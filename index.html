@@ -20,13 +20,10 @@
             background: radial-gradient(circle at 50% -20%, #f3e8ff 0%, #ffffff 60%);
         }
         .bg-purple-gradient {
-            background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%);
-        }
-        .bg-purple-gradient-vibrant {
-            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
         }
         .text-purple-gradient {
-            background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%);
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -64,32 +61,6 @@
         .animate-scale-in {
             animation: scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-
-        .btn-modern-primary {
-            background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%);
-            box-shadow: 0 10px 25px -5px rgba(109, 40, 217, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .btn-modern-primary:hover {
-            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 20px 30px -10px rgba(109, 40, 217, 0.4);
-        }
-        .btn-modern-primary:active {
-            transform: translateY(0) scale(0.98);
-        }
-
-        .btn-modern-secondary {
-            background: #ffffff;
-            border: 2px solid #e9d5ff;
-            color: #6d28d9;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .btn-modern-secondary:hover {
-            background: #faf5ff;
-            border-color: #6d28d9;
-            transform: translateY(-2px);
-        }
     </style>
 <script type="importmap">
 {
@@ -110,5 +81,7 @@
 </head>
 <body class="bg-aura text-slate-900">
     <div id="root"></div>
+    <!-- Entry point script module to fix the white screen issue -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>

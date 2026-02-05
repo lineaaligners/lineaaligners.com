@@ -38,6 +38,8 @@ const FeatureIcon: React.FC<{ type: string }> = ({ type }) => {
 
 export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const content = TRANSLATIONS[language].features;
+  const videoFeatureUrl = "https://player.vimeo.com/external/370331493.hd.mp4?s=383077a00aa7c2202b4db499b1397379ef3e5066&profile_id=175";
+
   return (
     <section id="benefits" className="py-32 bg-white relative overflow-hidden">
       <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-purple-50 rounded-full blur-[120px] opacity-40 -z-10"></div>
@@ -46,48 +48,58 @@ export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
           <div className="space-y-6">
-            <h2 className="text-purple-600 font-black uppercase tracking-[0.25em] text-[10px]">{content.tag}</h2>
-            <h3 className="text-5xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tighter">
+            <h2 className="text-purple-600 font-black uppercase tracking-[0.25em] text-[12px]">{content.tag}</h2>
+            <h3 className="text-5xl md:text-6xl lg:text-8xl font-black text-slate-900 leading-[1] tracking-tighter">
               {content.title}
             </h3>
           </div>
-          <div className="lg:border-l lg:border-slate-100 lg:pl-16">
-            <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-xl">
+          <div className="lg:border-l-4 lg:border-slate-950 lg:pl-16">
+            <p className="text-2xl text-slate-700 font-bold leading-relaxed max-w-xl">
               {content.desc}
             </p>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {content.items.map((feature, idx) => (
-            <div 
-              key={idx}
-              className="relative p-10 rounded-[45px] bg-white border border-slate-100 shadow-[0_15px_40px_rgba(0,0,0,0.02)] hover:shadow-[0_50px_90px_rgba(109,40,217,0.1)] transition-all duration-700 group overflow-hidden flex flex-col h-full"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 via-white to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+          {content.items.map((feature, idx) => {
+            const isSpecial = feature.icon === 'precision';
+            return (
+              <div 
+                key={idx}
+                className={`relative p-10 rounded-[60px] bg-white border-4 border-slate-950 shadow-2xl hover:shadow-purple-500/20 transition-all duration-700 group overflow-hidden flex flex-col h-full ${isSpecial ? 'bg-slate-950 text-white' : ''}`}
+              >
+                {isSpecial && (
+                  <video 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity"
+                  >
+                    <source src={videoFeatureUrl} type="video/mp4" />
+                  </video>
+                )}
 
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="w-16 h-16 bg-slate-50 rounded-[22px] border border-white flex items-center justify-center mb-10 transform group-hover:rotate-12 group-hover:scale-110 group-hover:bg-white group-hover:shadow-xl transition-all duration-500 ease-out">
-                  <div className="relative">
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center mb-10 transform group-hover:rotate-12 transition-all duration-500 ${isSpecial ? 'bg-white text-slate-950' : 'bg-slate-100 text-purple-600'}`}>
                     <FeatureIcon type={feature.icon} />
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse"></div>
+                  </div>
+
+                  <h4 className={`text-3xl font-black mb-5 tracking-tight ${isSpecial ? 'text-white' : 'text-slate-950'}`}>
+                    {feature.title}
+                  </h4>
+                  
+                  <p className={`leading-relaxed font-bold text-base opacity-80 ${isSpecial ? 'text-slate-100' : 'text-slate-700'}`}>
+                    {feature.description}
+                  </p>
+
+                  <div className="mt-auto pt-10">
+                    <div className={`w-12 h-2 rounded-full transition-all duration-700 ${isSpecial ? 'bg-purple-500 group-hover:w-full' : 'bg-slate-200 group-hover:bg-purple-600 group-hover:w-full'}`}></div>
                   </div>
                 </div>
-
-                <h4 className="text-2xl font-black text-slate-900 mb-5 tracking-tight group-hover:text-purple-700 transition-colors duration-300">
-                  {feature.title}
-                </h4>
-                
-                <p className="text-slate-500 leading-relaxed font-medium text-[15px] opacity-90 group-hover:opacity-100 transition-opacity">
-                  {feature.description}
-                </p>
-
-                <div className="mt-auto pt-10">
-                  <div className="w-8 h-1 bg-slate-100 group-hover:w-full group-hover:bg-purple-600 transition-all duration-700 rounded-full"></div>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
