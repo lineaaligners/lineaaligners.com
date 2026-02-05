@@ -1,7 +1,5 @@
 {
-  "name": "Copy of Linea Aligners Kosovo",
+  "name": "Linea Aligners Kosovo",
   "description": "Premium orthodontic care in Kosovo featuring clear aligners, digital scanning, and personalized treatment plans in an elegant purple theme.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "requestFramePermissions": []
 }

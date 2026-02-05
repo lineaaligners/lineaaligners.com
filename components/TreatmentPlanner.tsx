@@ -3,13 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { ModelViewer } from './ModelViewer';
 
-export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () => void }> = ({ onBack, onBookScan }) => {
+// Added language prop to props type and destructuring to fix TS error in App.tsx
+export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () => void; language: 'en' | 'sq' }> = ({ onBack, onBookScan, language }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [extension, setExtension] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isEn = language === 'en';
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -51,7 +53,7 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
     
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      setError("AI Vision analysis is currently optimized for clinical photos. For 3D scans, please book a full in-clinic consultation.");
+      setError(isEn ? "AI Vision analysis is currently optimized for clinical photos. For 3D scans, please book a full in-clinic consultation." : "Analiza e AI Vision është e optimizuar për foto klinike. Për skanimet 3D, ju lutem rezervoni një konsultë të plotë në klinikë.");
       return;
     }
 
@@ -86,12 +88,12 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
         }
       });
 
-      const rawText = response.text || "Unable to process the image. Please try again with a clearer dental scan or photo.";
+      const rawText = response.text || (isEn ? "Unable to process the image. Please try again with a clearer dental scan or photo." : "Nuk mund të përpunohet imazhi. Ju lutem provoni përsëri me një skanim ose foto dentare më të qartë.");
       const cleanText = rawText.replace(/\*/g, '');
       setAnalysis(cleanText);
     } catch (err) {
       console.error(err);
-      setError("An error occurred during file processing. Please check your connection and try again.");
+      setError(isEn ? "An error occurred during file processing. Please check your connection and try again." : "Ndodhi një gabim gjatë përpunimit të skedarit. Ju lutem kontrolloni lidhjen tuaj dhe provoni përsëri.");
     } finally {
       setLoading(false);
     }
@@ -104,16 +106,16 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <button 
           onClick={onBack}
-          className="mb-8 flex items-center gap-2 text-purple-600 font-bold hover:text-purple-700 transition-all"
+          className="mb-8 flex items-center gap-2 text-purple-700 font-black hover:text-purple-900 transition-all uppercase text-xs tracking-widest"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Back to Home
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+          {isEn ? 'Back to Home' : 'Kthehu në Fillim'}
         </button>
 
         <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-purple-100">
-          <div className="bg-purple-700 p-8 text-white text-center">
-            <h1 className="text-3xl font-bold mb-2">Clinical Planning: Scan & X-Ray</h1>
-            <p className="text-purple-100 opacity-80">Upload your data for a preliminary orthodontic review</p>
+          <div className="bg-purple-gradient p-8 text-white text-center">
+            <h1 className="text-3xl font-black mb-2 tracking-tight">{isEn ? 'Clinical Planning' : 'Planifikimi Klinik'}</h1>
+            <p className="text-purple-100 opacity-80 font-medium">{isEn ? 'Preliminary digital assessment lab' : 'Laboratori i vlerësimit paraprak digjital'}</p>
           </div>
 
           <div className="p-8 md:p-12 space-y-12">
@@ -121,13 +123,13 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
               <>
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Uploading your data</h2>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{isEn ? 'Uploading your data' : 'Ngarkimi i të dhënave tuaja'}</h2>
                     <div className="grid gap-4">
                       {[
-                        { icon: '🔬', title: '3D Scans', text: 'Upload STL or OBJ files from your previous dental work.' },
-                        { icon: '🦴', title: 'Dental X-rays', text: 'High-resolution Panoramic or Lateral Ceph images.' },
-                        { icon: '📸', title: 'Clinical Photos', text: 'Clear front-facing photos of your natural bite.' },
-                        { icon: '🔒', title: 'Secure Handling', text: 'Data is handled securely for specialist review.' }
+                        { icon: '🔬', title: isEn ? '3D Scans' : 'Skanimet 3D', text: isEn ? 'Upload STL or OBJ files from your previous dental work.' : 'Ngarkoni skedarët STL ose OBJ nga puna juaj e mëparshme dentare.' },
+                        { icon: '🦴', title: isEn ? 'Dental X-rays' : 'Rrezet X Dentare', text: isEn ? 'High-resolution Panoramic or Lateral Ceph images.' : 'Imazhe panoramike me rezolucion të lartë ose Ceph anësore.' },
+                        { icon: '📸', title: isEn ? 'Clinical Photos' : 'Foto Klinike', text: isEn ? 'Clear front-facing photos of your natural bite.' : 'Foto të qarta ballore të kafshimit tuaj natyral.' },
+                        { icon: '🔒', title: isEn ? 'Secure Handling' : 'Trajtim i Sigurt', text: isEn ? 'Data is handled securely for specialist review.' : 'Të dhënat trajtohen në mënyrë të sigurt për rishikim nga specialisti.' }
                       ].map((item, i) => (
                         <div key={i} className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-md">
                           <span className="text-2xl">{item.icon}</span>
@@ -166,13 +168,13 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
                       ) : (
                         <label 
                           htmlFor="teeth-upload"
-                          className="aspect-[4/3] rounded-3xl border-4 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-purple-300 cursor-pointer transition-all flex flex-col items-center justify-center text-center p-6"
+                          className="aspect-[4/3] rounded-3xl border-4 border-dashed border-purple-100 bg-purple-50/20 hover:bg-purple-50 hover:border-purple-300 cursor-pointer transition-all flex flex-col items-center justify-center text-center p-6"
                         >
-                          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-4">
+                          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-4 shadow-inner">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                           </div>
-                          <span className="text-slate-900 font-bold text-lg">Upload Data</span>
-                          <span className="text-slate-500 text-sm mt-2">Select STL, OBJ, or Clinical Photos</span>
+                          <span className="text-purple-900 font-black text-lg">{isEn ? 'Upload Data' : 'Ngarko të Dhënat'}</span>
+                          <span className="text-purple-600/60 text-sm mt-2 font-medium">{isEn ? 'Select STL, OBJ, or Photos' : 'Zgjidhni STL, OBJ, ose Foto'}</span>
                         </label>
                       )}
                     </div>
@@ -183,10 +185,10 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
                   <button
                     onClick={analyzeSmile}
                     disabled={!file || loading}
-                    className={`px-12 py-4 rounded-full font-bold text-lg transition-all shadow-xl flex items-center gap-3 ${
+                    className={`px-12 py-5 rounded-full font-black text-lg transition-all shadow-2xl flex items-center gap-3 ${
                       !file || loading 
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                        : 'bg-purple-600 text-white hover:bg-purple-700 transform hover:scale-105 shadow-purple-200'
+                        : 'bg-purple-gradient text-white hover:scale-105 shadow-purple-200'
                     }`}
                   >
                     {loading ? (
@@ -194,12 +196,12 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                         <div className="w-2 h-2 bg-white rounded-full"></div>
-                        <span className="ml-2">Analyzing...</span>
+                        <span className="ml-2">{isEn ? 'Analyzing...' : 'Duke analizuar...'}</span>
                       </div>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-                        <span>Start Preliminary Review</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                        <span>{isEn ? 'Start Preliminary Review' : 'Fillo Rishikimin Paraprak'}</span>
                       </>
                     )}
                   </button>
@@ -208,13 +210,13 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
             ) : (
               <div className="animate-fade-in space-y-8">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <h2 className="text-2xl font-bold text-slate-900">Preliminary Clinical Review</h2>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">{isEn ? 'Clinical Review Result' : 'Rezultati i Rishikimit Klinik'}</h2>
                   <button 
                     onClick={() => { setAnalysis(null); setFile(null); setPreview(null); }}
-                    className="text-purple-600 font-bold hover:text-purple-700 text-sm flex items-center gap-2"
+                    className="text-purple-700 font-black hover:text-purple-900 text-sm flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                    Upload New File
+                    {isEn ? 'New Assessment' : 'Vlerësim i Ri'}
                   </button>
                 </div>
 
@@ -225,26 +227,26 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
                 <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-2xl flex gap-4">
                   <div className="text-yellow-400 text-2xl pt-1 leading-none">⚠️</div>
                   <p className="text-yellow-800 text-sm font-medium leading-relaxed">
-                    <strong>Medical Disclaimer:</strong> This review is a preliminary assessment based on uploaded data. It is NOT a professional diagnosis. A full in-person clinical examination and scan are required.
+                    <strong>{isEn ? 'Medical Disclaimer:' : 'Mohim Mjekësor:'}</strong> {isEn ? 'This review is a preliminary assessment based on uploaded data. It is NOT a professional diagnosis. A full in-person clinical examination and scan are required.' : 'Ky rishikim është një vlerësim paraprak bazuar në të dhënat e ngarkuara. Nuk është një diagnozë profesionale. Kërkohet një ekzaminim klinik i plotë dhe skanim personalisht.'}
                   </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
                   <button 
                     onClick={onBookScan}
-                    className="bg-purple-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-purple-700 transition-all shadow-xl shadow-purple-200"
+                    className="bg-purple-gradient text-white px-10 py-5 rounded-full font-black text-lg transition-all shadow-xl shadow-purple-200 active:scale-95"
                   >
-                    Book Scan via Google Calendar
+                    {isEn ? 'Book Scan via Google Calendar' : 'Rezervo Skanimin në Google Calendar'}
                   </button>
-                  <button onClick={onBack} className="bg-white border-2 border-purple-100 text-purple-700 px-10 py-4 rounded-full font-bold text-lg hover:bg-purple-50 transition-all">
-                    Back to Home
+                  <button onClick={onBack} className="bg-white border-2 border-purple-200 text-purple-700 px-10 py-5 rounded-full font-black text-lg hover:bg-purple-50 transition-all active:scale-95">
+                    {isEn ? 'Back to Home' : 'Kthehu në Fillim'}
                   </button>
                 </div>
               </div>
             )}
 
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 rounded-xl text-center font-medium border border-red-100 flex items-center justify-center gap-2">
+              <div className="p-4 bg-red-50 text-red-600 rounded-xl text-center font-bold border border-red-100 flex items-center justify-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {error}
               </div>

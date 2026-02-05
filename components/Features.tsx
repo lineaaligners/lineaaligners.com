@@ -1,5 +1,5 @@
 import React from 'react';
-import { FEATURES } from '../constants';
+import { TRANSLATIONS } from '../constants';
 
 const FeatureIcon: React.FC<{ type: string }> = ({ type }) => {
   const baseClass = "w-8 h-8 text-purple-600";
@@ -10,7 +10,6 @@ const FeatureIcon: React.FC<{ type: string }> = ({ type }) => {
         <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" style={{ opacity: 0 }} />
         </svg>
       );
     case 'removable':
@@ -37,44 +36,40 @@ const FeatureIcon: React.FC<{ type: string }> = ({ type }) => {
   }
 };
 
-export const Features: React.FC = () => {
+export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
+  const content = TRANSLATIONS[language].features;
   return (
     <section id="benefits" className="py-32 bg-white relative overflow-hidden">
-      {/* Decorative Gradient Auras */}
       <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-purple-50 rounded-full blur-[120px] opacity-40 -z-10"></div>
       <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-indigo-50 rounded-full blur-[120px] opacity-40 -z-10"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
           <div className="space-y-6">
-            <h2 className="text-purple-600 font-black uppercase tracking-[0.25em] text-[10px]">The Linea Difference</h2>
+            <h2 className="text-purple-600 font-black uppercase tracking-[0.25em] text-[10px]">{content.tag}</h2>
             <h3 className="text-5xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tighter">
-              Advanced <span className="text-purple-600">Orthodontics</span> <br />
-              for the Modern Life.
+              {content.title}
             </h3>
           </div>
           <div className="lg:border-l lg:border-slate-100 lg:pl-16">
             <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-xl">
-              We've redesigned the dental experience to be entirely digital, comfortable, and patient-focused. No messy molds, just clear clinical precision.
+              {content.desc}
             </p>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {FEATURES.map((feature, idx) => (
+          {content.items.map((feature, idx) => (
             <div 
               key={idx}
-              className="relative p-10 rounded-[45px] bg-white border border-slate-100 shadow-[0_15px_40px_rgba(0,0,0,0.02)] hover:shadow-[0_50px_90px_rgba(109,40,217,0.1)] transition-all duration-700 group overflow-hidden"
+              className="relative p-10 rounded-[45px] bg-white border border-slate-100 shadow-[0_15px_40px_rgba(0,0,0,0.02)] hover:shadow-[0_50px_90px_rgba(109,40,217,0.1)] transition-all duration-700 group overflow-hidden flex flex-col h-full"
             >
-              {/* Animated subtle backdrop */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 via-white to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
 
               <div className="relative z-10 flex flex-col h-full">
-                {/* Modern Glass Icon Container */}
                 <div className="w-16 h-16 bg-slate-50 rounded-[22px] border border-white flex items-center justify-center mb-10 transform group-hover:rotate-12 group-hover:scale-110 group-hover:bg-white group-hover:shadow-xl transition-all duration-500 ease-out">
                   <div className="relative">
                     <FeatureIcon type={feature.icon} />
-                    {/* Small pulsing element to add "tech" feel */}
                     <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse"></div>
                   </div>
                 </div>
@@ -87,7 +82,6 @@ export const Features: React.FC = () => {
                   {feature.description}
                 </p>
 
-                {/* Bottom decorative bar */}
                 <div className="mt-auto pt-10">
                   <div className="w-8 h-1 bg-slate-100 group-hover:w-full group-hover:bg-purple-600 transition-all duration-700 rounded-full"></div>
                 </div>

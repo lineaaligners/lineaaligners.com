@@ -1,21 +1,27 @@
-
 import React from 'react';
-import { TESTIMONIALS } from '../constants';
+import { TESTIMONIALS_CONTENT } from '../constants';
 
-export const Testimonials: React.FC = () => {
+export const Testimonials: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
+  const testimonials = TESTIMONIALS_CONTENT[language];
   return (
     <section className="py-24 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <h2 className="text-purple-600 font-bold uppercase tracking-wider text-sm">Success Stories</h2>
-          <h3 className="text-4xl font-bold text-slate-900">What our patients say</h3>
+          <h2 className="text-purple-600 font-bold uppercase tracking-wider text-sm">
+            {language === 'en' ? 'Success Stories' : 'Rrëfime Suksesi'}
+          </h2>
+          <h3 className="text-4xl font-bold text-slate-900">
+            {language === 'en' ? 'What our patients say' : 'Çfarë thonë pacientët tanë'}
+          </h3>
           <p className="text-lg text-slate-600">
-            Real transformations from real people in Kosovo who chose Linea Aligners.
+            {language === 'en' 
+              ? "Real transformations from real people in Kosovo who chose Linea Aligners."
+              : "Transformime reale nga njerëz realë në Kosovë që zgjodhën Linea Aligners."}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {TESTIMONIALS.map((t, idx) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {testimonials.map((t, idx) => (
             <div 
               key={idx} 
               className="bg-slate-50 p-8 rounded-[32px] border border-slate-100 flex flex-col justify-between transition-all hover:shadow-xl hover:shadow-purple-100 hover:-translate-y-1"
@@ -38,7 +44,6 @@ export const Testimonials: React.FC = () => {
                   loading="lazy"
                   width="64"
                   height="64"
-                  decoding="async"
                 />
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>
