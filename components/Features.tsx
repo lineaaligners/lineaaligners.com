@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TRANSLATIONS } from '../constants';
 
@@ -38,7 +39,6 @@ const FeatureIcon: React.FC<{ type: string }> = ({ type }) => {
 
 export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const content = TRANSLATIONS[language].features;
-  const videoFeatureUrl = "https://player.vimeo.com/external/370331493.hd.mp4?s=383077a00aa7c2202b4db499b1397379ef3e5066&profile_id=175";
 
   return (
     <section id="benefits" className="py-32 bg-white relative overflow-hidden">
@@ -62,39 +62,26 @@ export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {content.items.map((feature, idx) => {
-            const isSpecial = feature.icon === 'precision';
             return (
               <div 
                 key={idx}
-                className={`relative p-10 rounded-[60px] bg-white border-4 border-slate-950 shadow-2xl hover:shadow-purple-500/20 transition-all duration-700 group overflow-hidden flex flex-col h-full ${isSpecial ? 'bg-slate-950 text-white' : ''}`}
+                className="relative p-10 rounded-[60px] border-4 border-slate-950 bg-white text-slate-950 transition-all duration-700 group overflow-hidden flex flex-col h-full shadow-xl hover:shadow-purple-500/20"
               >
-                {isSpecial && (
-                  <video 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline 
-                    className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity"
-                  >
-                    <source src={videoFeatureUrl} type="video/mp4" />
-                  </video>
-                )}
-
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center mb-10 transform group-hover:rotate-12 transition-all duration-500 ${isSpecial ? 'bg-white text-slate-950' : 'bg-slate-100 text-purple-600'}`}>
+                  <div className="w-20 h-20 rounded-[28px] bg-slate-100 flex items-center justify-center mb-10 transform group-hover:rotate-12 transition-all duration-500 text-purple-600">
                     <FeatureIcon type={feature.icon} />
                   </div>
 
-                  <h4 className={`text-3xl font-black mb-5 tracking-tight ${isSpecial ? 'text-white' : 'text-slate-950'}`}>
+                  <h4 className="text-3xl font-black mb-5 tracking-tight text-slate-950">
                     {feature.title}
                   </h4>
                   
-                  <p className={`leading-relaxed font-bold text-base opacity-80 ${isSpecial ? 'text-slate-100' : 'text-slate-700'}`}>
+                  <p className="leading-relaxed font-bold text-base text-slate-700 opacity-80">
                     {feature.description}
                   </p>
 
                   <div className="mt-auto pt-10">
-                    <div className={`w-12 h-2 rounded-full transition-all duration-700 ${isSpecial ? 'bg-purple-500 group-hover:w-full' : 'bg-slate-200 group-hover:bg-purple-600 group-hover:w-full'}`}></div>
+                    <div className="w-12 h-2 rounded-full transition-all duration-700 bg-slate-200 group-hover:bg-purple-600 group-hover:w-full"></div>
                   </div>
                 </div>
               </div>

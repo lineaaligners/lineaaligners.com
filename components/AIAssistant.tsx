@@ -12,7 +12,7 @@ const scheduleAppointmentDeclaration: FunctionDeclaration = {
   name: 'scheduleAppointment',
   parameters: {
     type: Type.OBJECT,
-    description: 'Schedules a free 3D scan appointment at Meident Dental Clinic for the user. Call this tool when the user expresses interest in booking a scan, visiting the clinic, or starting their journey.',
+    description: 'Schedules a free 3D scan appointment at Medident Dental Clinic for the user. Call this tool when the user expresses interest in booking a scan, visiting the clinic, or starting their journey.',
     properties: {
       fullName: { type: Type.STRING, description: 'The full name of the patient.' },
       email: { type: Type.STRING, description: 'The email address of the patient for confirmation.' },
@@ -60,7 +60,7 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
         model: 'gemini-3-flash-preview',
         contents: updatedMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
         config: {
-          systemInstruction: `You are a friendly AI for Linea Aligners. Your goal is to help users understand our clear aligner treatment and ultimately book a free 3D scan at Meident Dental Clinic in Peja. 
+          systemInstruction: `You are a friendly AI for Linea Aligners. Your goal is to help users understand our clear aligner treatment and ultimately book a free 3D scan at Medident Dental Clinic in Peja. 
           Help the user in ${isEn ? 'English' : 'Albanian'}. 
           If a user wants to book, visit, or start, ALWAYS use the 'scheduleAppointment' tool. If they haven't provided their full name and email, ask for them politely first.
           Booking link: ${GOOGLE_CALENDAR_URL}. 
@@ -77,8 +77,8 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
         const name = fc.args.fullName;
         
         const confirmation = isEn 
-          ? `Perfect, ${name}! I've initiated your booking process. I am opening our digital calendar for you right now so you can pick your exact time slot at Meident Clinic.`
-          : `Shkëlqyeshëm, ${name}! Kam nisur procesin e rezervimit tuaj. Po hap kalendarin tonë digjital për ju tani që të zgjidhni orarin tuaj të saktë në Klinikën Meident.`;
+          ? `Perfect, ${name}! I've initiated your booking process. I am opening our digital calendar for you right now so you can pick your exact time slot at Medident Clinic.`
+          : `Shkëlqyeshëm, ${name}! Kam nisur procesin e rezervimit tuaj. Po hap kalendarin tonë digjital për ju tani që të zgjidhni orarin tuaj të saktë në Klinikën Medident.`;
         
         setMessages(prev => [...prev, { role: 'model', text: confirmation }]);
       } else {

@@ -23,7 +23,7 @@ const GET_STEP_DETAILS = (lang: 'en' | 'sq'): Record<string, StepDetail> => ({
   },
   '02': {
     title: lang === 'en' ? 'Personalized Plan' : 'Plani i Personalizuar',
-    description: lang === 'en' ? 'Our expert orthodontists design your perfect smile.' : 'Ortodontët tanë ekspertë dizajnojnë buzëqeshjen tuaj të përsosur.',
+    description: lang === 'en' ? 'Our expert orthodontists design your perfect smile.' : 'Ortodontët tanë expertë dizajnojnë buzëqeshjen tuaj të përsosur.',
     longDesc: lang === 'en'
       ? 'Using advanced AI-driven software, Dr. Fatbardha Mustafa and Genis Nallbani map out every tooth movement.'
       : 'Duke përdorur softuer të avancuar të AI, Dr. Fatbardha Mustafa dhe Genis Nallbani planifikojnë çdo lëvizje të dhëmbit.',
@@ -127,7 +127,7 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-2xl" onClick={closeModal}></div>
           <div className="relative bg-white w-full max-w-6xl rounded-[60px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row animate-scale-in">
             <div className="lg:w-1/2 relative min-h-[300px] lg:min-h-full overflow-hidden">
-              <img src={stepDetails[activeStep].imageUrl} className="absolute inset-0 w-full h-full object-cover" alt="" />
+              <img src={stepDetails[activeStep].imageUrl} loading="lazy" className="absolute inset-0 w-full h-full object-cover" alt="" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
               <div className="absolute bottom-10 left-10">
                 <div className="bg-purple-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] w-fit mb-4">

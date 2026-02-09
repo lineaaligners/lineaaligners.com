@@ -26,6 +26,7 @@ export const Footer: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
               <img 
                 src={logoUrl} 
                 alt="Linea Aligners Logo" 
+                loading="lazy"
                 className="h-24 w-auto object-contain" 
               />
             </div>
@@ -60,7 +61,7 @@ export const Footer: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
             <h2 className="text-xs font-black text-purple-400 uppercase tracking-[0.3em]">{isEn ? 'The Clinic' : 'Klinika'}</h2>
             <div className="space-y-6">
               <div className="space-y-1">
-                <p className="text-slate-100 font-black text-base uppercase">Meident Dental Clinic</p>
+                <p className="text-slate-100 font-black text-base uppercase">Medident Dental Clinic</p>
                 <address className="text-slate-200 text-base leading-relaxed not-italic font-medium">
                   {isEn ? 'Peja, Republic of Kosova' : 'Pejë, Republika e Kosovës'}<br />
                   30000 Pejë

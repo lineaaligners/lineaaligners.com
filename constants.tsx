@@ -56,7 +56,7 @@ export const TRANSLATIONS = {
         {
           number: '01',
           title: 'Free 3D Scan',
-          description: 'Visit our clinic in Peja for a state-of-the-art digital scan at Meident Dental Clinic. No uncomfortable molds required.'
+          description: 'Visit our clinic in Peja for a state-of-the-art digital scan at Medident Dental Clinic. No uncomfortable molds required.'
         },
         {
           number: '02',
@@ -78,7 +78,7 @@ export const TRANSLATIONS = {
       tag: "Transparent Value",
       title1: "Invest in",
       title2: "your future self.",
-      desc: "At Meident, we believe world-class orthodontic care should be accessible. Our clear pricing model removes any financial anxiety.",
+      desc: "At Medident, we believe world-class orthodontic care should be accessible. Our clear pricing model removes any financial anxiety.",
       perks: ['In-Clinic Supervision', 'Digital Simulation', 'All Retainers', 'Flexible Payments'],
       cardTag: "Financing",
       cardTitle: "Flexible Plans",
@@ -147,7 +147,7 @@ export const TRANSLATIONS = {
         {
           number: '01',
           title: 'Skanimi 3D Falas',
-          description: 'Vizitoni klinikën tonë në Pejë për një skanim digjital në Meident Dental Clinic.'
+          description: 'Vizitoni klinikën tonë në Pejë për një skanim digjital në Medident Dental Clinic.'
         },
         {
           number: '02',
@@ -169,7 +169,7 @@ export const TRANSLATIONS = {
       tag: "Vlerë Transparente",
       title1: "Investoni në",
       title2: "veten tuaj të ardhshme.",
-      desc: "Në Meident, ne besojmë se kujdesi ortodontik i klasit botëror duhet të jetë i aksesueshëm.",
+      desc: "Në Medident, ne besojmë se kujdesi ortodontik i klasit botëror duhet të jetë i aksesueshëm.",
       perks: ['Mbikëqyrje në Klinikë', 'Simulim Digjital', 'Të gjithë Retainer-at', 'Pagesa Fleksibile'],
       cardTag: "Financimi",
       cardTitle: "Plane Fleksibile",
@@ -236,7 +236,7 @@ export const TESTIMONIALS_CONTENT = {
     {
       name: 'Besnik Gashi',
       location: 'Prizren',
-      text: 'The 3D scan at Meident was so fast and professional. I could see my future smile before even starting. Highly recommend the team!',
+      text: 'The 3D scan at Medident was so fast and professional. I could see my future smile before even starting. Highly recommend the team!',
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
       rating: 5
     }
@@ -252,7 +252,7 @@ export const TESTIMONIALS_CONTENT = {
     {
       name: 'Besnik Gashi',
       location: 'Prizren',
-      text: 'Skanimi 3D në Meident ishte shumë i shpejtë dhe profesional. Pashë buzëqeshjen time të ardhshme para se të filloja.',
+      text: 'Skanimi 3D në Medident ishte shumë i shpejtë dhe profesional. Pashë buzëqeshjen time të ardhshme para se të filloja.',
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
       rating: 5
     }
