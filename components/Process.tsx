@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TRANSLATIONS } from '../constants';
 
@@ -151,7 +152,7 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
                   onClick={() => { onBookScan?.(); closeModal(); }}
                   className="bg-purple-gradient text-white px-10 py-4 rounded-full font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
-                  {language === 'en' ? 'Book via Google Calendar' : 'Rezervo përmes Kalendarit'}
+                  {language === 'en' ? 'Book via WhatsApp' : 'Rezervo përmes WhatsApp'}
                 </button>
               </div>
             </div>

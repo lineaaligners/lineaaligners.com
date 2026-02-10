@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { BRAND_ASSET } from '../App';
 
-type PortalMode = 'login' | 'signup' | 'forgot' | 'verify';
+type PortalMode = 'login' | 'signup' | 'forgot';
 
 interface Milestone {
   label: string;
@@ -138,8 +138,16 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
   const currentPhase = phases.find(p => currentWeek >= p.weeks[0] && currentWeek <= p.weeks[1]) || phases[0];
 
   const handleSignup = () => {
+    if (!idInput.trim()) {
+      setValidationError(isEn ? "Username/ID is required." : "Përdoruesi/ID është i kërkuar.");
+      return;
+    }
     if (!nameInput.trim()) {
       setValidationError(isEn ? "Full Name is required." : "Emri i plotë është i kërkuar.");
+      return;
+    }
+    if (!emailInput.trim()) {
+      setValidationError(isEn ? "Email is required." : "Email-i është i kërkuar.");
       return;
     }
     if (passwordInput.length < 6) {
@@ -152,7 +160,7 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
     }
 
     const users = getStoredUsers();
-    if (users.some(u => u.id === idInput || u.email === emailInput)) {
+    if (users.some(u => u.id.toLowerCase() === idInput.toLowerCase() || u.email.toLowerCase() === emailInput.toLowerCase())) {
       setValidationError(isEn ? "User already exists with this ID or Email." : "Përdoruesi ekziston me këtë ID ose Email.");
       return;
     }
@@ -165,24 +173,20 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
         email: emailInput,
         passwordHash: passwordInput,
         currentWeek: 1,
-        isVerified: false
+        isVerified: true // Set to true directly for prototype ease
       };
       saveUser(newUser);
+      localStorage.setItem('linea_active_session', JSON.stringify(newUser));
+      setCurrentUser(newUser);
       setLoading(false);
-      setMode('verify');
     }, 1500);
   };
 
   const handleLogin = () => {
     const users = getStoredUsers();
-    const user = users.find(u => (u.id === idInput || u.email === idInput) && u.passwordHash === passwordInput);
+    const user = users.find(u => (u.id.toLowerCase() === idInput.toLowerCase() || u.email.toLowerCase() === idInput.toLowerCase()) && u.passwordHash === passwordInput);
     
     if (user) {
-      if (!user.isVerified) {
-        setMode('verify');
-        setEmailInput(user.email);
-        return;
-      }
       setLoading(true);
       setTimeout(() => {
         setCurrentUser(user);
@@ -191,23 +195,8 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
         setLoading(false);
       }, 1000);
     } else {
-      setValidationError(isEn ? "Invalid credentials. Please register first." : "Kredencialet e gabuara. Ju lutem regjistrohuni së pari.");
+      setValidationError(isEn ? "Invalid credentials. Please check your username and password." : "Kredencialet e gabuara. Ju lutem kontrolloni emrin e përdoruesit dhe fjalëkalimin.");
     }
-  };
-
-  const handleVerify = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const users = getStoredUsers();
-      const user = users.find(u => u.email === emailInput || u.id === idInput);
-      if (user) {
-        user.isVerified = true;
-        saveUser(user);
-        setSuccessMessage(isEn ? "Email confirmed! You can now log in." : "Email-i u konfirmua! Tani mund të kyçeni.");
-        setMode('login');
-      }
-      setLoading(false);
-    }, 1200);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -216,7 +205,6 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
     setSuccessMessage(null);
     if (mode === 'signup') handleSignup();
     else if (mode === 'login') handleLogin();
-    else if (mode === 'verify') handleVerify();
     else if (mode === 'forgot') {
       setLoading(true);
       setTimeout(() => {
@@ -248,12 +236,10 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
                 {mode === 'login' && (isEn ? 'Patient Login' : 'Kyçja e Pacientit')}
                 {mode === 'signup' && (isEn ? 'Register' : 'Regjistrimi')}
                 {mode === 'forgot' && (isEn ? 'Reset Password' : 'Rivendos Fjalëkalimin')}
-                {mode === 'verify' && (isEn ? 'Confirm Email' : 'Konfirmo Email-in')}
               </h1>
               <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-[280px] mx-auto">
                 {mode === 'login' && (isEn ? 'Access your personalized 3D orthodontic roadmap.' : 'Hyni në rrugëtimin tuaj të personalizuar 3D.')}
                 {mode === 'signup' && (isEn ? 'Join the smile revolution. Create your account.' : 'Bashkohuni me revolucionin. Krijoni llogarinë tuaj.')}
-                {mode === 'verify' && (isEn ? `Check your inbox for ${emailInput || idInput}.` : `Kontrolloni inbox-in për ${emailInput || idInput}.`)}
               </p>
             </div>
 
@@ -261,7 +247,7 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
             {validationError && <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-700 text-xs font-bold rounded-2xl text-center animate-shake">{validationError}</div>}
             
             <form onSubmit={handleSubmit} className="space-y-5">
-              {mode !== 'forgot' && mode !== 'verify' && (
+              {mode !== 'forgot' && (
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{isEn ? 'Username or ID' : 'Përdoruesi ose ID'}</label>
                   <input type="text" required value={idInput} onChange={(e) => setIdInput(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-purple-500 transition-all placeholder:text-slate-300" placeholder="e.g. Geno21" />
@@ -291,7 +277,6 @@ export const PatientPortal: React.FC<{ onBack: () => void; language: 'en' | 'sq'
                   <input type="password" required value={confirmPasswordInput} onChange={(e) => setConfirmPasswordInput(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-purple-500 transition-all" />
                 </div>
               )}
-              {mode === 'verify' && <div className="p-6 bg-purple-50 rounded-[30px] text-center space-y-4 shadow-inner border border-purple-100"><p className="text-xs font-bold text-purple-700 italic">{isEn ? "Mock Email Step: For this demo, please click below to confirm your registration." : "Hapi i Email-it: Për këtë demo, klikoni më poshtë për të konfirmuar regjistrimin tuaj."}</p></div>}
               
               <button type="submit" disabled={loading} className="w-full bg-purple-gradient text-white font-black py-5 rounded-2xl shadow-xl shadow-purple-900/10 transition-all disabled:opacity-50 mt-4 uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95">
                 {loading ? <div className="w-6 h-6 border-3 border-white border-t-transparent animate-spin rounded-full"></div> : (

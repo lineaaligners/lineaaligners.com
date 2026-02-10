@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { ModelViewer } from './ModelViewer';
@@ -87,8 +88,8 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
         IMPORTANT: Do not use any asterisks (*) or markdown formatting in your response. Keep the text clean, plain, and structured with simple line breaks.
         
         MANDATORY DISCLAIMER: You MUST start and end the response with this message in both English and Albanian:
-        "This is a preliminary clinical observation and NOT a professional medical diagnosis. A full in-person 3D scan at our clinic is mandatory for a definitive treatment plan."
-        "Ky është një vlerësim paraprak klinik dhe nuk përbën një diagnozë mjekësore profesionale. Një skanim i plotë 3D në klinikën tonë është i domosdoshëm për një plan përfundimtar."
+        "This is a preliminary clinical observation and NOT a professional medical diagnosis. A full in-person 3D scan at our clinic via WhatsApp is mandatory for a definitive treatment plan."
+        "Ky është një vlerësim paraprak klinik dhe nuk përbën një diagnozë mjekësore profesionale. Një skanim i plotë 3D në klinikën tonë përmes WhatsApp është i domosdoshëm për një plan përfundimtar."
 
         Please provide the analysis in both English and Albanian.
       `;
@@ -281,7 +282,7 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
                     onClick={onBookScan}
                     className="bg-purple-gradient text-white px-10 py-5 rounded-full font-black text-lg transition-all shadow-xl shadow-purple-200 active:scale-95"
                   >
-                    {isEn ? 'Book Scan via Google Calendar' : 'Rezervo Skanimin në Google Calendar'}
+                    {isEn ? 'Book Scan via WhatsApp' : 'Rezervo Skanimin në WhatsApp'}
                   </button>
                   <button onClick={onBack} className="bg-white border-2 border-purple-200 text-purple-700 px-10 py-5 rounded-full font-black text-lg hover:bg-purple-50 transition-all active:scale-95">
                     {isEn ? 'Back to Home' : 'Kthehu në Fillim'}

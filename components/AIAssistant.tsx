@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 
@@ -6,13 +7,13 @@ interface Message {
   text: string;
 }
 
-const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2eP6uFm-7rY-M8Nn4R-JqXvY-M8Nn4R-JqXvY-M8Nn4R-JqXv';
+const WHATSAPP_URL = 'https://wa.me/38349772307';
 
 const scheduleAppointmentDeclaration: FunctionDeclaration = {
   name: 'scheduleAppointment',
   parameters: {
     type: Type.OBJECT,
-    description: 'Schedules a free 3D scan appointment at Medident Dental Clinic for the user. Call this tool when the user expresses interest in booking a scan, visiting the clinic, or starting their journey.',
+    description: 'Directs the user to book a free 3D scan appointment at Medident Dental Clinic via WhatsApp. Call this tool when the user expresses interest in booking a scan, visiting the clinic, or starting their journey.',
     properties: {
       fullName: { type: Type.STRING, description: 'The full name of the patient.' },
       email: { type: Type.STRING, description: 'The email address of the patient for confirmation.' },
@@ -26,8 +27,8 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
   const [isOpen, setIsOpen] = useState(false);
   const isEn = language === 'en';
   const initialText = isEn 
-    ? "Welcome to Linea Aligners! I'm your personal AI smile consultant. How can we start transforming your smile today? I can help you book a free 3D scan at our clinic!"
-    : "Mirësevini në Linea Aligners! Unë jam konsulenti juaj personal i AI. Si mund të fillojmë transformimin e buzëqeshjes suaj sot? Unë mund t'ju ndihmoj të rezervoni një skanim 3D falas në klinikën tonë!";
+    ? "Welcome to Linea Aligners! I'm your personal AI smile consultant. How can we start transforming your smile today? I can help you book a free 3D scan at our clinic via WhatsApp!"
+    : "Mirësevini në Linea Aligners! Unë jam konsulenti juaj personal i AI. Si mund të fillojmë transformimin e buzëqeshjes suaj sot? Unë mund t'ju ndihmoj të rezervoni një skanim 3D falas në klinikën tonë përmes WhatsApp!";
   
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -62,30 +63,30 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
         config: {
           systemInstruction: `You are a friendly AI for Linea Aligners. Your goal is to help users understand our clear aligner treatment and ultimately book a free 3D scan at Medident Dental Clinic in Peja. 
           Help the user in ${isEn ? 'English' : 'Albanian'}. 
-          If a user wants to book, visit, or start, ALWAYS use the 'scheduleAppointment' tool. If they haven't provided their full name and email, ask for them politely first.
-          Booking link: ${GOOGLE_CALENDAR_URL}. 
+          If a user wants to book, visit, or start, ALWAYS use the 'scheduleAppointment' tool to guide them to WhatsApp. If they haven't provided their full name and email, ask for them politely first.
+          Direct WhatsApp link: ${WHATSAPP_URL}. 
           Keep responses concise and premium. Do not use asterisks in output.`,
           tools: [{ functionDeclarations: [scheduleAppointmentDeclaration] }],
         },
       });
 
       if (response.functionCalls && response.functionCalls.length > 0) {
-        // Automatically open the booking link when the AI calls the function
-        window.open(GOOGLE_CALENDAR_URL, '_blank');
+        // Automatically open the WhatsApp link when the AI calls the function
+        window.open(WHATSAPP_URL, '_blank');
         
         const fc = response.functionCalls[0];
         const name = fc.args.fullName;
         
         const confirmation = isEn 
-          ? `Perfect, ${name}! I've initiated your booking process. I am opening our digital calendar for you right now so you can pick your exact time slot at Medident Clinic.`
-          : `Shkëlqyeshëm, ${name}! Kam nisur procesin e rezervimit tuaj. Po hap kalendarin tonë digjital për ju tani që të zgjidhni orarin tuaj të saktë në Klinikën Medident.`;
+          ? `Perfect, ${name}! I've initiated your booking process. I am opening WhatsApp for you right now so you can chat directly with our clinic to pick your exact time slot at Medident.`
+          : `Shkëlqyeshëm, ${name}! Kam nisur procesin e rezervimit tuaj. Po hap WhatsApp për ju tani që të flisni direkt me klinikën tonë për të zgjedhur orarin tuaj të saktë në Medident.`;
         
         setMessages(prev => [...prev, { role: 'model', text: confirmation }]);
       } else {
         setMessages(prev => [...prev, { role: 'model', text: (response.text || "").replace(/\*/g, '') }]);
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'model', text: isEn ? "I'm having a bit of trouble connecting. Please try again or visit our booking page directly!" : "Kam pak vështirësi në lidhje. Ju lutem provoni përsëri ose vizitoni faqen tonë të rezervimeve direkt!" }]);
+      setMessages(prev => [...prev, { role: 'model', text: isEn ? "I'm having a bit of trouble connecting. Please try again or visit our WhatsApp directly!" : "Kam pak vështirësi në lidhje. Ju lutem provoni përsëri ose na kontaktoni në WhatsApp direkt!" }]);
     } finally {
       setIsLoading(false);
     }

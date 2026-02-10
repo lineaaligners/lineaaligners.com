@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -12,7 +13,7 @@ import { AIAssistant } from './components/AIAssistant';
 import { PatientPortal } from './components/PatientPortal';
 import { TRANSLATIONS } from './constants';
 
-export const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2eP6uFm-7rY-M8Nn4R-JqXvY-M8Nn4R-JqXvY-M8Nn4R-JqXv';
+export const WHATSAPP_URL = 'https://wa.me/38349772307';
 export const BRAND_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/202241%20-%20Copy.jpg";
 export const ICONIC_DESIGN_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/572628579_18084691715316830_1228185980579187523_n.jpg";
 export const ALIGNMENT_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/sddefault.jpg";
@@ -34,6 +35,7 @@ const ProductSpotlight: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => 
               <img 
                 src={ICONIC_DESIGN_ASSET} 
                 alt="Linea Aligner Iconic Design" 
+                loading="lazy"
                 className="relative z-10 w-full max-w-lg mx-auto rounded-[80px] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-4 border-white/5 transform transition-transform duration-700 hover:scale-105"
               />
             </div>
@@ -223,6 +225,7 @@ const TransformationGallery: React.FC<{ language: 'en' | 'sq' }> = ({ language }
               <div className="aspect-[4/5] rounded-[50px] overflow-hidden bg-slate-100 shadow-2xl group border-4 border-slate-950/5">
                  <img 
                     src={BRAND_ASSET} 
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:grayscale-0 grayscale-0 transition-all duration-1000" 
                     alt="Close up of clear aligner detail" 
                  />
@@ -230,6 +233,7 @@ const TransformationGallery: React.FC<{ language: 'en' | 'sq' }> = ({ language }
               <div className="aspect-[4/5] rounded-[50px] overflow-hidden bg-slate-100 shadow-2xl mt-16 group border-4 border-slate-950/5">
                  <img 
                     src="https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=800" 
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                     alt="Happy patient with perfect smile" 
                  />
@@ -265,7 +269,7 @@ const App: React.FC = () => {
   };
 
   const handleBookScan = () => {
-    window.open(GOOGLE_CALENDAR_URL, '_blank');
+    window.open(WHATSAPP_URL, '_blank');
   };
 
   return (
@@ -402,7 +406,7 @@ const App: React.FC = () => {
                       {language === 'en' ? 'Your evolution' : 'Evolucioni juaj'} <br /> {language === 'en' ? 'starts here.' : 'fillon këtu.'}
                     </h2>
                     <p className="text-2xl md:text-3xl text-slate-200 max-w-3xl mx-auto font-bold leading-relaxed">
-                      {language === 'en' ? 'Join the smile revolution at Meident Dental Clinic.' : 'Bashkohuni me revolucionin e buzëqeshjes në Meident Dental Clinic.'}
+                      {language === 'en' ? 'Join the smile revolution at Medident Dental Clinic.' : 'Bashkohuni me revolucionin e buzëqeshjes në Medident Dental Clinic.'}
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-8 pt-6">
                       <button 
@@ -412,7 +416,7 @@ const App: React.FC = () => {
                         {language === 'en' ? 'Book Now' : 'Rezervo Tani'}
                       </button>
                       <a 
-                        href="https://wa.me/38349772307" 
+                        href={WHATSAPP_URL} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="border-4 border-white text-white px-16 py-7 rounded-full font-black text-2xl hover:bg-white hover:text-slate-950 transition-all flex items-center justify-center gap-4 group focus:outline-none focus:ring-2 focus:ring-purple-500"
