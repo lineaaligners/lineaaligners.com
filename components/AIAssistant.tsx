@@ -1,13 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
+import { WHATSAPP_URL } from '../constants';
 
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
-
-const WHATSAPP_URL = 'https://wa.me/38349772307';
 
 const scheduleAppointmentDeclaration: FunctionDeclaration = {
   name: 'scheduleAppointment',
@@ -95,8 +94,8 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
   return (
     <div className="fixed bottom-8 right-8 z-[60]">
       {isOpen && (
-        <div className="mb-6 w-80 sm:w-96 h-[500px] bg-white rounded-[32px] shadow-2xl border border-purple-100 flex flex-col overflow-hidden animate-scale-in origin-bottom-right">
-          <div className="p-6 bg-purple-700 text-white flex justify-between items-center">
+        <div className="mb-6 w-80 sm:w-96 h-[500px] bg-[#142A4D] rounded-[32px] shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-scale-in origin-bottom-right">
+          <div className="p-6 bg-[#4169E1] text-white flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
@@ -108,40 +107,40 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/50">
+          <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#193D6D]/30">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-purple-700 text-white shadow-md' : 'bg-white text-slate-700 shadow-sm border border-slate-100'}`}>
+                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-[#4169E1] text-white shadow-md font-medium' : 'bg-[#193D6D] text-white shadow-sm border border-white/5'}`}>
                   {m.text}
                 </div>
               </div>
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm">
+                <div className="bg-[#193D6D] border border-white/5 p-4 rounded-2xl shadow-sm">
                   <div className="flex gap-1 loader-dots">
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-[#4169E1] rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-[#4169E1] rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-1.5 h-1.5 bg-[#4169E1] rounded-full animate-bounce [animation-delay:0.4s]"></div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="p-4 bg-white border-t border-slate-100 flex gap-2">
+          <div className="p-4 bg-[#142A4D] border-t border-white/5 flex gap-2">
             <input 
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder={isEn ? "Ask me anything..." : "Më pyet çdo gjë..."}
-              className="flex-1 bg-purple-50/50 rounded-xl px-4 py-3 text-sm outline-none text-purple-900 placeholder:text-purple-300 font-medium"
+              className="flex-1 bg-[#193D6D] rounded-xl px-4 py-3 text-sm outline-none text-white placeholder:text-white/20 font-medium"
             />
             <button 
               onClick={handleSend} 
               disabled={isLoading || !input.trim()} 
-              className={`w-12 h-12 rounded-xl text-white flex items-center justify-center shadow-lg transition-all ${isLoading || !input.trim() ? 'bg-slate-200 shadow-none' : 'bg-purple-gradient hover:scale-105 active:scale-95'}`}
+              className={`w-12 h-12 rounded-xl text-white flex items-center justify-center shadow-lg transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/20 shadow-none' : 'bg-[#4169E1] hover:bg-[#5A8DFF] shadow-blue-900/40 hover:scale-105 active:scale-95'}`}
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -150,7 +149,7 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
       )}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-[#5b21b6] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 border-4 border-white"
+        className="w-16 h-16 bg-[#4169E1] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 border-4 border-white"
         aria-label="Toggle AI Assistant"
       >
         {isOpen ? <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12"/></svg> : "💬"}

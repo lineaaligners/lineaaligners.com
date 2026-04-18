@@ -10,27 +10,28 @@
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
-            background-color: #f8fafc;
+            background-color: #193D6D;
+            color: #F5F7FA;
         }
         /* Account for fixed navbar height in anchor jumps */
         section {
             scroll-margin-top: 5rem;
         }
         .bg-aura {
-            background: radial-gradient(circle at 50% -20%, #f3e8ff 0%, #ffffff 60%);
+            background: radial-gradient(circle at 50% -20%, #4169E1 0%, #193D6D 70%);
         }
-        .bg-purple-gradient {
-            background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+        .bg-royal-gradient {
+            background: linear-gradient(135deg, #4169E1 0%, #193D6D 100%);
         }
-        .text-purple-gradient {
-            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+        .text-royal-gradient {
+            background: linear-gradient(135deg, #87CEEB 0%, #4169E1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(25, 61, 109, 0.7);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(65, 105, 225, 0.3);
         }
         .loader-dots div {
             animation: bounce 0.6s infinite alternate;
@@ -44,14 +45,14 @@
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #193D6D;
         }
         ::-webkit-scrollbar-thumb {
-            background: #d8b4fe;
+            background: #4169E1;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #a855f7;
+            background: #87CEEB;
         }
         
         @keyframes scale-in {
@@ -78,10 +79,12 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-aura text-slate-900">
     <div id="root"></div>
     <!-- Entry point script module to fix the white screen issue -->
     <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

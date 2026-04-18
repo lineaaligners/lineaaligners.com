@@ -1,12 +1,16 @@
+
 import { NavItem, Feature, Step, FAQ, Testimonial } from './types';
+
+export const WHATSAPP_URL = 'https://wa.me/38349772307';
+export const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2eP6uFm-7rY-M8Nn4R-JqXvY-M8Nn4R-JqXvY-M8Nn4R-JqXv';
 
 export const TRANSLATIONS = {
   en: {
     nav: [
-      { label: 'How it Works', href: '#how-it-works' },
-      { label: 'Benefits', href: '#benefits' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'FAQ', href: '#faq' },
+      { label: 'Home', href: '#' },
+      { label: 'Features', href: '#benefits' },
+      { label: 'About', href: '#how-it-works' },
+      { label: 'Contact', href: '#footer' },
     ],
     hero: {
       badge: "Kosovo's Digital Smile Lab",
@@ -70,8 +74,8 @@ export const TRANSLATIONS = {
         }
       ],
       ctaTitle: "Ready for your digital twin?",
-      ctaDesc: "Take the first step toward your new smile. Book a session via Google Calendar or start your AI assessment.",
-      ctaBtn1: "Google Calendar Booking",
+      ctaDesc: "Take the first step toward your new smile. Book a session via WhatsApp or start your AI assessment.",
+      ctaBtn1: "Book via WhatsApp",
       ctaBtn2: "AI Digital Assessment"
     },
     pricing: {
@@ -89,15 +93,15 @@ export const TRANSLATIONS = {
         { label: 'Support', val: '24/7 Support' },
         { label: 'Retainers', val: 'Included' }
       ],
-      btn: "Book via Google Calendar"
+      btn: "Book via WhatsApp"
     }
   },
   sq: {
     nav: [
-      { label: 'Si Funksionon', href: '#how-it-works' },
-      { label: 'Përfitimet', href: '#benefits' },
-      { label: 'Çmimet', href: '#pricing' },
-      { label: 'FAQ', href: '#faq' },
+      { label: 'Fillimi', href: '#' },
+      { label: 'Karakteristikat', href: '#benefits' },
+      { label: 'Rreth nesh', href: '#how-it-works' },
+      { label: 'Kontakti', href: '#footer' },
     ],
     hero: {
       badge: "Laboratori Digjital i Buzëqeshjes në Kosovë",
@@ -161,8 +165,8 @@ export const TRANSLATIONS = {
         }
       ],
       ctaTitle: "Gati për binjakun tuaj digjital?",
-      ctaDesc: "Bëni hapin e parë drejt buzëqeshjes tuaj të re. Rezervoni një seancë ose filloni vlerësimin me AI.",
-      ctaBtn1: "Rezervo në Google Calendar",
+      ctaDesc: "Bëni hapin e parë drejt buzëqeshjes tuaj të re. Rezervoni një seancë përmes WhatsApp ose filloni vlerësimin me AI.",
+      ctaBtn1: "Rezervo në WhatsApp",
       ctaBtn2: "Vlerësimi Digjital me AI"
     },
     pricing: {
@@ -180,7 +184,7 @@ export const TRANSLATIONS = {
         { label: 'Mbështetja', val: '24/7 Mbështetje' },
         { label: 'Retainer-at', val: 'Të Përfshirë' }
       ],
-      btn: "Rezervo në Google Calendar"
+      btn: "Rezervo në WhatsApp"
     }
   }
 };

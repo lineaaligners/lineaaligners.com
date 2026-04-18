@@ -11,9 +11,9 @@ import { TreatmentPlanner } from './components/TreatmentPlanner';
 import { ImageGenerator } from './components/ImageGenerator';
 import { AIAssistant } from './components/AIAssistant';
 import { PatientPortal } from './components/PatientPortal';
-import { TRANSLATIONS } from './constants';
+import { TRANSLATIONS, WHATSAPP_URL, GOOGLE_CALENDAR_URL } from './constants';
 
-export const WHATSAPP_URL = 'https://wa.me/38349772307';
+export { WHATSAPP_URL, GOOGLE_CALENDAR_URL };
 export const BRAND_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/202241%20-%20Copy.jpg";
 export const ICONIC_DESIGN_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/572628579_18084691715316830_1228185980579187523_n.jpg";
 export const ALIGNMENT_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/sddefault.jpg";
@@ -25,28 +25,28 @@ const SCAN_VIDEO_URL = "https://player.vimeo.com/external/370331493.hd.mp4?s=383
 const ProductSpotlight: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const isEn = language === 'en';
   return (
-    <section className="py-32 bg-slate-950 overflow-hidden relative">
+    <section className="py-32 bg-[#193D6D] overflow-hidden relative">
       <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-20">
           <div className="lg:w-1/2">
             <div className="relative group">
-              <div className="absolute -inset-10 bg-yellow-400/10 blur-[120px] rounded-full group-hover:bg-yellow-400/20 transition-all duration-1000"></div>
+              <div className="absolute -inset-10 bg-[#4169E1]/10 blur-[120px] rounded-full group-hover:bg-[#4169E1]/20 transition-all duration-1000"></div>
               <img 
                 src={ICONIC_DESIGN_ASSET} 
                 alt="Linea Aligner Iconic Design" 
                 loading="lazy"
-                className="relative z-10 w-full max-w-lg mx-auto rounded-[80px] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-4 border-white/5 transform transition-transform duration-700 hover:scale-105"
+                className="relative z-10 w-full max-w-lg mx-auto rounded-[80px] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-4 border-white/10 transform transition-transform duration-700 hover:scale-105"
               />
             </div>
           </div>
           <div className="lg:w-1/2 space-y-8">
-            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-yellow-400 text-slate-950 font-black text-[11px] uppercase tracking-[0.3em]">
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-[#4169E1] text-white font-black text-[11px] uppercase tracking-[0.3em]">
               {isEn ? 'Premium Accessory' : 'Aksesor Premium'}
             </div>
             <h2 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tighter">
               {isEn ? 'Iconic Design.' : 'Dizajn Ikonik.'}<br />
-              <span className="text-yellow-400">{isEn ? 'Unmistakable.' : 'I pagabueshëm.'}</span>
+              <span className="text-[#87CEEB]">{isEn ? 'Unmistakable.' : 'I pagabueshëm.'}</span>
             </h2>
             <p className="text-2xl text-white leading-relaxed font-bold opacity-90">
               {isEn 
@@ -55,7 +55,7 @@ const ProductSpotlight: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => 
             </p>
             <div className="pt-4">
               <div className="flex items-center gap-5 text-white font-black text-lg">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-yellow-400 shadow-xl">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-[#87CEEB] shadow-xl">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 </div>
                 <span>{isEn ? 'Shock-resistant Protection' : 'Mbrojtje kundër goditjeve'}</span>
@@ -71,36 +71,36 @@ const ProductSpotlight: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => 
 const VideoShowcase: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const isEn = language === 'en';
   return (
-    <section className="py-32 bg-white overflow-hidden relative" aria-labelledby="video-showcase-heading">
+    <section className="py-32 bg-[#193D6D] overflow-hidden relative" aria-labelledby="video-showcase-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-24 items-center">
           <div className="space-y-10 order-2 lg:order-1">
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-purple-100 text-purple-700 font-black text-[11px] uppercase tracking-[0.3em]">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-[#4169E1]/10 text-[#87CEEB] font-black text-[11px] uppercase tracking-[0.3em]">
               {isEn ? 'Precision in Motion' : 'Saktësia në Lëvizje'}
             </div>
-            <h2 id="video-showcase-heading" className="text-6xl md:text-8xl font-black text-slate-950 tracking-tighter leading-none">
+            <h2 id="video-showcase-heading" className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none">
               {isEn ? 'Digital' : 'Dizajni'} <br /> 
-              <span className="text-purple-600">{isEn ? 'Mastery.' : 'Digjital.'}</span>
+              <span className="text-[#4169E1]">{isEn ? 'Mastery.' : 'Digjital.'}</span>
             </h2>
-            <p className="text-2xl text-slate-700 font-bold leading-relaxed max-w-lg">
+            <p className="text-2xl text-white/80 font-bold leading-relaxed max-w-lg">
               {isEn 
                 ? "Watch as our advanced 3D algorithms map out your perfect alignment. We combine artificial intelligence with human expertise to craft every single set."
                 : "Shikoni se si algoritmet tona të avancuara 3D hartojnë rreshtimin tuaj të përsosur. Ne kombinojmë inteligjencën artificiale me ekspertizën njerëzore."}
             </p>
             <div className="flex gap-8 items-center pt-4">
                <div className="flex flex-col">
-                  <span className="text-4xl font-black text-slate-950 tracking-tighter">0.2mm</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isEn ? 'Accuracy' : 'Saktësia'}</span>
+                  <span className="text-4xl font-black text-white tracking-tighter">0.2mm</span>
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{isEn ? 'Accuracy' : 'Saktësia'}</span>
                </div>
-               <div className="w-px h-12 bg-slate-200"></div>
+               <div className="w-px h-12 bg-white/10"></div>
                <div className="flex flex-col">
-                  <span className="text-4xl font-black text-slate-950 tracking-tighter">100%</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isEn ? 'Digital' : 'Digjitale'}</span>
+                  <span className="text-4xl font-black text-white tracking-tighter">100%</span>
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{isEn ? 'Digital' : 'Digjitale'}</span>
                </div>
             </div>
           </div>
           <div className="order-1 lg:order-2">
-            <div className="relative aspect-[4/5] rounded-[80px] overflow-hidden shadow-[0_50px_100px_rgba(109,40,217,0.2)] border-[12px] border-slate-50">
+            <div className="relative aspect-[4/5] rounded-[80px] overflow-hidden shadow-[0_50px_100px_rgba(65,105,225,0.2)] border-[12px] border-white/10">
               <video 
                 autoPlay 
                 loop 
@@ -110,9 +110,9 @@ const VideoShowcase: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
               >
                 <source src={TECH_VIDEO_URL} type="video/mp4" />
               </video>
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-950/40 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#193D6D]/40 via-transparent to-transparent"></div>
               <div className="absolute bottom-10 left-10 flex items-center gap-3">
-                 <div className="w-3 h-3 rounded-full bg-purple-400 animate-ping"></div>
+                 <div className="w-3 h-3 rounded-full bg-[#87CEEB] animate-ping"></div>
                  <span className="text-white font-black text-xs uppercase tracking-[0.2em]">{isEn ? 'Real-time Simulation' : 'Simulim në Kohë Reale'}</span>
               </div>
             </div>
@@ -123,12 +123,12 @@ const VideoShowcase: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   );
 };
 
-const CinematicStory: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
+const CinematicStory: React.FC<{ language: 'en' | 'sq'; onPlayVideo: () => void }> = ({ language, onPlayVideo }) => {
   const isEn = language === 'en';
   return (
-    <section id="cinematic-story" className="py-32 bg-slate-950 overflow-hidden relative" aria-labelledby="story-heading">
+    <section id="cinematic-story" className="py-32 bg-[#193D6D] overflow-hidden relative" aria-labelledby="story-heading">
       <div className="absolute inset-0 z-0" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#193D6D] via-[#193D6D]/80 to-transparent z-10"></div>
         <video 
           autoPlay 
           loop 
@@ -143,12 +143,12 @@ const CinematicStory: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
         <div className="flex flex-col lg:flex-row gap-20 items-center">
           <div className="lg:w-5/12 space-y-10">
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border-2 border-purple-500/50 bg-purple-900/40 text-purple-300 font-black text-[11px] uppercase tracking-[0.3em]">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border-2 border-[#4169E1]/50 bg-[#4169E1]/20 text-[#87CEEB] font-black text-[11px] uppercase tracking-[0.3em]">
               {isEn ? 'Precision Lab' : 'Laboratori i Saktësisë'}
             </div>
             <h2 id="story-heading" className="text-6xl md:text-8xl font-black text-white leading-none tracking-tighter">
               {isEn ? 'The Art of' : 'Arti i'}<br />
-              <span className="text-purple-500">{isEn ? 'Alignment.' : 'Rreshtimit.'}</span>
+              <span className="text-[#4169E1]">{isEn ? 'Alignment.' : 'Rreshtimit.'}</span>
             </h2>
             <p className="text-2xl text-slate-100 font-bold leading-relaxed">
               {isEn 
@@ -162,7 +162,7 @@ const CinematicStory: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
                 { title: isEn ? 'Human Artistry' : 'Artizanat Njerëzor', desc: isEn ? 'Hand-finished by expert technicians' : 'Përfunduar me dorë nga teknikët ekspertë' }
               ].map((item, i) => (
                 <div key={i} className="flex gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center text-purple-400 flex-shrink-0 shadow-2xl" aria-hidden="true">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center text-[#4169E1] flex-shrink-0 shadow-2xl" aria-hidden="true">
                     <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div>
@@ -175,7 +175,7 @@ const CinematicStory: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
           </div>
 
           <div className="lg:w-7/12 w-full relative group">
-            <div className="aspect-[16/9] bg-slate-900 rounded-[50px] overflow-hidden shadow-[0_40px_100px_rgba(109,40,217,0.3)] border-4 border-white/10 relative">
+            <div className="aspect-[16/9] bg-[#193D6D] rounded-[50px] overflow-hidden shadow-[0_40px_100px_rgba(65,105,225,0.3)] border-4 border-white/10 relative">
               <video 
                 autoPlay 
                 loop 
@@ -185,15 +185,16 @@ const CinematicStory: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
               >
                 <source src={SCAN_VIDEO_URL} type="video/mp4" />
               </video>
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#193D6D] via-transparent to-transparent"></div>
               
               <div className="absolute inset-0 flex items-center justify-center">
                 <button 
-                  className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(255,255,255,0.3)] transform group-hover:scale-110 transition-all duration-500 relative focus:outline-none focus:ring-4 focus:ring-purple-500"
+                  onClick={onPlayVideo}
+                  className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(255,255,255,0.3)] transform group-hover:scale-110 transition-all duration-500 relative focus:outline-none focus:ring-4 focus:ring-blue-500"
                   aria-label="Play clinic overview video"
                 >
-                  <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-30"></div>
-                  <div className="w-0 h-0 border-t-[14px] border-t-transparent border-l-[24px] border-l-slate-950 border-b-[14px] border-b-transparent ml-2" aria-hidden="true"></div>
+                  <div className="absolute inset-0 bg-[#4169E1] rounded-full animate-ping opacity-30"></div>
+                  <div className="w-0 h-0 border-t-[14px] border-t-transparent border-l-[24px] border-l-[#193D6D] border-b-[14px] border-b-transparent ml-2" aria-hidden="true"></div>
                 </button>
               </div>
             </div>
@@ -207,22 +208,22 @@ const CinematicStory: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
 const TransformationGallery: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const isEn = language === 'en';
   return (
-    <section className="py-32 bg-white relative overflow-hidden" aria-labelledby="gallery-heading">
+    <section className="py-32 bg-[#193D6D] relative overflow-hidden" aria-labelledby="gallery-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-24 items-center mb-24">
            <div className="space-y-6">
-              <h2 className="text-purple-900 font-black uppercase tracking-[0.25em] text-[12px]">{isEn ? 'The Transformation' : 'Transformimi'}</h2>
-              <h3 id="gallery-heading" className="text-6xl md:text-8xl font-black text-slate-950 tracking-tighter leading-none">
+              <h2 className="text-[#87CEEB] font-black uppercase tracking-[0.25em] text-[12px]">{isEn ? 'The Transformation' : 'Transformimi'}</h2>
+              <h3 id="gallery-heading" className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none">
                 {isEn ? 'Real results,' : 'Rezultate reale,'} <br /> {isEn ? 'real patients.' : 'pacientë realë.'}
               </h3>
-              <p className="text-2xl text-slate-900 font-bold leading-relaxed max-w-lg">
+              <p className="text-2xl text-white/80 font-bold leading-relaxed max-w-lg">
                 {isEn 
                   ? "Witness the clarity and precision of our treatments through clinical documentation and lifestyle results."
                   : "Dëshmoni qartësinë dhe saktësinë e trajtimeve tona përmes dokumentacionit klinik dhe rezultateve të stilit të jetesës."}
               </p>
            </div>
            <div className="grid grid-cols-2 gap-6">
-              <div className="aspect-[4/5] rounded-[50px] overflow-hidden bg-slate-100 shadow-2xl group border-4 border-slate-950/5">
+              <div className="aspect-[4/5] rounded-[50px] overflow-hidden bg-white/5 shadow-2xl group border-4 border-white/10">
                  <img 
                     src={BRAND_ASSET} 
                     loading="lazy"
@@ -230,7 +231,7 @@ const TransformationGallery: React.FC<{ language: 'en' | 'sq' }> = ({ language }
                     alt="Close up of clear aligner detail" 
                  />
               </div>
-              <div className="aspect-[4/5] rounded-[50px] overflow-hidden bg-slate-100 shadow-2xl mt-16 group border-4 border-slate-950/5">
+              <div className="aspect-[4/5] rounded-[50px] overflow-hidden bg-white/5 shadow-2xl mt-16 group border-4 border-white/10">
                  <img 
                     src="https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=800" 
                     loading="lazy"
@@ -245,9 +246,33 @@ const TransformationGallery: React.FC<{ language: 'en' | 'sq' }> = ({ language }
   );
 };
 
+const VideoModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string }> = ({ isOpen, onClose, videoUrl }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fade-in" onClick={onClose}>
+      <div className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 z-10 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <video 
+          autoPlay 
+          controls 
+          className="w-full h-full object-contain"
+        >
+          <source src={videoUrl} type="video/mp4" />
+        </video>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'planner' | 'portal'>('home');
   const [language, setLanguage] = useState<'en' | 'sq'>('en');
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
 
   useEffect(() => {
@@ -273,7 +298,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-purple-900 selection:text-white">
+    <div className="min-h-screen flex flex-col selection:bg-[#4169E1] selection:text-white bg-[#193D6D] text-[#F5F7FA]">
       <header role="banner">
         <Navbar 
           setView={setView} 
@@ -294,7 +319,7 @@ const App: React.FC = () => {
               language={language}
             />
             
-            <section className="bg-white py-24 border-y-4 border-slate-950 relative overflow-hidden" aria-label="Statistics">
+            <section className="bg-[#193D6D] py-24 border-y-4 border-white/10 relative overflow-hidden" aria-label="Statistics">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-16 text-center items-center">
                   {[
@@ -304,10 +329,10 @@ const App: React.FC = () => {
                     { val: '0%', label: language === 'en' ? 'Finance Interest' : 'Interes Financiar' }
                   ].map((stat, i) => (
                     <div key={i} className="space-y-4 group">
-                      <p className="text-7xl md:text-8xl font-black text-slate-950 tracking-tighter group-hover:text-purple-900 transition-colors duration-500">
+                      <p className="text-7xl md:text-8xl font-black text-white tracking-tighter group-hover:text-[#4169E1] transition-colors duration-500">
                         {stat.val}
                       </p>
-                      <p className="text-[12px] font-black text-slate-950 uppercase tracking-[0.3em] font-bold">{stat.label}</p>
+                      <p className="text-[12px] font-black text-[#87CEEB] uppercase tracking-[0.3em] font-bold">{stat.label}</p>
                     </div>
                   ))}
                 </div>
@@ -316,7 +341,7 @@ const App: React.FC = () => {
 
             <Features language={language} />
             
-            <CinematicStory language={language} />
+            <CinematicStory language={language} onPlayVideo={() => setIsVideoModalOpen(true)} />
 
             <Process 
               onStartPlanner={startDigitalAssessment} 
@@ -332,23 +357,23 @@ const App: React.FC = () => {
 
             <TransformationGallery language={language} />
 
-            <section id="pricing" className="py-40 bg-slate-50 relative" aria-labelledby="pricing-heading">
+            <section id="pricing" className="py-40 bg-[#142A4D] relative" aria-labelledby="pricing-heading">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col lg:flex-row gap-24 items-start">
                   <div className="lg:w-1/2 space-y-10 lg:sticky lg:top-32">
                     <div className="space-y-4">
-                       <h2 className="text-purple-900 font-black uppercase tracking-[0.25em] text-[12px]">{content.pricing.tag}</h2>
-                       <h3 id="pricing-heading" className="text-6xl md:text-8xl font-black text-slate-950 leading-[1] tracking-tighter">
+                       <h2 className="text-[#87CEEB] font-black uppercase tracking-[0.25em] text-[12px]">{content.pricing.tag}</h2>
+                       <h3 id="pricing-heading" className="text-6xl md:text-8xl font-black text-white leading-[1] tracking-tighter">
                           {content.pricing.title1} <br /> {content.pricing.title2}
                        </h3>
                     </div>
-                    <p className="text-2xl text-slate-950 leading-relaxed font-bold">
+                    <p className="text-2xl text-white/90 leading-relaxed font-bold">
                       {content.pricing.desc}
                     </p>
                     <div className="grid grid-cols-2 gap-8 pt-6">
                       {content.pricing.perks.map((item, i) => (
-                        <div key={i} className="flex items-center gap-4 text-slate-950 font-black text-base">
-                          <div className="w-7 h-7 rounded-full bg-slate-950 flex items-center justify-center text-white flex-shrink-0 shadow-lg" aria-hidden="true">
+                        <div key={i} className="flex items-center gap-4 text-white font-black text-base">
+                          <div className="w-7 h-7 rounded-full bg-[#4169E1] flex items-center justify-center text-white flex-shrink-0 shadow-lg" aria-hidden="true">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>
                           </div>
                           {item}
@@ -359,31 +384,31 @@ const App: React.FC = () => {
 
                   <div className="lg:w-1/2 w-full">
                     <div className="relative group">
-                      <div className="absolute -inset-10 bg-purple-900/10 blur-[100px] opacity-20 -z-10 rounded-full group-hover:opacity-30 transition-opacity"></div>
+                      <div className="absolute -inset-10 bg-[#4169E1]/10 blur-[100px] opacity-20 -z-10 rounded-full group-hover:opacity-30 transition-opacity"></div>
                       
-                      <div className="bg-white rounded-[60px] p-12 lg:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.1)] border-4 border-slate-950 relative overflow-hidden">
+                      <div className="bg-[#193D6D] rounded-[60px] p-12 lg:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.3)] border-4 border-white/10 relative overflow-hidden">
                         <div className="flex justify-between items-start mb-14">
                           <div>
-                            <p className="text-slate-950 font-black uppercase tracking-widest text-[12px] mb-3 opacity-60">{content.pricing.cardTag}</p>
-                            <h4 className="text-4xl font-black text-slate-900 tracking-tight">{content.pricing.cardTitle}</h4>
+                            <p className="text-white font-black uppercase tracking-widest text-[12px] mb-3 opacity-60">{content.pricing.cardTag}</p>
+                            <h4 className="text-4xl font-black text-white tracking-tight">{content.pricing.cardTitle}</h4>
                           </div>
-                          <div className="bg-slate-950 text-white px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl">
+                          <div className="bg-[#4169E1] text-white px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl">
                             {content.pricing.cardBadge}
                           </div>
                         </div>
 
                         <div className="space-y-8 mb-14">
                           {content.pricing.details.map((item, i) => (
-                            <div key={i} className="flex justify-between items-center py-5 border-b-2 border-slate-100 text-lg">
-                              <span className="text-slate-950 font-bold opacity-70">{item.label}</span>
-                              <span className="font-black text-slate-950">{item.val}</span>
+                            <div key={i} className="flex justify-between items-center py-5 border-b-2 border-white/5 text-lg">
+                              <span className="text-white/70 font-bold">{item.label}</span>
+                              <span className="font-black text-white">{item.val}</span>
                             </div>
                           ))}
                         </div>
 
                         <button 
                           onClick={handleBookScan}
-                          className="w-full bg-slate-950 text-white font-black py-7 rounded-[30px] transition-all shadow-2xl shadow-slate-900/40 transform hover:-translate-y-1 active:scale-95 text-xl tracking-widest uppercase focus:outline-none focus:ring-4 focus:ring-purple-900/20"
+                          className="w-full bg-[#4169E1] text-white font-black py-7 rounded-[30px] transition-all shadow-2xl shadow-blue-900/40 transform hover:-translate-y-1 active:scale-95 text-xl tracking-widest uppercase focus:outline-none focus:ring-4 focus:ring-blue-500/20"
                           aria-label="Book a free 3D scan appointment"
                         >
                           {content.pricing.btn}
@@ -397,21 +422,21 @@ const App: React.FC = () => {
 
             <FAQSection language={language} />
 
-            <section className="py-32 bg-white" aria-labelledby="cta-heading">
+            <section className="py-32 bg-[#193D6D]" aria-labelledby="cta-heading">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="bg-slate-950 rounded-[100px] p-20 md:p-32 text-center text-white relative overflow-hidden group border-4 border-white/5 shadow-[0_60px_120px_rgba(0,0,0,0.5)]">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 to-slate-950/0"></div>
+                <div className="bg-[#142A4D] rounded-[100px] p-20 md:p-32 text-center text-white relative overflow-hidden group border-4 border-white/10 shadow-[0_60px_120px_rgba(0,0,0,0.5)]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#4169E1]/40 to-[#193D6D]/0"></div>
                   <div className="relative z-10 space-y-14">
                     <h2 id="cta-heading" className="text-6xl md:text-9xl font-black leading-[0.8] tracking-tighter">
                       {language === 'en' ? 'Your evolution' : 'Evolucioni juaj'} <br /> {language === 'en' ? 'starts here.' : 'fillon këtu.'}
                     </h2>
-                    <p className="text-2xl md:text-3xl text-slate-200 max-w-3xl mx-auto font-bold leading-relaxed">
+                    <p className="text-2xl md:text-3xl text-white/80 max-w-3xl mx-auto font-bold leading-relaxed">
                       {language === 'en' ? 'Join the smile revolution at Medident Dental Clinic.' : 'Bashkohuni me revolucionin e buzëqeshjes në Medident Dental Clinic.'}
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-8 pt-6">
                       <button 
                         onClick={handleBookScan}
-                        className="bg-white text-slate-950 px-16 py-7 rounded-full font-black text-2xl hover:bg-slate-100 transition-all shadow-2xl hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-purple-500"
+                        className="bg-[#4169E1] text-white px-16 py-7 rounded-full font-black text-2xl hover:bg-[#5A8DFF] transition-all shadow-2xl hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-blue-500"
                       >
                         {language === 'en' ? 'Book Now' : 'Rezervo Tani'}
                       </button>
@@ -419,10 +444,10 @@ const App: React.FC = () => {
                         href={WHATSAPP_URL} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="border-4 border-white text-white px-16 py-7 rounded-full font-black text-2xl hover:bg-white hover:text-slate-950 transition-all flex items-center justify-center gap-4 group focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="border-4 border-white/20 text-white px-16 py-7 rounded-full font-black text-2xl hover:bg-white/10 transition-all flex items-center justify-center gap-4 group focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <span>{language === 'en' ? 'WhatsApp' : 'WhatsApp'}</span>
-                        <div className="w-3.5 h-3.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_15px_rgba(74,222,128,0.5)]" aria-hidden="true"></div>
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#87CEEB] animate-pulse shadow-[0_0_15px_rgba(135,206,235,0.5)]" aria-hidden="true"></div>
                       </a>
                     </div>
                   </div>
@@ -440,6 +465,11 @@ const App: React.FC = () => {
       </main>
       <Footer language={language} />
       <AIAssistant language={language} />
+      <VideoModal 
+        isOpen={isVideoModalOpen} 
+        onClose={() => setIsVideoModalOpen(false)} 
+        videoUrl={SCAN_VIDEO_URL} 
+      />
     </div>
   );
 };

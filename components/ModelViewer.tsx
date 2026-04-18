@@ -51,7 +51,7 @@ export const ModelViewer: React.FC<ModelProps> = ({ url, extension }) => {
             environment="city" 
             intensity={0.6} 
             adjustCamera={1.2}
-            contactShadow={{ opacity: 0.5, blur: 3 }}
+            shadows="contact"
           >
             <Center>
               <Model url={url} extension={extension} />

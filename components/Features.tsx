@@ -3,7 +3,7 @@ import React from 'react';
 import { TRANSLATIONS } from '../constants';
 
 const FeatureIcon: React.FC<{ type: string }> = ({ type }) => {
-  const baseClass = "w-8 h-8 text-purple-600";
+  const baseClass = "w-8 h-8 text-[#4169E1]";
   
   switch (type) {
     case 'invisible':
@@ -41,20 +41,20 @@ export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const content = TRANSLATIONS[language].features;
 
   return (
-    <section id="benefits" className="py-32 bg-white relative overflow-hidden">
-      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-purple-50 rounded-full blur-[120px] opacity-40 -z-10"></div>
-      <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-indigo-50 rounded-full blur-[120px] opacity-40 -z-10"></div>
+    <section id="benefits" className="py-32 bg-[#193D6D] relative overflow-hidden">
+      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-[#4169E1]/10 rounded-full blur-[120px] opacity-40 -z-10"></div>
+      <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-blue-900/40 rounded-full blur-[120px] opacity-40 -z-10"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
           <div className="space-y-6">
-            <h2 className="text-purple-600 font-black uppercase tracking-[0.25em] text-[12px]">{content.tag}</h2>
-            <h3 className="text-5xl md:text-6xl lg:text-8xl font-black text-slate-900 leading-[1] tracking-tighter">
+            <h2 className="text-[#87CEEB] font-black uppercase tracking-[0.25em] text-[12px]">{content.tag}</h2>
+            <h3 className="text-5xl md:text-6xl lg:text-8xl font-black text-white leading-[1] tracking-tighter">
               {content.title}
             </h3>
           </div>
-          <div className="lg:border-l-4 lg:border-slate-950 lg:pl-16">
-            <p className="text-2xl text-slate-700 font-bold leading-relaxed max-w-xl">
+          <div className="lg:border-l-4 lg:border-white/10 lg:pl-16">
+            <p className="text-2xl text-white/80 font-bold leading-relaxed max-w-xl">
               {content.desc}
             </p>
           </div>
@@ -65,23 +65,23 @@ export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
             return (
               <div 
                 key={idx}
-                className="relative p-10 rounded-[60px] border-4 border-slate-950 bg-white text-slate-950 transition-all duration-700 group overflow-hidden flex flex-col h-full shadow-xl hover:shadow-purple-500/20"
+                className="relative p-10 rounded-[60px] border-4 border-white/5 bg-[#142A4D] text-[#F5F7FA] transition-all duration-700 group overflow-hidden flex flex-col h-full shadow-2xl hover:shadow-blue-500/10 hover:border-[#4169E1]/30"
               >
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className="w-20 h-20 rounded-[28px] bg-slate-100 flex items-center justify-center mb-10 transform group-hover:rotate-12 transition-all duration-500 text-purple-600">
+                  <div className="w-20 h-20 rounded-[28px] bg-white/5 flex items-center justify-center mb-10 transform group-hover:rotate-12 transition-all duration-500 text-[#4169E1]">
                     <FeatureIcon type={feature.icon} />
                   </div>
 
-                  <h4 className="text-3xl font-black mb-5 tracking-tight text-slate-950">
+                  <h4 className="text-3xl font-black mb-5 tracking-tight text-white">
                     {feature.title}
                   </h4>
                   
-                  <p className="leading-relaxed font-bold text-base text-slate-700 opacity-80">
+                  <p className="leading-relaxed font-bold text-base text-white/70">
                     {feature.description}
                   </p>
 
                   <div className="mt-auto pt-10">
-                    <div className="w-12 h-2 rounded-full transition-all duration-700 bg-slate-200 group-hover:bg-purple-600 group-hover:w-full"></div>
+                    <div className="w-12 h-2 rounded-full transition-all duration-700 bg-white/10 group-hover:bg-[#4169E1] group-hover:w-full"></div>
                   </div>
                 </div>
               </div>
