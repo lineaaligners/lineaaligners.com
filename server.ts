@@ -74,6 +74,17 @@ async function startServer() {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
+    // Backend validation (matching frontend's flexible rules)
+    if (displayName && displayName.trim().length < 2) {
+      return res.status(400).json({ error: "Name must be at least 2 characters" });
+    }
+    if (!email.includes('@')) {
+      return res.status(400).json({ error: "Invalid email format (must contain @)" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
     try {
       const userRecord = await admin.auth().createUser({
         email,

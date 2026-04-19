@@ -336,6 +336,21 @@ export const AdminPortal: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Simple, flexible validation rules
+    if (userFormData.name.trim().length < 2) {
+      alert("Name must be at least 2 characters");
+      return;
+    }
+    if (!userFormData.email.includes('@')) {
+      alert("Invalid email format (must contain @)");
+      return;
+    }
+    if (userFormData.password.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Create Auth User via Backend
@@ -392,6 +407,12 @@ export const AdminPortal: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (patientFormData.name.trim().length < 2) {
+      alert("Patient name must be at least 2 characters");
+      return;
+    }
+
     setLoading(true);
     try {
       const newPatient = {

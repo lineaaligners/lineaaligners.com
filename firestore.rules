@@ -36,7 +36,7 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 512;
     }
 
     function incoming() { return request.resource.data; }
@@ -46,7 +46,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.keys().hasAll(['name', 'email', 'status', 'role', 'createdAt']) &&
-             data.name is string && data.name.size() > 0 &&
+             data.name is string && data.name.size() >= 2 &&
              data.email is string &&
              data.role in ['doctor', 'patient'] &&
              data.status in ['active', 'inactive'] &&
@@ -55,7 +55,7 @@ service cloud.firestore {
 
     function isValidPatient(data) {
       return data.keys().hasAll(['name', 'dob', 'condition', 'userId', 'createdAt']) &&
-             data.name is string &&
+             data.name is string && data.name.size() >= 2 &&
              data.dob is string &&
              data.condition is string &&
              data.userId is string &&
