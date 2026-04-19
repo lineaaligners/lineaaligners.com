@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    function isAdmin() {
+      // Admin is nallbanigeno@gmail.com or explicitly in admins collection
+      // Robust check to avoid NPEs
+      return isSignedIn() && (
+        (request.auth.token.email == 'nallbanigeno@gmail.com' || request.auth.token.email == 'NALLBANIGENO@GMAIL.COM') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+    
+    function isVerifiedWriter() {
+      // Strictly mandate verification for safety, with admin fallback
+      return isEmailVerified() || isAdmin();
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Entity Validations (Pillar 2: Blueprints) ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'status', 'role', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.email is string &&
+             data.role in ['doctor', 'patient'] &&
+             data.status in ['active', 'inactive'] &&
+             data.createdAt == request.time;
+    }
+
+    function isValidPatient(data) {
+      return data.keys().hasAll(['name', 'dob', 'condition', 'userId', 'createdAt']) &&
+             data.name is string &&
+             data.dob is string &&
+             data.condition is string &&
+             data.userId is string &&
+             data.createdAt == request.time;
+    }
+
+    function isValidCase(data) {
+      return data.keys().hasAll(['caseName', 'patientName', 'fileCount', 'createdAt']) &&
+             data.caseName is string &&
+             data.patientName is string &&
+             data.fileCount is number &&
+             data.createdAt == request.time;
+    }
+
+    function isValidAlignerFile(data) {
+      return data.keys().hasAll(['name', 'type', 'url', 'createdAt']) &&
+             data.name is string &&
+             data.type in ['pdf', 'image', 'url'] &&
+             data.url is string &&
+             data.createdAt == request.time;
+    }
+
+    function isValidDocRecord(data) {
+      return data.keys().hasAll(['name', 'fileName', 'fileType', 'fileSize', 'downloadUrl', 'category', 'uploadedBy', 'createdAt']) &&
+             data.name is string &&
+             data.category in ["Medical Records", "Test Results", "Prescriptions", "Notes", "Other"] &&
+             data.createdAt == request.time;
+    }
+
+    function isValidScan(data) {
+      return data.keys().hasAll(['fileName', 'fileType', 'fileUrl', 'fileSize', 'uploadedBy', 'uploadDate', 'assignedTo']) &&
+             data.fileName is string &&
+             data.fileType in ['jpg', 'png', 'pdf'] &&
+             data.uploadedBy == request.auth.uid &&
+             data.uploadDate == request.time &&
+             data.assignedTo is list;
+    }
+
+    // --- Collection Rules ---
+
+    // Collection Group Rule for Documents (Pillar 8: Query Enforcer)
+    match /{path=**}/documents/{docId} {
+      allow read: if isAdmin();
+      // Write access handled by specific paths below
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isVerifiedWriter() && isValidUser(incoming()) && isValidId(userId);
+      allow update: if isVerifiedWriter() && (isAdmin() || isOwner(userId)) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'status', 'role', 'email', 'doctorId'])
+      );
+      allow delete: if isAdmin();
+
+      // Nested documents for patient access
+      match /documents/{docId} {
+        allow read: if isSignedIn() && (isAdmin() || isOwner(userId));
+        allow create: if isAdmin() && isValidDocRecord(incoming());
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /patients/{patientId} {
+      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() && isValidPatient(incoming()) && isValidId(patientId);
+      allow update: if isAdmin() && incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin();
+      
+      match /documents/{docId} {
+        // Pillar 8: Relational logic for list
+        allow list: if isSignedIn() && (isAdmin() || get(/databases/$(database)/documents/patients/$(patientId)).data.userId == request.auth.uid);
+        allow get: if isSignedIn() && (isAdmin() || get(/databases/$(database)/documents/patients/$(patientId)).data.userId == request.auth.uid);
+        allow create: if isAdmin() && isValidDocRecord(incoming());
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /alignerCases/{caseId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidCase(incoming());
+      allow update: if isAdmin() && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['fileCount', 'caseName', 'patientName'])
+      );
+      allow delete: if isAdmin();
+
+      match /files/{fileId} {
+        allow read: if isSignedIn();
+        allow create: if isAdmin() && isValidAlignerFile(incoming());
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /scans/{scanId} {
+      allow list: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid || request.auth.uid in resource.data.assignedTo);
+      allow get: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid || request.auth.uid in resource.data.assignedTo);
+      allow create: if isVerifiedWriter() && isValidScan(incoming());
+      allow update: if isVerifiedWriter() && (isAdmin() || resource.data.uploadedBy == request.auth.uid) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['assignedTo', 'fileName', 'thumbnailUrl'])
+      );
+      allow delete: if isVerifiedWriter() && (isAdmin() || resource.data.uploadedBy == request.auth.uid);
+    }
+
+    match /doctor_patients/{relId} {
+      allow read: if isSignedIn() && (isAdmin() || resource.data.doctorId == request.auth.uid || resource.data.patientId == request.auth.uid);
+      allow create: if isVerifiedWriter() && (isAdmin() || incoming().doctorId == request.auth.uid);
+      allow update: if isVerifiedWriter() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow delete: if isVerifiedWriter() && isAdmin();
+    }
+
+    // Admins List
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false; 
+    }
+  }
+}

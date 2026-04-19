@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-royal: #4169E1;
+  --color-navy: #193D6D;
+  --color-sky: #87CEEB;
+}
+
+@layer utilities {
+  @keyframes moving-bg {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  .animate-moving-bar {
+    background-size: 200% 100%;
+    animation: moving-bg 2s linear infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+}
+
+body {
+  @apply bg-[#050B18] text-white antialiased font-sans;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(65, 105, 225, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(135, 206, 235, 0.1) 0px, transparent 50%);
+  min-height: 100vh;
+}
+
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+input, select {
+  @apply transition-all duration-200 outline-none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-navy/20;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-royal/40 rounded-full hover:bg-royal/60;
+}

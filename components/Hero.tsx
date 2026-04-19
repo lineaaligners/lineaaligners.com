@@ -55,10 +55,10 @@ export const Hero: React.FC<{
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] tracking-tighter"
             >
-              {content.title1} <br />
-              <span className="text-[#87CEEB]">{content.title2}</span><br />
-              {content.title3} <br />
-              <span className="text-[#4169E1] italic underline decoration-white/20 underline-offset-8">
+              <span className="text-white">{content.title1}</span> <br />
+              <span className="text-white">{content.title2}</span><br />
+              <span className="text-white">{content.title3}</span> <br />
+              <span className="text-white italic underline decoration-white/20 underline-offset-8">
                 {content.title4}
               </span>
             </motion.h1>

@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Universal user profile for Doctors and Patients",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["doctor", "patient"] },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role", "status"]
+    },
+    "Scan": {
+      "title": "Orthodontic Scan",
+      "description": "High-fidelity clinical scan uploaded by a doctor",
+      "type": "object",
+      "properties": {
+        "fileName": { "type": "string" },
+        "fileType": { "type": "string", "enum": ["jpg", "png", "pdf"] },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "thumbnailUrl": { "type": "string", "format": "uri" },
+        "fileSize": { "type": "number" },
+        "uploadedBy": { "type": "string", "description": "Doctor UID" },
+        "assignedTo": { "type": "array", "items": { "type": "string" }, "description": "Array of Patient Names or IDs" },
+        "uploadDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fileName", "fileType", "fileUrl", "fileSize", "uploadedBy", "uploadDate"]
+    },
+    "Patient": {
+      "title": "Patient Record",
+      "description": "Patient metadata managed by administrators",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "dob": { "type": "string" },
+        "condition": { "type": "string" },
+        "userId": { "type": "string", "description": "Link to the patient's User profile UID" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "dob", "condition", "userId"]
+    },
+    "AlignerCase": {
+      "title": "Aligner Case",
+      "description": "A clinical aligner treatment case",
+      "type": "object",
+      "properties": {
+        "caseName": { "type": "string" },
+        "patientName": { "type": "string" },
+        "fileCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["caseName", "patientName"]
+    },
+    "AlignerFile": {
+      "title": "Aligner File",
+      "description": "Files associated with a specific aligner case",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["pdf", "image", "url"] },
+        "url": { "type": "string", "format": "uri" },
+        "size": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "url", "createdAt"]
+    },
+    "DocumentRecord": {
+      "title": "Document Record",
+      "description": "Clinical documents assigned to a patient",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileType": { "type": "string" },
+        "fileSize": { "type": "number" },
+        "downloadUrl": { "type": "string", "format": "uri" },
+        "category": { "type": "string", "enum": ["Medical Records", "Test Results", "Prescriptions", "Notes", "Other"] },
+        "uploadedBy": { "type": "string" },
+        "patientId": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "fileName", "fileType", "fileSize", "downloadUrl", "category", "uploadedBy", "createdAt"]
+    },
+    "PatientRel": {
+      "title": "Patient Relationship",
+      "description": "Relational mapping between doctors and their registered patients",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientEmail": { "type": "string" },
+        "assignedScans": { "type": "array", "items": { "type": "string" } },
+        "registrationDate": { "type": "string" }
+      },
+      "required": ["patientId", "doctorId", "registrationDate"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Universal user storage."
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": "DocumentRecord",
+      "description": "Redundant documents link for patient portable access."
+    },
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Patient metadata."
+    },
+    "/patients/{patientId}/documents/{docId}": {
+      "schema": "DocumentRecord",
+      "description": "Clinical documents for a patient."
+    },
+    "/alignerCases/{caseId}": {
+      "schema": "AlignerCase",
+      "description": "Aligner cases."
+    },
+    "/alignerCases/{caseId}/files/{fileId}": {
+      "schema": "AlignerFile",
+      "description": "Files for a specific aligner case."
+    },
+    "/scans/{scanId}": {
+      "schema": "Scan",
+      "description": "Global scan repository."
+    },
+    "/doctor_patients/{relId}": {
+      "schema": "PatientRel",
+      "description": "Mappings of patients to doctors."
+    }
+  }
+}

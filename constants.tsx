@@ -4,6 +4,11 @@ import { NavItem, Feature, Step, FAQ, Testimonial } from './types';
 export const WHATSAPP_URL = 'https://wa.me/38349772307';
 export const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2eP6uFm-7rY-M8Nn4R-JqXvY-M8Nn4R-JqXvY-M8Nn4R-JqXv';
 
+export const BRAND_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/202241%20-%20Copy.jpg";
+export const ICONIC_DESIGN_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/freepik_upscale-your-image-to-a-h_2777775323.jpeg";
+export const ALIGNMENT_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/sddefault.jpg";
+export const PERSONALIZED_PLAN_URL = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/Monitor.webp";
+
 export const TRANSLATIONS = {
   en: {
     nav: [

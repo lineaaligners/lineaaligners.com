@@ -11,12 +11,21 @@ import { TreatmentPlanner } from './components/TreatmentPlanner';
 import { ImageGenerator } from './components/ImageGenerator';
 import { AIAssistant } from './components/AIAssistant';
 import { PatientPortal } from './components/PatientPortal';
-import { TRANSLATIONS, WHATSAPP_URL, GOOGLE_CALENDAR_URL } from './constants';
+import { DoctorPortal } from './components/DoctorPortal';
+import { AdminPortal } from './components/AdminPortal';
+import { auth, db } from './lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { 
+  TRANSLATIONS, 
+  WHATSAPP_URL, 
+  GOOGLE_CALENDAR_URL,
+  BRAND_ASSET,
+  ICONIC_DESIGN_ASSET,
+  ALIGNMENT_ASSET
+} from './constants';
 
 export { WHATSAPP_URL, GOOGLE_CALENDAR_URL };
-export const BRAND_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/202241%20-%20Copy.jpg";
-export const ICONIC_DESIGN_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/572628579_18084691715316830_1228185980579187523_n.jpg";
-export const ALIGNMENT_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/sddefault.jpg";
 
 // High quality stock medical/dental tech videos
 const TECH_VIDEO_URL = "https://player.vimeo.com/external/494252666.hd.mp4?s=2f5c2512183615591b85821774136f4a59513333&profile_id=175";
@@ -101,15 +110,11 @@ const VideoShowcase: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
           </div>
           <div className="order-1 lg:order-2">
             <div className="relative aspect-[4/5] rounded-[80px] overflow-hidden shadow-[0_50px_100px_rgba(65,105,225,0.2)] border-[12px] border-white/10">
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                className="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-1000"
-              >
-                <source src={TECH_VIDEO_URL} type="video/mp4" />
-              </video>
+              <img 
+                src="https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/Monitor.webp"
+                alt="Digital Smile Monitoring"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#193D6D]/40 via-transparent to-transparent"></div>
               <div className="absolute bottom-10 left-10 flex items-center gap-3">
                  <div className="w-3 h-3 rounded-full bg-[#87CEEB] animate-ping"></div>
@@ -270,10 +275,37 @@ const VideoModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: str
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'planner' | 'portal'>('home');
+  const [view, setView] = useState<'home' | 'planner' | 'portal' | 'admin'>('home');
+  const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [language, setLanguage] = useState<'en' | 'sq'>('en');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Fetch user profile to check role
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserRole(data.role as 'doctor' | 'patient');
+        }
+
+        if (user.email === 'nallbanigeno@gmail.com') {
+          setIsAdmin(true);
+        } else {
+          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+          const adminExists = adminDoc.exists();
+          setIsAdmin(adminExists);
+        }
+      } else {
+        setUserRole(null);
+        setIsAdmin(false);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (view === 'home' && window.location.hash) {
@@ -297,16 +329,33 @@ const App: React.FC = () => {
     window.open(WHATSAPP_URL, '_blank');
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUserRole(null);
+    setIsAdmin(false);
+    setView('home');
+  };
+
+  if (view === 'admin' && isAdmin) {
+    return <AdminPortal onLogout={handleLogout} />;
+  }
+
+  if (view === 'portal' && userRole === 'doctor') {
+    return <DoctorPortal onLogout={handleLogout} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col selection:bg-[#4169E1] selection:text-white bg-[#193D6D] text-[#F5F7FA]">
       <header role="banner">
         <Navbar 
           setView={setView} 
           view={view} 
-          onBookClick={handleBookScan} 
+          onBookClick={() => window.open(WHATSAPP_URL, '_blank')} 
           onPortalClick={openPortal}
           language={language}
           setLanguage={setLanguage}
+          isAdmin={isAdmin}
+          onAdminClick={() => setView('admin')}
         />
       </header>
       
@@ -459,8 +508,15 @@ const App: React.FC = () => {
           </>
         ) : view === 'planner' ? (
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
+        ) : view === 'admin' ? (
+           <AdminPortal onLogout={handleLogout} />
         ) : (
-          <PatientPortal onBack={() => setView('home')} language={language} />
+          <PatientPortal 
+            onBack={() => setView('home')} 
+            language={language} 
+            isAdmin={isAdmin}
+            onAdminClick={() => setView('admin')}
+          />
         )}
       </main>
       <Footer language={language} />
