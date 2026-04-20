@@ -6,8 +6,8 @@ export const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/app
 
 export const BRAND_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/202241%20-%20Copy.jpg";
 export const ICONIC_DESIGN_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/freepik_upscale-your-image-to-a-h_2777775323.jpeg";
-export const ALIGNMENT_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/sddefault.jpg";
-export const PERSONALIZED_PLAN_URL = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/Monitor.webp";
+export const ALIGNMENT_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/leart3d.stl";
+export const SCAN_VIDEO_URL = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/linea34.mp4";
 
 export const TRANSLATIONS = {
   en: {

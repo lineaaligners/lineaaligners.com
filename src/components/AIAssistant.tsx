@@ -55,10 +55,9 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      let response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: updatedMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || '' });
+      const chat = ai.chats.create({
+        model: "gemini-1.5-flash",
         config: {
           systemInstruction: `You are a friendly AI for Linea Aligners. Your goal is to help users understand our clear aligner treatment and ultimately book a free 3D scan at Medident Dental Clinic in Peja. 
           Help the user in ${isEn ? 'English' : 'Albanian'}. 
@@ -67,14 +66,21 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
           Keep responses concise and premium. Do not use asterisks in output.`,
           tools: [{ functionDeclarations: [scheduleAppointmentDeclaration] }],
         },
+        history: messages.slice(0, -1).map(m => ({ 
+          role: m.role as 'user' | 'model', 
+          parts: [{ text: m.text }] 
+        })),
       });
 
-      if (response.functionCalls && response.functionCalls.length > 0) {
+      const response = await chat.sendMessage({ message: userMessage.text });
+      const functionCalls = response.functionCalls;
+
+      if (functionCalls && functionCalls.length > 0) {
         // Automatically open the WhatsApp link when the AI calls the function
         window.open(WHATSAPP_URL, '_blank');
         
-        const fc = response.functionCalls[0];
-        const name = fc.args.fullName;
+        const fc = functionCalls[0];
+        const name = (fc.args as any).fullName;
         
         const confirmation = isEn 
           ? `Perfect, ${name}! I've initiated your booking process. I am opening WhatsApp for you right now so you can chat directly with our clinic to pick your exact time slot at Medident.`

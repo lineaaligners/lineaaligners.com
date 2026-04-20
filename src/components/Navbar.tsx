@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Globe } from 'lucide-react';
+import { Menu, X, Globe, User } from 'lucide-react';
 
 export const Navbar: React.FC<{ 
   setView: (v: 'home' | 'planner' | 'portal' | 'admin') => void; 
@@ -121,9 +121,12 @@ export const Navbar: React.FC<{
                 )}
                 <button 
                   onClick={onPortalClick}
-                  className="text-[10px] font-black text-white/50 uppercase tracking-widest hover:text-white transition-colors"
+                  className="flex items-center gap-2 group px-4 py-2 hover:bg-white/5 rounded-lg transition-all"
                 >
-                  {language === 'en' ? 'Portal' : 'Portali'}
+                  <User className="w-3.5 h-3.5 text-white/40 group-hover:text-[#87CEEB] transition-colors" />
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest group-hover:text-white transition-colors">
+                    {language === 'en' ? 'Sign In' : 'Identifikohu'}
+                  </span>
                 </button>
                 <div className="w-px h-4 bg-white/10"></div>
                 <div className="flex items-center gap-1">

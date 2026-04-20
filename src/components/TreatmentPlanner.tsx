@@ -78,8 +78,9 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
 
     try {
       const base64Data = await fileToBase64(file);
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || '' });
+
+      const promptText = `
         You are a professional orthodontic planning assistant for Linea Aligners. 
         Analyze the provided dental scan/image. 
         Identify common orthodontic concerns like crowding (rradhitje e dendur), spacing (hapësira), or alignment issues. 
@@ -95,10 +96,10 @@ export const TreatmentPlanner: React.FC<{ onBack: () => void; onBookScan?: () =>
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-1.5-pro',
         contents: {
           parts: [
-            { text: prompt },
+            { text: promptText },
             { inlineData: { mimeType: file.type, data: base64Data } }
           ]
         }

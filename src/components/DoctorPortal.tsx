@@ -14,7 +14,9 @@ import {
   onSnapshot,
   setDoc,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  getDoc,
+  Timestamp
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
@@ -32,7 +34,8 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  Database
+  Database,
+  User
 } from 'lucide-react';
 import { ProgressBar, ScreenLoader } from './ProgressBar';
 
@@ -67,6 +70,16 @@ export const DoctorPortal: React.FC<{ currentUser: any }> = ({ currentUser }) =>
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedScan, setSelectedScan] = useState<ScanRecord | null>(null);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [patientForm, setPatientForm] = useState({
+    currentAligner: 1,
+    totalAligners: 20,
+    nextAlignerChange: '',
+    nextAppointmentDate: '',
+    nextVisitUrl: '',
+    status: 'In Progress'
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -217,6 +230,49 @@ export const DoctorPortal: React.FC<{ currentUser: any }> = ({ currentUser }) =>
     }
   };
 
+  const handleOpenEdit = async (patient: Patient) => {
+    setEditingPatient(patient);
+    try {
+      const snap = await getDoc(doc(db, 'users', patient.patientId));
+      if (snap.exists()) {
+        const data = snap.data();
+        setPatientForm({
+          currentAligner: data.currentAligner || 1,
+          totalAligners: data.totalAligners || 20,
+          nextAlignerChange: data.nextAlignerChange ? new Date(data.nextAlignerChange.seconds * 1000).toISOString().split('T')[0] : '',
+          nextAppointmentDate: data.nextAppointmentDate ? new Date(data.nextAppointmentDate.seconds * 1000).toISOString().split('T')[0] : '',
+          nextVisitUrl: data.nextVisitUrl || '',
+          status: data.status || 'In Progress'
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching patient profile:", err);
+    }
+  };
+
+  const handleUpdatePatient = async () => {
+    if (!editingPatient) return;
+    setIsSaving(true);
+    try {
+      const userRef = doc(db, 'users', editingPatient.patientId);
+      await updateDoc(userRef, {
+        currentAligner: Number(patientForm.currentAligner),
+        totalAligners: Number(patientForm.totalAligners),
+        nextAlignerChange: patientForm.nextAlignerChange ? Timestamp.fromDate(new Date(patientForm.nextAlignerChange)) : null,
+        nextAppointmentDate: patientForm.nextAppointmentDate ? Timestamp.fromDate(new Date(patientForm.nextAppointmentDate)) : null,
+        nextVisitUrl: patientForm.nextVisitUrl,
+        status: patientForm.status,
+        updatedAt: serverTimestamp()
+      });
+      setEditingPatient(null);
+    } catch (err) {
+      console.error("Error updating patient:", err);
+      alert("Failed to update patient profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const filteredScans = scans.filter(s => 
     s.fileName.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -224,38 +280,42 @@ export const DoctorPortal: React.FC<{ currentUser: any }> = ({ currentUser }) =>
   if (loading) return <ScreenLoader message="Fetching scans..." />;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative group/header">
-        {/* Floating Accent for selected area */}
-        <div className="absolute -left-12 top-0 bottom-0 w-1 hidden xl:block overflow-hidden rounded-full py-2">
-            <div className="w-full h-12 bg-royal animate-float shadow-[0_0_15px_rgba(65,105,225,0.6)]" />
-        </div>
-        
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Database className="w-8 h-8 text-royal" />
-            <h1 className="text-4xl font-black italic uppercase tracking-tighter">Line<span className="text-royal">a</span> Scan Hub</h1>
-          </div>
-          <p className="text-white/40 text-xs font-black uppercase tracking-[0.3em]">Managed Professional Ecosystem</p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsUploadModalOpen(true)}
-            className="group relative bg-royal hover:bg-royal/80 text-white font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-2xl shadow-2xl shadow-royal/40 flex items-center gap-2 transition-all"
-          >
-            <Upload className="w-4 h-4" />
-            Upload Scans
-          </button>
-          <button 
-            onClick={() => auth.signOut()}
-            className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all"
-          >
-            <LogOut className="w-4 h-4 text-white/40" />
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-royal/30 selection:text-white">
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-royal/10 blur-[150px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#87CEEB]/5 blur-[150px] rounded-full" />
       </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-16 space-y-16 relative z-10">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 relative group/header bg-white/5 backdrop-blur-2xl p-10 rounded-[40px] border border-white/5 shadow-2xl">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-royal rounded-2xl flex items-center justify-center shadow-2xl shadow-royal/40">
+                <Database className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-5xl font-black italic uppercase tracking-tighter text-white">Line<span className="text-royal">a</span> Scan Hub</h1>
+            </div>
+            <p className="text-white/40 text-xs font-black uppercase tracking-[0.4em] ml-1">Managed Digital Ecosystem • Surgeons Only</p>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setIsUploadModalOpen(true)}
+              className="group relative bg-royal hover:bg-royal/80 text-white font-black uppercase text-[10px] tracking-widest px-10 py-5 rounded-2xl shadow-2xl shadow-royal/40 flex items-center gap-3 transition-all hover:scale-105 active:scale-95"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Medical Data
+            </button>
+            <button 
+              onClick={() => auth.signOut()}
+              className="p-5 bg-white/5 hover:bg-red-500/20 rounded-2xl border border-white/5 transition-all text-white/40 hover:text-red-400"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -343,6 +403,60 @@ export const DoctorPortal: React.FC<{ currentUser: any }> = ({ currentUser }) =>
               </motion.div>
             ))}
           </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Patient Management */}
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black uppercase tracking-widest">Patient Success Management</h2>
+          <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-widest">
+            <Users className="w-3.5 h-3.5" />
+            <span>{patients.length} ACTIVE PATIENTS</span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {patients.map(patient => (
+            <div key={patient.id} className="glass-panel p-8 rounded-[32px] space-y-6 group hover:border-royal/50 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-royal/10 flex items-center justify-center">
+                    <User className="w-6 h-6 text-royal" />
+                  </div>
+                  <div className="max-w-[150px]">
+                    <p className="text-sm font-black uppercase tracking-tight truncate">{patient.patientName}</p>
+                    <p className="text-[10px] font-bold text-white/40 truncate">{patient.patientEmail}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleOpenEdit(patient)}
+                  className="p-3 bg-white/5 hover:bg-royal/20 rounded-xl transition-all group/btn"
+                  title="Update Progress & Appointments"
+                >
+                  <TrendingUp className="w-4 h-4 text-royal group-hover/btn:scale-110 transition-transform" />
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-[0.2em] text-white/60">
+                  <span>Assigned Scans</span>
+                  <span className="text-royal">{patient.assignedScans?.length || 0}</span>
+                </div>
+                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-royal w-2/3" />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between mt-auto">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3 h-3 text-white/20" />
+                  <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">Joined {new Date(patient.registrationDate?.toDate()).toLocaleDateString()}</span>
+                </div>
+                <span className="px-3 py-1 bg-royal/10 text-royal text-[8px] font-black uppercase rounded-full">Patient</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -443,6 +557,93 @@ export const DoctorPortal: React.FC<{ currentUser: any }> = ({ currentUser }) =>
         )}
       </AnimatePresence>
 
+      {/* Edit Patient Modal */}
+      <AnimatePresence>
+        {editingPatient && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-xl glass-panel rounded-[40px] p-12 space-y-8 my-auto"
+            >
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-black uppercase tracking-widest italic">Patient Journey <span className="text-royal">Admin</span></h3>
+                <p className="text-[10px] font-black text-white/40 tracking-widest italic">{editingPatient.patientName}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Current Aligner #</label>
+                  <input 
+                    type="number" 
+                    value={patientForm.currentAligner}
+                    onChange={e => setPatientForm({...patientForm, currentAligner: Number(e.target.value)})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-royal/50 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Total Aligners</label>
+                  <input 
+                    type="number" 
+                    value={patientForm.totalAligners}
+                    onChange={e => setPatientForm({...patientForm, totalAligners: Number(e.target.value)})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-royal/50 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Next Aligner Change</label>
+                  <input 
+                    type="date" 
+                    value={patientForm.nextAlignerChange}
+                    onChange={e => setPatientForm({...patientForm, nextAlignerChange: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-royal/50 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Next Appointment</label>
+                  <input 
+                    type="date" 
+                    value={patientForm.nextAppointmentDate}
+                    onChange={e => setPatientForm({...patientForm, nextAppointmentDate: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-royal/50 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Next Visit URL (Link)</label>
+                <input 
+                  type="url" 
+                  placeholder="https://..."
+                  value={patientForm.nextVisitUrl}
+                  onChange={e => setPatientForm({...patientForm, nextVisitUrl: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-royal/50 outline-none"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setEditingPatient(null)}
+                  disabled={isSaving}
+                  className="flex-1 py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all disabled:opacity-50"
+                >
+                  CANCEL
+                </button>
+                <button 
+                  onClick={handleUpdatePatient}
+                  disabled={isSaving}
+                  className="flex-1 py-5 bg-royal text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-royal/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSaving ? <Clock className="animate-spin w-3 h-3" /> : 'SAVE UPDATES'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </div>
     </div>
   );
 };
