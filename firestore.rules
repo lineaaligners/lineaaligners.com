@@ -18,10 +18,9 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Admin is nallbanigeno@gmail.com or explicitly in admins collection
-      // Robust check to avoid NPEs
+      // Admin check with case-insensitivity
       return isSignedIn() && (
-        (request.auth.token.email == 'nallbanigeno@gmail.com' || request.auth.token.email == 'NALLBANIGENO@GMAIL.COM') ||
+        (request.auth.token.email.lower() == 'nallbanigeno@gmail.com') ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
@@ -88,10 +87,11 @@ service cloud.firestore {
     function isValidScan(data) {
       return data.keys().hasAll(['fileName', 'fileType', 'fileUrl', 'fileSize', 'uploadedBy', 'uploadDate', 'assignedTo']) &&
              data.fileName is string &&
-             data.fileType in ['jpg', 'png', 'pdf'] &&
+             data.fileType in ['jpg', 'png', 'pdf', 'stl'] &&
              data.uploadedBy == request.auth.uid &&
              data.uploadDate == request.time &&
-             data.assignedTo is list;
+             data.assignedTo is list &&
+             (data.keys().hasOnly(['fileName', 'fileType', 'fileUrl', 'fileSize', 'uploadedBy', 'uploadDate', 'assignedTo', 'patientId', 'category', 'thumbnailUrl']));
     }
 
     // --- Collection Rules ---
@@ -104,9 +104,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isVerifiedWriter() && isValidUser(incoming()) && isValidId(userId);
-      allow update: if isVerifiedWriter() && (isAdmin() || isOwner(userId)) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'status', 'role', 'email', 'doctorId'])
+      allow create: if isSignedIn() && (isOwner(userId) || isAdmin()) && isValidUser(incoming());
+      allow update: if isSignedIn() && (isAdmin() || isOwner(userId)) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'status', 'role', 'email', 'doctorId', 'currentAligner', 'totalAligners', 'nextAlignerChange', 'nextAppointmentDate', 'nextVisitUrl', 'lastScanUrl', 'lastScanDate', 'lastScanType'])
       );
       allow delete: if isAdmin();
 
@@ -150,13 +150,13 @@ service cloud.firestore {
     }
 
     match /scans/{scanId} {
-      allow list: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid || request.auth.uid in resource.data.assignedTo);
-      allow get: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid || request.auth.uid in resource.data.assignedTo);
-      allow create: if isVerifiedWriter() && isValidScan(incoming());
-      allow update: if isVerifiedWriter() && (isAdmin() || resource.data.uploadedBy == request.auth.uid) && (
+      allow list: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid || request.auth.uid in resource.data.assignedTo || resource.data.patientId == request.auth.uid);
+      allow get: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid || request.auth.uid in resource.data.assignedTo || resource.data.patientId == request.auth.uid);
+      allow create: if isSignedIn() && isValidScan(incoming());
+      allow update: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid) && (
         incoming().diff(existing()).affectedKeys().hasOnly(['assignedTo', 'fileName', 'thumbnailUrl'])
       );
-      allow delete: if isVerifiedWriter() && (isAdmin() || resource.data.uploadedBy == request.auth.uid);
+      allow delete: if isSignedIn() && (isAdmin() || resource.data.uploadedBy == request.auth.uid);
     }
 
     match /doctor_patients/{relId} {

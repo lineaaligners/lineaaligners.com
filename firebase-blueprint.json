@@ -15,16 +15,18 @@
     },
     "Scan": {
       "title": "Orthodontic Scan",
-      "description": "High-fidelity clinical scan uploaded by a doctor",
+      "description": "High-fidelity clinical scan uploaded by a doctor or patient",
       "type": "object",
       "properties": {
         "fileName": { "type": "string" },
-        "fileType": { "type": "string", "enum": ["jpg", "png", "pdf"] },
+        "fileType": { "type": "string", "enum": ["jpg", "png", "pdf", "stl"] },
         "fileUrl": { "type": "string", "format": "uri" },
         "thumbnailUrl": { "type": "string", "format": "uri" },
-        "fileSize": { "type": "number" },
-        "uploadedBy": { "type": "string", "description": "Doctor UID" },
-        "assignedTo": { "type": "array", "items": { "type": "string" }, "description": "Array of Patient Names or IDs" },
+        "fileSize": { "type": "string" },
+        "uploadedBy": { "type": "string", "description": "UID of uploader" },
+        "patientId": { "type": "string", "description": "Target patient UID" },
+        "assignedTo": { "type": "array", "items": { "type": "string" } },
+        "category": { "type": "string" },
         "uploadDate": { "type": "string", "format": "date-time" }
       },
       "required": ["fileName", "fileType", "fileUrl", "fileSize", "uploadedBy", "uploadDate"]

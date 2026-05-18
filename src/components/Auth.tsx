@@ -3,17 +3,19 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut,
-  updateProfile 
+  updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider
 } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProgressBar } from './ProgressBar';
 import { Stethoscope, User, ArrowLeft, Loader2 } from 'lucide-react';
 
 export const Auth: React.FC = () => {
-  const [step, setStep] = useState<'choice' | 'login' | 'register'>('choice');
-  const [role, setRole] = useState<'doctor' | 'patient' | null>(null);
+  const [step, setStep] = useState<'login' | 'register'>('login');
+  const [role, setRole] = useState<'doctor' | 'patient'>('patient');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -24,6 +26,41 @@ export const Auth: React.FC = () => {
   const handleAuthProgress = (val: number) => {
     setLoading(true);
     setProgress(val);
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    handleAuthProgress(20);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      setProgress(60);
+      
+      // Check if user has a profile, if not create one as patient by default
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      if (!userDoc.exists()) {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          uid: result.user.uid,
+          email: result.user.email,
+          name: result.user.displayName || 'Unnamed User',
+          role: 'patient',
+          status: 'active',
+          createdAt: serverTimestamp(),
+          currentAligner: 1,
+          totalAligners: 20,
+          nextAlignerChange: null,
+          clinicName: 'Medident Dental Clinic',
+          clinicAddress: 'Prishtina, Kosovo',
+          registrationDate: serverTimestamp()
+        });
+      }
+      setProgress(100);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
+      setLoading(false);
+      setProgress(0);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -39,13 +76,24 @@ export const Auth: React.FC = () => {
       await updateProfile(userCredential.user, { displayName: name });
       
       setProgress(85);
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      const profileData: any = {
         uid: userCredential.user.uid,
         email,
         name,
         role,
-        createdAt: serverTimestamp()
-      });
+        status: 'active',
+        createdAt: serverTimestamp(),
+        registrationDate: serverTimestamp()
+      };
+
+      if (role === 'patient') {
+        profileData.currentAligner = 1;
+        profileData.totalAligners = 20;
+        profileData.clinicName = 'Medident Dental Clinic';
+        profileData.clinicAddress = 'Prishtina, Kosovo';
+      }
+
+      await setDoc(doc(db, 'users', userCredential.user.uid), profileData);
       
       setProgress(100);
     } catch (err: any) {
@@ -86,66 +134,12 @@ export const Auth: React.FC = () => {
       </div>
 
       <AnimatePresence mode="wait">
-        {step === 'choice' && (
-          <motion.div 
-            key="choice"
-            variants={containerVariants}
-            initial="hidden" animate="visible" exit="exit"
-            className="w-full max-w-xl space-y-12 text-center relative z-10"
-          >
-            <div className="space-y-4">
-              <h1 className="text-8xl font-black tracking-tighter italic text-white uppercase leading-none">LINE<span className="text-royal">A</span></h1>
-              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[10px]">Managed Aligner Ecosystem</p>
-            </div>
-
-            <div className="space-y-8">
-              <p className="text-3xl font-black tracking-tighter italic">Select your professional path</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <button 
-                  onClick={() => { setRole('doctor'); setStep('register'); }}
-                  className="group relative h-80 bg-white/5 backdrop-blur-2xl rounded-[40px] border border-white/5 overflow-hidden transition-all hover:border-royal/50 hover:bg-white/10 flex flex-col items-center justify-center gap-6"
-                >
-                  <div className="p-8 bg-royal/10 rounded-[32px] group-hover:scale-110 transition-transform">
-                    <Stethoscope className="w-12 h-12 text-royal" />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-xl font-black uppercase italic">Surgeon</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 italic">Provider Access</p>
-                  </div>
-                </button>
-
-                <button 
-                  onClick={() => { setRole('patient'); setStep('register'); }}
-                  className="group relative h-80 bg-white/5 backdrop-blur-2xl rounded-[40px] border border-white/5 overflow-hidden transition-all hover:border-[#87CEEB]/50 hover:bg-white/10 flex flex-col items-center justify-center gap-6"
-                >
-                  <div className="p-8 bg-[#87CEEB]/10 rounded-[32px] group-hover:scale-110 transition-transform">
-                    <User className="w-12 h-12 text-[#87CEEB]" />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-xl font-black uppercase italic">Patient</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 italic">Journey Portal</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-6">
-              <button 
-                onClick={() => setStep('login')}
-                className="text-white/40 hover:text-white font-black uppercase tracking-widest text-[10px] transition-all"
-              >
-                Already registered? <span className="text-royal">Connect Now</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-
         {(step === 'login' || step === 'register') && (
           <motion.div 
             key={step}
             variants={containerVariants}
             initial="hidden" animate="visible" exit="exit"
-            className="w-full max-w-lg bg-white/5 backdrop-blur-2xl rounded-[50px] p-16 border border-white/5 shadow-2xl relative z-10 overflow-hidden"
+            className="w-full max-w-lg bg-white/5 backdrop-blur-2xl rounded-[50px] p-12 md:p-16 border border-white/5 shadow-2xl relative z-10 overflow-hidden"
           >
             {loading && (
               <div className="absolute top-0 left-0 w-full z-10">
@@ -153,20 +147,18 @@ export const Auth: React.FC = () => {
               </div>
             )}
 
-            <button 
-              onClick={() => { setStep('choice'); setLoading(false); }}
-              className="mb-10 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-white/40 hover:text-white"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
+            <div className="text-center mb-10">
+              <h1 className="text-6xl font-black tracking-tighter italic text-white uppercase leading-none mb-2">LINE<span className="text-royal">A</span></h1>
+              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[8px]">Managed Aligner Ecosystem</p>
+            </div>
             
             <div className="space-y-10">
               <div className="space-y-2">
-                <h2 className="text-4xl font-black tracking-tighter italic uppercase">
-                  {step === 'login' ? 'Portal Access' : `New ${role === 'doctor' ? 'Professional' : 'Patient'}`}
+                <h2 className="text-4xl font-black tracking-tighter italic uppercase text-center">
+                  {step === 'login' ? 'Portal Access' : 'Create Account'}
                 </h2>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">
-                  {step === 'login' ? 'Credential Verification' : 'Portal Account Setup'}
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 italic text-center">
+                  {step === 'login' ? 'Credential Verification' : 'Start your smile journey'}
                 </p>
               </div>
 
@@ -177,7 +169,7 @@ export const Auth: React.FC = () => {
                     <input 
                       required type="text" value={name} onChange={e => setName(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-[24px] p-6 text-sm font-bold focus:border-royal/50 outline-none"
-                      placeholder="Dr. John Doe / Patient Name"
+                      placeholder="Your Full Name"
                     />
                   </div>
                 )}
@@ -207,6 +199,30 @@ export const Auth: React.FC = () => {
                   {loading ? <Loader2 className="animate-spin w-5 h-5" /> : (step === 'login' ? 'AUTHORIZE ACCESS' : 'CREATE PORTAL')}
                 </button>
               </form>
+
+              <div className="space-y-6 pt-4">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                  <div className="relative flex justify-center text-[10px] font-black"><span className="bg-[#070B14] px-4 text-white/20 uppercase tracking-widest">or continue with</span></div>
+                </div>
+
+                <button 
+                  onClick={handleGoogleLogin}
+                  className="w-full bg-white text-navy font-black py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-white/90 transition-all shadow-xl"
+                >
+                  <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+                  GOOGLE ACCOUNT
+                </button>
+
+                <div className="text-center">
+                  <button 
+                    onClick={() => setStep(step === 'login' ? 'register' : 'login')}
+                    className="text-white/40 hover:text-white font-black uppercase tracking-widest text-[10px] transition-all"
+                  >
+                    {step === 'login' ? "Don't have an account?" : "Already registered?"} <span className="text-royal">{step === 'login' ? 'Create Journey' : 'Connect Now'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

@@ -52,7 +52,8 @@ import {
   Loader2,
   Calendar,
   Info,
-  ExternalLink
+  ExternalLink,
+  ShieldAlert
 } from 'lucide-react';
 
 const formatFileSize = (bytes: number) => {
@@ -198,7 +199,7 @@ interface User {
   createdAt: any;
 }
 
-export const AdminPortal: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
+export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: () => void }> = ({ onLogout, onSwitchToPatient }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'patients' | 'cases' | 'scans'>('dashboard');
   const [users, setUsers] = useState<User[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -727,6 +728,16 @@ export const AdminPortal: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
               {item.label}
             </button>
           ))}
+          
+          {onSwitchToPatient && (
+            <button
+              onClick={onSwitchToPatient}
+              className="w-full flex items-center gap-4 px-5 py-4 mt-6 rounded-2xl text-[#87CEEB] hover:bg-white/5 transition-all font-black text-[10px] uppercase tracking-widest border border-white/5"
+            >
+              <ShieldAlert className="w-5 h-5" />
+              Switch to Patient Portal
+            </button>
+          )}
         </nav>
 
         <button 

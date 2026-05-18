@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Globe, User } from 'lucide-react';
+import { Menu, X, Globe, User, ShieldCheck } from 'lucide-react';
 
 export const Navbar: React.FC<{ 
   setView: (v: 'home' | 'planner' | 'portal' | 'admin') => void; 
@@ -111,10 +111,15 @@ export const Navbar: React.FC<{
                   <div className="flex items-center">
                     <button 
                       onClick={onAdminClick}
-                      className="bg-red-500/10 border-2 border-red-500/20 text-red-400 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all shadow-lg flex items-center gap-2"
+                      className="group relative overflow-hidden bg-gradient-to-r from-[#FFD700]/20 to-[#FF8C00]/20 border-2 border-[#FFD700]/40 text-[#FFD700] px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.25em] hover:from-[#FFD700] hover:to-[#FF8C00] hover:text-navy transition-all shadow-[0_0_30px_rgba(255,215,0,0.2)] hover:shadow-[0_0_40px_rgba(255,215,0,0.5)] flex items-center gap-2.5"
                     >
-                      <Menu className="w-3.5 h-3.5" />
-                      {language === 'en' ? 'Admin Portal' : 'Portali Admin'}
+                      <motion.div
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0 bg-[#FFD700]/5 pointer-events-none"
+                      />
+                      <ShieldCheck className="w-4 h-4 group-hover:scale-110 transition-transform relative z-10" />
+                      <span className="relative z-10">{language === 'en' ? 'Admin Access' : 'Aksesi Admin'}</span>
                     </button>
                     <div className="w-px h-6 bg-white/10 mx-6"></div>
                   </div>
@@ -205,9 +210,10 @@ export const Navbar: React.FC<{
                  {isAdmin && (
                     <button 
                       onClick={() => { onAdminClick?.(); setIsOpen(false); }}
-                      className="w-full py-4 rounded-2xl border-2 border-[#4169E1]/30 bg-[#4169E1]/10 text-[#87CEEB] font-black uppercase tracking-widest text-center"
+                      className="w-full py-5 rounded-[24px] border-2 border-[#FFD700]/20 bg-gradient-to-r from-[#FFD700]/10 to-[#FF8C00]/5 text-[#FFD700] font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-3 shadow-2xl"
                     >
-                      {language === 'en' ? 'Admin Portal' : 'Portali Admin'}
+                      <ShieldCheck className="w-5 h-5" />
+                      {language === 'en' ? 'Admin Control' : 'Kontrolli Admin'}
                     </button>
                  )}
                  <button 

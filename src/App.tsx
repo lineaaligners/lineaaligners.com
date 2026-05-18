@@ -9,8 +9,7 @@ import { Testimonials } from './components/Testimonials';
 import { TreatmentPlanner } from './components/TreatmentPlanner';
 import { ImageGenerator } from './components/ImageGenerator';
 import { AIAssistant } from './components/AIAssistant';
-import { PatientPortal } from './components/PatientPortal';
-import { DoctorPortal } from './components/DoctorPortal';
+import { UserPortal } from './components/UserPortal';
 import { AdminPortal } from './components/AdminPortal';
 import { Auth } from './components/Auth';
 import { ProductSpotlight } from './components/ProductSpotlight';
@@ -19,6 +18,8 @@ import { CinematicStory } from './components/CinematicStory';
 import { TransformationGallery } from './components/TransformationGallery';
 import { VideoModal } from './components/VideoModal';
 import { auth, db } from './lib/firebase';
+import { motion, AnimatePresence } from 'motion/react';
+import { ShieldCheck, LayoutGrid, UserCircle } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { 
@@ -35,6 +36,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [language, setLanguage] = useState<'en' | 'sq'>('en');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
@@ -52,6 +54,7 @@ const App: React.FC = () => {
 
         if (user.email === 'nallbanigeno@gmail.com') {
           setIsAdmin(true);
+          // Auto-enable admin mode if desired, or let user toggle
         } else {
           const adminDoc = await getDoc(doc(db, 'admins', user.uid));
           const adminExists = adminDoc.exists();
@@ -64,6 +67,16 @@ const App: React.FC = () => {
     });
     return unsubscribe;
   }, []);
+
+  const toggleAdminMode = () => {
+    if (isAdmin) {
+      if (view === 'admin') {
+        setView('home');
+      } else {
+        setView('admin');
+      }
+    }
+  };
 
   useEffect(() => {
     if (view === 'home' && window.location.hash) {
@@ -98,12 +111,8 @@ const App: React.FC = () => {
     return <Auth />;
   }
 
-  if (view === 'portal' && userRole === 'doctor') {
-    return <DoctorPortal currentUser={currentUser} />;
-  }
-
   if (view === 'admin' && isAdmin) {
-    return <AdminPortal onLogout={handleLogout} />;
+    return <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />;
   }
 
   return (
@@ -117,7 +126,7 @@ const App: React.FC = () => {
           language={language}
           setLanguage={setLanguage}
           isAdmin={isAdmin}
-          onAdminClick={() => setView('admin')}
+          onAdminClick={toggleAdminMode}
         />
       </header>
       
@@ -271,9 +280,9 @@ const App: React.FC = () => {
         ) : view === 'planner' ? (
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
         ) : view === 'admin' ? (
-           <AdminPortal onLogout={handleLogout} />
+           <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />
         ) : (
-          <PatientPortal 
+          <UserPortal 
             currentUser={currentUser}
             onBack={() => setView('home')}
             language={language}
@@ -282,6 +291,36 @@ const App: React.FC = () => {
       </main>
       <Footer language={language} />
       <AIAssistant language={language} />
+      
+      {/* Floating Admin Control Panel Trigger */}
+      {isAdmin && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={toggleAdminMode}
+          className="fixed bottom-8 left-8 z-[100] bg-gradient-to-br from-[#FFD700] to-[#FF8C00] text-navy p-5 rounded-[22px] shadow-[0_15px_40px_rgba(255,215,0,0.4)] border-4 border-navy/20 group hover:shadow-[0_20px_50px_rgba(255,215,0,0.6)] transition-all"
+          title="Toggle Admin Mode"
+        >
+          <div className="relative">
+            <ShieldCheck className="w-8 h-8" />
+            <motion.div 
+              className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full border-2 border-white"
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </div>
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            whileHover={{ opacity: 1, x: 10 }}
+            className="absolute left-full top-1/2 -translate-y-1/2 bg-navy text-[#FFD700] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] pointer-events-none whitespace-nowrap border border-[#FFD700]/30 shadow-2xl"
+          >
+            {view === 'admin' ? 'Exit Admin Mode' : 'Enter Admin Control'}
+          </motion.div>
+        </motion.button>
+      )}
+
       <VideoModal 
         isOpen={isVideoModalOpen} 
         onClose={() => setIsVideoModalOpen(false)} 

@@ -13,6 +13,9 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
+import { useDropzone } from 'react-dropzone';
+import { ScanUpload } from './ScanUpload';
+import { ScansList } from './ScansList';
 import { 
   LogOut, 
   Home, 
@@ -130,7 +133,7 @@ const CountdownItem: React.FC<{ value: number; label: string; urgent?: boolean }
 
 // --- Main Component ---
 
-export const PatientPortal: React.FC<{ 
+export const UserPortal: React.FC<{ 
   currentUser: any;
   onBack: () => void;
   language: 'en' | 'sq';
@@ -138,6 +141,7 @@ export const PatientPortal: React.FC<{
   const isEn = language === 'en';
   const [activeTab, setActiveTab] = useState('dashboard');
   const [scans, setScans] = useState<Scan[]>([]);
+  const [doctorId, setDoctorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -153,15 +157,14 @@ export const PatientPortal: React.FC<{
         const data = doc.data();
         setProfile({
           ...data,
-          // Mocks for development if missing
-          currentAligner: data.currentAligner || 12,
-          totalAligners: data.totalAligners || 22,
-          nextAlignerChange: data.nextAlignerChange || { toDate: () => new Date(Date.now() + 4 * 24 * 60 * 60 * 1000) },
-          nextAppointmentDate: data.nextAppointmentDate || { toDate: () => new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) },
-          doctorName: data.doctorName || "Dr. Sarah Smith",
-          clinicAddress: data.clinicAddress || "Smile Clinic, Downtown Center",
-          appointmentType: data.appointmentType || "Check-up & Adjustment",
-          treatmentStartDate: data.treatmentStartDate || { toDate: () => new Date(Date.now() - 84 * 24 * 60 * 60 * 1000) }
+          currentAligner: data.currentAligner || 1,
+          totalAligners: data.totalAligners || 20,
+          nextAlignerChange: data.nextAlignerChange || null,
+          nextAppointmentDate: data.nextAppointmentDate || null,
+          doctorName: data.doctorName || "Pending Assignment",
+          clinicAddress: data.clinicAddress || "Medident Clinic, Prishtina",
+          appointmentType: data.appointmentType || "Initial Assessment",
+          treatmentStartDate: data.treatmentStartDate || data.createdAt || null
         } as UserProfile);
       }
     });
@@ -185,51 +188,80 @@ export const PatientPortal: React.FC<{
     };
   }, [currentUser]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !currentUser) return;
+  useEffect(() => {
+    if (!currentUser) return;
+    const qRel = query(
+      collection(db, 'doctor_patients'),
+      where('patientId', '==', currentUser.uid)
+    );
+    const unsubRel = onSnapshot(qRel, (snapshot) => {
+      if (!snapshot.empty) {
+        setDoctorId(snapshot.docs[0].data().doctorId);
+      }
+    });
+    return () => unsubRel();
+  }, [currentUser]);
 
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (!currentUser) return;
     setIsUploading(true);
     setUploadProgress(0);
 
-    try {
+    const uploadPromises = acceptedFiles.map(async (file) => {
       const fileId = Math.random().toString(36).substring(7);
       const storagePath = `patient_scans/${currentUser.uid}/${fileId}_${file.name}`;
       const storageRef = ref(storage, storagePath);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        }, 
-        (error) => {
-          console.error("Upload failed", error);
-          alert("Upload failed. Please try again.");
-          setIsUploading(false);
-        }, 
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          
-          await addDoc(collection(db, 'scans'), {
-            fileName: file.name,
-            fileUrl: downloadURL,
-            fileSize: file.size,
-            fileType: file.type.startsWith('image/') ? 'image' : 'pdf',
-            uploadDate: serverTimestamp(),
-            uploadedBy: currentUser.uid,
-            assignedTo: [currentUser.uid],
-            isProcessed: false
-          });
-          
-          setIsUploading(false);
-          alert("Scan uploaded successfully! Your doctor will review it shortly.");
-        }
-      );
+      return new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(p);
+          }, 
+          reject, 
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            const assignedIds = [currentUser.uid];
+            if (doctorId) assignedIds.push(doctorId);
+
+            await addDoc(collection(db, 'scans'), {
+              fileName: file.name,
+              fileUrl: downloadURL,
+              fileSize: file.size,
+              fileType: file.type.startsWith('image/') ? 'image' : 'pdf',
+              uploadDate: serverTimestamp(),
+              uploadedBy: currentUser.uid,
+              assignedTo: assignedIds,
+              isProcessed: false
+            });
+            resolve();
+          }
+        );
+      });
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      setIsUploading(false);
     } catch (err) {
       console.error("Upload failed", err);
       setIsUploading(false);
+      alert("One or more uploads failed.");
     }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png'],
+      'application/pdf': ['.pdf']
+    }
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) onDrop(files);
   };
 
   if (loading) return <ScreenLoader message="Building your journey..." />;
@@ -269,7 +301,7 @@ export const PatientPortal: React.FC<{
           Your Smile<br /><span className="text-[#87CEEB]">Journey.</span>
         </motion.h2>
         <p className="text-white/60 font-black uppercase tracking-widest text-xs">
-          Patient Portal • Welcome back, {profile?.name || 'Patient'}
+          Aligner Hub • Welcome back, {profile?.name || 'User'}
         </p>
       </div>
 
@@ -283,7 +315,7 @@ export const PatientPortal: React.FC<{
               <div>
                 <p className="text-3xl font-black text-white italic tracking-tighter">Aligner {profile?.currentAligner}</p>
                 <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] mt-2">Stage {profile?.currentAligner} of {profile?.totalAligners}</p>
-                <p className="text-sm font-bold text-[#87CEEB] mt-4">Change on {profile?.nextAlignerChange?.toDate().toLocaleDateString()}</p>
+                <p className="text-sm font-bold text-[#87CEEB] mt-4">Change on {profile?.nextAlignerChange?.toDate?.() ? profile.nextAlignerChange.toDate().toLocaleDateString() : 'TBD'}</p>
               </div>
               <div className="flex gap-4">
                 <CountdownItem value={getDaysDiff(profile?.nextAlignerChange)} label="Days Left" urgent={getDaysDiff(profile?.nextAlignerChange) <= 2} />
@@ -311,7 +343,7 @@ export const PatientPortal: React.FC<{
             </div>
             <div className="space-y-6 pt-6 border-t border-white/10">
               <div className="space-y-2">
-                <p className="text-lg font-black text-[#87CEEB] tracking-tight">{profile?.nextAppointmentDate?.toDate().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                <p className="text-lg font-black text-[#87CEEB] tracking-tight">{profile?.nextAppointmentDate?.toDate?.() ? profile.nextAppointmentDate.toDate().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Setting up...'}</p>
                 <p className="text-[10px] font-black uppercase text-white/30 tracking-[0.2em]">{profile?.clinicAddress}</p>
               </div>
               <div className="flex flex-wrap gap-4">
@@ -355,42 +387,17 @@ export const PatientPortal: React.FC<{
             </div>
           </SectionCard>
 
+          {/* Upload New Scan Section */}
+          <SectionCard title="Upload New Scan" icon={Upload}>
+            <ScanUpload 
+              patientId={currentUser.uid} 
+              onUploadComplete={() => setActiveTab('dashboard')} 
+            />
+          </SectionCard>
+
           {/* Last Scan Section */}
           <SectionCard title="Your Last Scan" icon={Eye}>
-            {scans.length > 0 ? (
-              <div className="group relative overflow-hidden rounded-2xl border border-white/10">
-                <div className="aspect-video bg-white/5 flex items-center justify-center relative overflow-hidden">
-                  {scans[0].fileUrl && scans[0].fileType === 'image' ? (
-                    <img src={scans[0].fileUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Last scan" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-4 text-white/20">
-                      <FileText className="w-16 h-16" />
-                      <span className="font-bold text-sm uppercase tracking-widest">{scans[0].fileType} Document</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 gap-4">
-                    <a href={scans[0].fileUrl} target="_blank" rel="noreferrer" className="p-3 bg-white rounded-full text-royal shadow-xl">
-                      <Download className="w-5 h-5" />
-                    </a>
-                  </div>
-                </div>
-                <div className="p-4 flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold truncate max-w-[200px] text-white underline underline-offset-4 decoration-royal/30">{scans[0].fileName}</p>
-                    <p className="text-xs text-white/40 font-medium italic">Uploaded {scans[0].uploadDate?.toDate().toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-[10px] font-black text-royal bg-royal/10 px-3 py-1 rounded-full uppercase tracking-widest">
-                    {(scans[0].fileSize! / (1024 * 1024)).toFixed(1)} MB
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="py-12 text-center space-y-4 border-2 border-dashed border-white/10 rounded-2xl">
-                 <div className="p-4 bg-white/5 rounded-full w-fit mx-auto"><Upload className="w-8 h-8 text-white/20" /></div>
-                 <p className="text-sm font-bold text-white/40">No scans uploaded yet.</p>
-                 <button onClick={() => setActiveTab('upload')} className="text-sm font-black text-royal uppercase tracking-widest italic hover:underline">Upload your first scan</button>
-              </div>
-            )}
+            <ScansList patientId={currentUser.uid} />
           </SectionCard>
         </div>
 
@@ -434,66 +441,18 @@ export const PatientPortal: React.FC<{
   const UploadScan = () => (
     <div className="space-y-8 pb-10">
       <div className="space-y-2">
-        <h1 className="text-4xl font-black text-white italic tracking-tighter">Upload Your Scan</h1>
-        <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Keep your doctor updated with the latest progress.</p>
+        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Upload Digital Records</h1>
+        <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Managed File Transmission • HIPAA Compliant</p>
       </div>
 
-      <div className="bg-white/5 border-2 border-dashed border-white/10 rounded-[32px] p-12 text-center space-y-6 relative overflow-hidden backdrop-blur-2xl">
-        {isUploading && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-[#070B14]/95 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-12 space-y-8"
-          >
-             <div className="relative w-24 h-24">
-                <div className="absolute inset-0 border-4 border-royal rounded-full opacity-20" />
-                <motion.div 
-                  className="absolute inset-0 border-4 border-royal rounded-full border-t-transparent"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
-             </div>
-             <div className="w-full max-w-sm space-y-4">
-                <p className="text-xl font-bold text-white uppercase italic">Uploading Scan...</p>
-                <ModernProgressBar progress={uploadProgress} />
-             </div>
-          </motion.div>
-        )}
-
-        <div className="mx-auto w-24 h-24 bg-royal/10 rounded-[32px] flex items-center justify-center shadow-2xl shadow-royal/20">
-          <Upload className="w-10 h-10 text-royal" />
-        </div>
-        <div className="max-w-xs mx-auto space-y-2">
-          <p className="text-xl font-black text-white italic uppercase tracking-tight">Drag and drop your file</p>
-          <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Supported formats: JPG, PNG, PDF (Max 50MB)</p>
-        </div>
-        <div className="pt-4">
-          <label className="bg-royal text-white px-10 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-royal/80 shadow-2xl shadow-royal/20 transition-all inline-block hover:scale-105 active:scale-95">
-            Choose File
-            <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,.pdf" />
-          </label>
-        </div>
+      <div className="glass-panel p-10 rounded-[40px]">
+        <ScanUpload patientId={currentUser.uid} onUploadComplete={() => setActiveTab('dashboard')} />
       </div>
 
-      {scans.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em] italic">Recent Activity</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {scans.slice(0, 4).map((scan) => (
-              <div key={scan.id} className="flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-[24px] hover:bg-white/10 transition-all">
-                <div className="w-12 h-12 bg-royal/10 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-royal" />
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="font-black text-sm truncate text-white">{scan.fileName}</p>
-                  <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">{scan.fileType} • {new Date(scan.uploadDate?.toDate()).toLocaleDateString()}</p>
-                </div>
-                <CheckCircle2 className="w-6 h-6 text-royal" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="space-y-6">
+        <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em] italic">Your Scan Library</h2>
+        <ScansList patientId={currentUser.uid} />
+      </div>
     </div>
   );
 
@@ -871,7 +830,7 @@ export const PatientPortal: React.FC<{
           <div className="flex items-center gap-6">
             <div className="hidden md:flex flex-col items-end">
               <span className="text-[10px] font-black uppercase tracking-widest text-white">{profile?.name}</span>
-              <span className="text-[8px] font-bold uppercase tracking-widest text-white/30">Patient Portal</span>
+              <span className="text-[8px] font-bold uppercase tracking-widest text-white/30">Member Portal</span>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white border border-white/10 shadow-lg font-black italic italic">
                 {profile?.name ? profile.name.charAt(0) : <User />}
