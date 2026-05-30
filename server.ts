@@ -9,7 +9,8 @@ import {
   getAdminDb,
   getBearerToken,
   getFirebaseAdminApp,
-  uploadAdminFile
+  uploadAdminFile,
+  verifyLoggedInAdmin
 } from "./server/firebaseAdminUpload";
 
 dotenv.config({ path: ".env.local" });
@@ -18,6 +19,10 @@ dotenv.config();
 const adminApp = getFirebaseAdminApp();
 const adminDb = getAdminDb(adminApp);
 console.log("Firebase Admin initialized with project:", firebaseConfig.projectId);
+
+function sendApiError(res: express.Response, error: any, fallback: string) {
+  res.status(error?.status || 500).json({ error: error?.message || fallback });
+}
 
 async function startServer() {
   const app = express();
@@ -56,52 +61,53 @@ async function startServer() {
   
   // Endpoint to send email when a new user is created
   app.post("/api/notify-user-created", async (req, res) => {
-    const { name, email, createdAt, adminLink } = req.body;
-    
-    // In a real app, you'd verify the request comes from an authenticated admin
-    // For now, we'll assume the client-side has checked permissions (Firestore Rules handle the data part)
-    
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.warn("Email credentials not set. Skipping notification.");
-      return res.status(200).json({ status: "skipped", message: "Email not configured" });
-    }
-
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // Sending to self (the admin)
-      subject: `New User Created: ${name}`,
-      text: `A new user has been created in the Linea Portal.\n\nName: ${name}\nEmail: ${email}\nCreated At: ${createdAt}\nAdmin Link: ${adminLink}`,
-    };
-
     try {
+      await verifyLoggedInAdmin(getBearerToken(req.headers.authorization));
+
+      const { name, email, createdAt, adminLink } = req.body;
+
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn("Email credentials not set. Skipping notification.");
+        return res.status(200).json({ status: "skipped", message: "Email not configured" });
+      }
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: process.env.EMAIL_USER, // Sending to self (the admin)
+        subject: `New User Created: ${name}`,
+        text: `A new user has been created in the Linea Portal.\n\nName: ${name}\nEmail: ${email}\nCreated At: ${createdAt}\nAdmin Link: ${adminLink}`,
+      };
+
       await transporter.sendMail(mailOptions);
       res.json({ status: "ok" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send email:", error);
-      res.status(500).json({ error: "Failed to send notification" });
+      sendApiError(res, error, "Failed to send notification");
     }
   });
 
   // Endpoint to create a Firebase Auth user
   app.post("/api/create-auth-user", async (req, res) => {
     const { email, password, displayName } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
-
-    // Backend validation (matching frontend's flexible rules)
-    if (displayName && displayName.trim().length < 2) {
-      return res.status(400).json({ error: "Name must be at least 2 characters" });
-    }
-    if (!email.includes('@')) {
-      return res.status(400).json({ error: "Invalid email format (must contain @)" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
-    }
 
     try {
+      await verifyLoggedInAdmin(getBearerToken(req.headers.authorization));
+
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      // Backend validation (matching frontend's flexible rules)
+      if (displayName && displayName.trim().length < 2) {
+        return res.status(400).json({ error: "Name must be at least 2 characters" });
+      }
+      if (!email.includes('@')) {
+        return res.status(400).json({ error: "Invalid email format (must contain @)" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
       const userRecord = await admin.auth().createUser({
         email,
         password,
@@ -125,7 +131,7 @@ async function startServer() {
         });
       }
       
-      res.status(500).json({ error: error.message || "Failed to create user" });
+      sendApiError(res, error, "Failed to create user");
     }
   });
 

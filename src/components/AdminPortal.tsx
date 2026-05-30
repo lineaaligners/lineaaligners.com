@@ -366,10 +366,16 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
     setLoading(true);
     try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Admin session expired. Please sign in again.');
+
       // 1. Create Auth User via Backend
       const authResponse = await fetch('/api/create-auth-user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           email: userFormData.email,
           password: userFormData.password,
@@ -395,9 +401,12 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       await setDoc(doc(db, 'users', authData.uid), newUser);
       
       // 3. Trigger email notification via backend
-      await fetch('/api/notify-user-created', {
+      const notifyResponse = await fetch('/api/notify-user-created', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           name: userFormData.name,
           email: userFormData.email,
@@ -405,6 +414,9 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
           adminLink: window.location.origin + '/admin'
         })
       });
+      if (!notifyResponse.ok) {
+        console.warn('User was created, but the notification email failed.');
+      }
 
       setIsUserModalOpen(false);
       setUserFormData({ name: '', email: '', password: '', status: 'active', role: 'patient' });
@@ -633,41 +645,36 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
   const uploadFile = async (file: File, category: DocumentRecord['category']) => {
     if (!selectedUser && !selectedPatient) return;
-    
+
     const fileId = Math.random().toString(36).substring(7);
     const accountId = selectedUser?.id || selectedPatient!.id;
     const storagePath = `${selectedUser ? 'users' : 'patients'}/${accountId}/documents/${fileId}_${file.name}`;
-    
+
     setIsUploading(true);
     setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
 
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) throw new Error('Admin session expired. Please sign in again.');
-
-    const response = await fetch('/api/admin-upload-file', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/octet-stream',
-        'X-Content-Type': file.type || 'application/octet-stream',
-        'X-Storage-Path': storagePath
-      },
-      body: file
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = uploadBytesResumable(storageRef, file, {
+      contentType: file.type || 'application/octet-stream'
     });
 
-    const uploadText = await response.text();
-    let uploadResult: any = null;
-    try {
-      uploadResult = uploadText ? JSON.parse(uploadText) : null;
-    } catch {
-      uploadResult = null;
-    }
-    if (!response.ok) {
-      throw new Error(uploadResult?.error || `Upload failed (${response.status} ${response.statusText})`);
-    }
-    if (!uploadResult?.storagePath || !uploadResult?.downloadUrl) {
-      throw new Error('Upload failed: server did not return file metadata');
-    }
+    const downloadUrl = await new Promise<string>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        snapshot => {
+          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
+        },
+        reject,
+        async () => {
+          try {
+            resolve(await getDownloadURL(uploadTask.snapshot.ref));
+          } catch (error) {
+            reject(error);
+          }
+        }
+      );
+    });
 
     setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
 
@@ -677,8 +684,8 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       fileType: file.type,
       category,
       fileSize: file.size,
-      storagePath: uploadResult.storagePath,
-      downloadUrl: uploadResult.downloadUrl,
+      storagePath,
+      downloadUrl,
       uploadedBy: auth.currentUser?.email || 'admin',
       createdAt: serverTimestamp(),
       patientId: selectedPatient?.id || '',

@@ -19,8 +19,8 @@ import { TransformationGallery } from './components/TransformationGallery';
 import { VideoModal } from './components/VideoModal';
 import { auth, db } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, LayoutGrid, UserCircle } from 'lucide-react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { Loader2, ShieldCheck } from 'lucide-react';
+import { onIdTokenChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { 
   TRANSLATIONS, 
@@ -33,6 +33,7 @@ export { WHATSAPP_URL, GOOGLE_CALENDAR_URL };
 
 const ADMIN_EMAIL = 'nallbanigeno@gmail.com';
 type View = 'home' | 'planner' | 'portal' | 'admin';
+type UserRole = 'doctor' | 'patient';
 
 const viewPaths: Record<View, string> = {
   home: '/',
@@ -49,12 +50,23 @@ function getViewFromPath(): View {
   return 'home';
 }
 
+const SessionLoadingScreen: React.FC = () => (
+  <div className="min-h-screen bg-[#070B14] text-white flex items-center justify-center">
+    <div className="flex flex-col items-center gap-5">
+      <Loader2 className="w-8 h-8 animate-spin text-[#87CEEB]" />
+      <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/40">
+        Restoring session
+      </p>
+    </div>
+  </div>
+);
+
 const App: React.FC = () => {
   const [view, setViewState] = useState<View>(() => getViewFromPath());
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [language, setLanguage] = useState<'en' | 'sq'>('en');
   const [authInitialStep, setAuthInitialStep] = useState<'login' | 'register'>('login');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -76,22 +88,32 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
+    let isActive = true;
+    let sessionRequest = 0;
+
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      const requestId = sessionRequest + 1;
+      sessionRequest = requestId;
+      setIsSessionLoading(true);
+
       if (!user) {
+        if (!isActive || requestId !== sessionRequest) return;
+        setCurrentUser(null);
         setUserRole(null);
         setIsAdmin(false);
+        setIsSessionLoading(false);
         return;
       }
 
+      let nextRole: UserRole | null = null;
       let nextIsAdmin = user.email?.toLowerCase() === ADMIN_EMAIL;
 
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        setUserRole(userDoc.exists() ? userDoc.data().role as 'doctor' | 'patient' : null);
+        const role = userDoc.exists() ? userDoc.data().role : null;
+        nextRole = role === 'doctor' || role === 'patient' ? role : null;
       } catch (error) {
         console.error('Failed to load user profile:', error);
-        setUserRole(null);
       }
 
       if (!nextIsAdmin) {
@@ -103,7 +125,13 @@ const App: React.FC = () => {
         }
       }
 
+      if (!isActive || requestId !== sessionRequest) return;
+
+      setCurrentUser(user);
+      setUserRole(nextRole);
       setIsAdmin(nextIsAdmin);
+      setIsSessionLoading(false);
+
       if (nextIsAdmin) {
         setViewState(currentView => {
           if (currentView === 'portal') {
@@ -113,8 +141,17 @@ const App: React.FC = () => {
           return currentView;
         });
       }
+    }, (error) => {
+      console.error('Failed to restore Firebase session:', error);
+      setCurrentUser(null);
+      setUserRole(null);
+      setIsAdmin(false);
+      setIsSessionLoading(false);
     });
-    return unsubscribe;
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, []);
 
   const toggleAdminMode = () => {
@@ -156,6 +193,10 @@ const App: React.FC = () => {
     setIsAdmin(false);
     setView('home', true);
   };
+
+  if ((view === 'portal' || view === 'admin') && isSessionLoading) {
+    return <SessionLoadingScreen />;
+  }
 
   if (view === 'portal' && !currentUser) {
     return <Auth initialStep={authInitialStep} onBack={() => setView('home')} />;

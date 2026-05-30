@@ -118,12 +118,16 @@ async function adminDocExists(idToken: string, uid: string) {
   throw httpError(403, await responseError(response, 'Could not verify admin role.'));
 }
 
-async function verifyLoggedInAdmin(idToken: string) {
+export async function verifyLoggedInAdmin(idToken: string | null) {
+  if (!idToken) {
+    throw httpError(401, 'Missing Firebase ID token');
+  }
+
   const user = await lookupFirebaseUser(idToken);
   if (user.email.toLowerCase() === ADMIN_EMAIL) return user;
   if (await adminDocExists(idToken, user.uid)) return user;
 
-  throw httpError(403, 'Only admins can upload client files');
+  throw httpError(403, 'Only admins can perform this action');
 }
 
 function getDownloadToken(metadata: any) {
