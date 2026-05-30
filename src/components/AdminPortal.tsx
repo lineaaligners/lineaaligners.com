@@ -199,8 +199,14 @@ interface User {
   createdAt: any;
 }
 
+type AdminTab = 'dashboard' | 'users' | 'patients' | 'cases' | 'scans';
+const ADMIN_TABS: AdminTab[] = ['dashboard', 'users', 'patients', 'cases', 'scans'];
+
 export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: () => void }> = ({ onLogout, onSwitchToPatient }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'patients' | 'cases' | 'scans'>('dashboard');
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    const hash = window.location.hash.slice(1) as AdminTab;
+    return ADMIN_TABS.includes(hash) ? hash : 'dashboard';
+  });
   const [users, setUsers] = useState<User[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [scans, setScans] = useState<ScanRecord[]>([]);
@@ -253,6 +259,12 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (window.location.pathname === '/admin' && window.location.hash !== `#${activeTab}`) {
+      window.history.replaceState({ view: 'admin', tab: activeTab }, '', `/admin#${activeTab}`);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const fetchFileCounts = async () => {
@@ -397,7 +409,9 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       setIsUserModalOpen(false);
       setUserFormData({ name: '', email: '', password: '', status: 'active', role: 'patient' });
       fetchData();
-      alert(`User ${userFormData.name} created successfully! UID: ${authData.uid}`);
+      alert(authData.existed
+        ? `Existing auth user linked to ${userFormData.name}. UID: ${authData.uid}`
+        : `User ${userFormData.name} created successfully! UID: ${authData.uid}`);
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Error creating user');
@@ -585,81 +599,112 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     setSelectedPatient(patient);
     const user = users.find(u => u.id === patient.userId);
     setSelectedUser(user || null);
-    
-    // Real-time listener for current patient documents
-    const q = query(collection(db, 'patients', patient.id, 'documents'), orderBy('createdAt', 'desc'));
+    setCategoryFilter('All');
+    setIsDocumentModalOpen(true);
+  };
+
+  const handleOpenUserDocManager = (user: User) => {
+    const patient = patients.find(p => p.userId === user.id) || null;
+    setSelectedUser(user);
+    setSelectedPatient(patient);
+    setCategoryFilter('All');
+    setIsDocumentModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isDocumentModalOpen || (!selectedUser && !selectedPatient)) {
+      setDocuments([]);
+      return;
+    }
+
+    const docsRef = selectedUser
+      ? collection(db, 'users', selectedUser.id, 'documents')
+      : collection(db, 'patients', selectedPatient!.id, 'documents');
+    const q = query(docsRef, orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
       setDocuments(docs);
+    }, (err) => {
+      console.error("Error loading client documents:", err);
+      setDocuments([]);
     });
-
-    setIsDocumentModalOpen(true);
-    return unsubscribe;
-  };
+    return () => unsubscribe();
+  }, [isDocumentModalOpen, selectedUser?.id, selectedPatient?.id]);
 
   const uploadFile = async (file: File, category: DocumentRecord['category']) => {
-    if (!selectedPatient) return;
+    if (!selectedUser && !selectedPatient) return;
     
     const fileId = Math.random().toString(36).substring(7);
-    const storagePath = `patients/${selectedPatient.id}/documents/${fileId}_${file.name}`;
-    const storageRef = ref(storage, storagePath);
+    const accountId = selectedUser?.id || selectedPatient!.id;
+    const storagePath = `${selectedUser ? 'users' : 'patients'}/${accountId}/documents/${fileId}_${file.name}`;
     
     setIsUploading(true);
     setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
 
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Admin session expired. Please sign in again.');
 
-    return new Promise<void>((resolve, reject) => {
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(prev => ({ ...prev, [file.name]: Math.round(progress) }));
-        }, 
-        (error) => {
-          console.error("Upload error:", error);
-          reject(error);
-        }, 
-        async () => {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          
-          const docData = {
-            name: file.name.split('.').slice(0, -1).join('.') || file.name,
-            fileName: file.name,
-            fileType: file.type,
-            category,
-            fileSize: file.size,
-            storagePath,
-            downloadUrl,
-            uploadedBy: auth.currentUser?.email || 'admin',
-            createdAt: serverTimestamp(),
-            patientId: selectedPatient.id
-          };
-
-          try {
-            await addDoc(collection(db, 'patients', selectedPatient.id, 'documents'), docData);
-            if (selectedUser) {
-              await addDoc(collection(db, 'users', selectedUser.id, 'documents'), docData);
-            }
-            setUploadSuccess(true);
-            setTimeout(() => setUploadSuccess(false), 3000);
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        }
-      );
+    const response = await fetch('/api/admin-upload-file', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/octet-stream',
+        'X-Content-Type': file.type || 'application/octet-stream',
+        'X-Storage-Path': storagePath
+      },
+      body: file
     });
+
+    const uploadText = await response.text();
+    let uploadResult: any = null;
+    try {
+      uploadResult = uploadText ? JSON.parse(uploadText) : null;
+    } catch {
+      uploadResult = null;
+    }
+    if (!response.ok) {
+      throw new Error(uploadResult?.error || `Upload failed (${response.status} ${response.statusText})`);
+    }
+    if (!uploadResult?.storagePath || !uploadResult?.downloadUrl) {
+      throw new Error('Upload failed: server did not return file metadata');
+    }
+
+    setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
+
+    const docData = {
+      name: file.name.split('.').slice(0, -1).join('.') || file.name,
+      fileName: file.name,
+      fileType: file.type,
+      category,
+      fileSize: file.size,
+      storagePath: uploadResult.storagePath,
+      downloadUrl: uploadResult.downloadUrl,
+      uploadedBy: auth.currentUser?.email || 'admin',
+      createdAt: serverTimestamp(),
+      patientId: selectedPatient?.id || '',
+      userId: selectedUser?.id || selectedPatient?.userId || ''
+    };
+
+    if (selectedUser) {
+      await addDoc(collection(db, 'users', selectedUser.id, 'documents'), docData);
+    }
+    if (selectedPatient) {
+      await addDoc(collection(db, 'patients', selectedPatient.id, 'documents'), docData);
+    }
+
+    setUploadSuccess(true);
+    setTimeout(() => setUploadSuccess(false), 3000);
   };
 
   const handleMultiUpload = async (files: File[], category: DocumentRecord['category']) => {
     setIsUploading(true);
     try {
       await Promise.all(files.map(f => uploadFile(f, category)));
-      setUploadProgress({});
     } catch (err) {
       console.error(err);
       alert("Some uploads failed.");
     } finally {
+      setUploadProgress({});
       setIsUploading(false);
     }
   };
@@ -669,17 +714,17 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     
     try {
       const storageRef = ref(storage, docObj.storagePath);
-      await deleteObject(storageRef);
-
-      if (selectedPatient) {
-        await deleteDoc(doc(db, 'patients', selectedPatient.id, 'documents', docObj.id));
-      }
+      await deleteObject(storageRef).catch((err) => {
+        console.warn("Storage delete failed, removing Firestore records anyway:", err);
+      });
 
       if (selectedUser) {
-        const userDocsSnap = await getDocs(query(collection(db, 'users', selectedUser.id, 'documents'), where('storagePath', '==', docObj.storagePath)));
-        userDocsSnap.forEach(async (d) => {
-          await deleteDoc(doc(db, 'users', selectedUser.id, 'documents', d.id));
-        });
+        await deleteDoc(doc(db, 'users', selectedUser.id, 'documents', docObj.id));
+      }
+
+      if (selectedPatient) {
+        const patientDocsSnap = await getDocs(query(collection(db, 'patients', selectedPatient.id, 'documents'), where('storagePath', '==', docObj.storagePath)));
+        await Promise.all(patientDocsSnap.docs.map((d) => deleteDoc(doc(db, 'patients', selectedPatient.id, 'documents', d.id))));
       }
     } catch (err) {
       console.error(err);
@@ -688,19 +733,27 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
   };
 
   const handleRenameDoc = async (docId: string, newName: string) => {
-    if (!newName || !selectedPatient) return;
+    if (!newName || (!selectedUser && !selectedPatient)) return;
     try {
-      await updateDoc(doc(db, 'patients', selectedPatient.id, 'documents', docId), { name: newName });
       if (selectedUser) {
-        const userDocsSnap = await getDocs(query(collection(db, 'users', selectedUser.id, 'documents'), where('storagePath', '==', documents.find(d => d.id === docId)?.storagePath)));
-        userDocsSnap.forEach(async (d) => {
-          await updateDoc(doc(db, 'users', selectedUser.id, 'documents', d.id), { name: newName });
-        });
+        await updateDoc(doc(db, 'users', selectedUser.id, 'documents', docId), { name: newName });
+      }
+      if (selectedPatient) {
+        const storagePath = documents.find(d => d.id === docId)?.storagePath;
+        if (storagePath) {
+          const patientDocsSnap = await getDocs(query(collection(db, 'patients', selectedPatient.id, 'documents'), where('storagePath', '==', storagePath)));
+          await Promise.all(patientDocsSnap.docs.map((d) => updateDoc(doc(db, 'patients', selectedPatient.id, 'documents', d.id), { name: newName })));
+        }
       }
     } catch (err) {
       console.error(err);
     }
   };
+
+  const documentOwnerName = selectedPatient?.name || selectedUser?.name || 'Client';
+  const documentOwnerMeta = selectedPatient
+    ? `${selectedPatient.dob} • ${selectedPatient.condition}`
+    : selectedUser?.email || 'Client account';
 
   return (
     <div className="flex min-h-screen bg-[#193D6D] text-white overflow-hidden">
@@ -858,14 +911,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                     <td className="p-8">
                       <div className="flex gap-4 items-center">
                         <button 
-                          onClick={() => {
-                            const patient = patients.find(p => p.userId === user.id);
-                            if (patient) {
-                              handleOpenDocManager(patient);
-                            } else {
-                              alert("This client does not have a linked patient record yet.");
-                            }
-                          }}
+                          onClick={() => handleOpenUserDocManager(user)}
                           title="Upload Files"
                           className="flex items-center gap-3 px-6 py-3 bg-[#4169E1] text-white rounded-2xl hover:bg-[#5A8DFF] transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/40 border-2 border-white/20"
                         >
@@ -1390,7 +1436,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
         </div>
       )}
 
-      {isDocumentModalOpen && selectedPatient && (
+      {isDocumentModalOpen && (selectedUser || selectedPatient) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-hidden">
           <div className="bg-[#142A4D] rounded-[56px] w-full max-w-6xl h-[85vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
             {/* Header */}
@@ -1400,16 +1446,18 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                     <UserIcon className="w-8 h-8" />
                  </div>
                  <div>
-                    <h2 className="text-3xl font-black tracking-tight">{selectedPatient.name}</h2>
+                    <h2 className="text-3xl font-black tracking-tight">{documentOwnerName}</h2>
                     <div className="flex items-center gap-4 text-white/50 text-sm font-bold">
-                       <span className="flex items-center gap-2"><Calendar className="w-4 h-4" /> {selectedPatient.dob}</span>
-                       <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                       <span className="flex items-center gap-2 max-w-[200px] truncate"><Info className="w-4 h-4" /> {selectedPatient.condition}</span>
+                       <span className="flex items-center gap-2 max-w-[360px] truncate"><Info className="w-4 h-4" /> {documentOwnerMeta}</span>
                     </div>
                  </div>
               </div>
               <button 
-                onClick={() => setIsDocumentModalOpen(false)}
+                onClick={() => {
+                  setIsDocumentModalOpen(false);
+                  setUploadProgress({});
+                  setIsUploading(false);
+                }}
                 className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
               >
                 <X className="w-6 h-6 border-white/10" />

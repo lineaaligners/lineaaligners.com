@@ -8,6 +8,7 @@
     "start": "node server.ts",
     "build": "vite build",
     "preview": "vite preview",
+    "firebase:reset": "tsx tools/resetFirebase.ts",
     "lint": "tsc --noEmit && npx eslint ."
   },
   "dependencies": {

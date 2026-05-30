@@ -1,0 +1,34 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email.lower() == 'nallbanigeno@gmail.com';
+    }
+
+    match /users/{userId}/documents/{fileName=**} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow write: if isAdmin();
+    }
+
+    match /patients/{patientId}/documents/{fileName=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /alignerCases/{caseId}/{fileName=**} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /patient_scans/{userId}/{fileName=**} {
+      allow read, write: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+    }
+
+    match /scans/{patientId}/{fileName=**} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

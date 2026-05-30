@@ -3,23 +3,21 @@ import path from "path";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
-import { readFileSync } from "fs";
+import {
+  firebaseConfig,
+  formatAdminUploadError,
+  getAdminDb,
+  getBearerToken,
+  getFirebaseAdminApp,
+  uploadAdminFile
+} from "./server/firebaseAdminUpload";
 
+dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-const firebaseConfig = JSON.parse(readFileSync("./firebase-applet-config.json", "utf-8"));
-
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      projectId: firebaseConfig.projectId,
-    });
-    console.log("Firebase Admin initialized with project:", firebaseConfig.projectId);
-  } catch (error) {
-    console.error("Firebase Admin initialization error:", error);
-  }
-}
+const adminApp = getFirebaseAdminApp();
+const adminDb = getAdminDb(adminApp);
+console.log("Firebase Admin initialized with project:", firebaseConfig.projectId);
 
 async function startServer() {
   const app = express();
@@ -37,6 +35,24 @@ async function startServer() {
   });
 
   // API Routes
+
+  app.post("/api/admin-upload-file", express.raw({ type: "application/octet-stream", limit: "100mb" }), async (req, res) => {
+    try {
+      const result = await uploadAdminFile({
+        idToken: getBearerToken(req.headers.authorization),
+        storagePath: String(req.headers["x-storage-path"] || ""),
+        contentType: String(req.headers["x-content-type"] || "application/octet-stream"),
+        body: req.body,
+        env: process.env
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Admin upload failed:", error);
+      const formatted = formatAdminUploadError(error, process.env);
+      res.status(formatted.status).json({ error: formatted.error });
+    }
+  });
   
   // Endpoint to send email when a new user is created
   app.post("/api/notify-user-created", async (req, res) => {
@@ -95,6 +111,11 @@ async function startServer() {
       res.json({ uid: userRecord.uid });
     } catch (error: any) {
       console.error("Error creating auth user:", error);
+
+      if (error.code === "auth/email-already-exists") {
+        const existingUser = await admin.auth().getUserByEmail(email);
+        return res.json({ uid: existingUser.uid, existed: true });
+      }
       
       // Check for specifically disabled API error
       if (error.message && error.message.includes("identitytoolkit.googleapis.com")) {

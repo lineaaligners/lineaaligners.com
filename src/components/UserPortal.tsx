@@ -71,6 +71,20 @@ interface UserProfile {
   treatmentStartDate?: any;
 }
 
+interface AccountDocument {
+  id: string;
+  name: string;
+  fileName: string;
+  fileType: string;
+  category: string;
+  fileSize: number;
+  downloadUrl: string;
+  uploadedBy: string;
+  createdAt: any;
+}
+
+const PORTAL_TABS = ['dashboard', 'upload', 'timeline', 'documents', 'appointment', 'instructions', 'settings'];
+
 // --- Sub-components ---
 
 const ModernProgressBar: React.FC<{ progress: number; label?: string; showPercentage?: boolean }> = ({ 
@@ -139,14 +153,24 @@ export const UserPortal: React.FC<{
   language: 'en' | 'sq';
 }> = ({ currentUser, onBack, language }) => {
   const isEn = language === 'en';
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.slice(1);
+    return PORTAL_TABS.includes(hash) ? hash : 'dashboard';
+  });
   const [scans, setScans] = useState<Scan[]>([]);
+  const [accountDocuments, setAccountDocuments] = useState<AccountDocument[]>([]);
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    if (window.location.pathname === '/portal' && window.location.hash !== `#${activeTab}`) {
+      window.history.replaceState({ view: 'portal', tab: activeTab }, '', `/portal#${activeTab}`);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -166,7 +190,38 @@ export const UserPortal: React.FC<{
           appointmentType: data.appointmentType || "Initial Assessment",
           treatmentStartDate: data.treatmentStartDate || data.createdAt || null
         } as UserProfile);
+      } else {
+        setProfile({
+          name: currentUser.displayName || currentUser.email || 'User',
+          email: currentUser.email || '',
+          role: 'patient',
+          status: 'active',
+          currentAligner: 1,
+          totalAligners: 20,
+          nextAlignerChange: null,
+          nextAppointmentDate: null,
+          doctorName: 'Pending Assignment',
+          clinicAddress: 'Medident Clinic, Prishtina',
+          appointmentType: 'Initial Assessment',
+          treatmentStartDate: null
+        });
       }
+    }, (error) => {
+      console.error('Failed to load user profile:', error);
+      setProfile({
+        name: currentUser.displayName || currentUser.email || 'User',
+        email: currentUser.email || '',
+        role: 'patient',
+        status: 'active',
+        currentAligner: 1,
+        totalAligners: 20,
+        nextAlignerChange: null,
+        nextAppointmentDate: null,
+        doctorName: 'Pending Assignment',
+        clinicAddress: 'Medident Clinic, Prishtina',
+        appointmentType: 'Initial Assessment',
+        treatmentStartDate: null
+      });
     });
 
     // Load assigned scans
@@ -180,11 +235,28 @@ export const UserPortal: React.FC<{
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Scan));
       setScans(docs);
       setLoading(false);
+    }, (error) => {
+      console.error('Failed to load scans:', error);
+      setScans([]);
+      setLoading(false);
+    });
+
+    const docsQuery = query(
+      collection(db, 'users', currentUser.uid, 'documents'),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubDocuments = onSnapshot(docsQuery, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AccountDocument));
+      setAccountDocuments(docs);
+    }, (error) => {
+      console.error('Failed to load account documents:', error);
+      setAccountDocuments([]);
     });
 
     return () => {
       unsubProfile();
       unsubScans();
+      unsubDocuments();
     };
   }, [currentUser]);
 
@@ -270,14 +342,16 @@ export const UserPortal: React.FC<{
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'upload', label: 'Upload Scan', icon: Upload },
     { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'appointment', label: 'Appointment', icon: Calendar },
     { id: 'instructions', label: 'Instructions', icon: HelpCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   const calculateProgress = () => {
-    if (!profile) return 0;
-    return (profile.currentAligner! / profile.totalAligners!) * 100;
+    const currentAligner = profile?.currentAligner || 1;
+    const totalAligners = profile?.totalAligners || 20;
+    return (currentAligner / totalAligners) * 100;
   };
 
   const getDaysDiff = (date: any) => {
@@ -286,6 +360,9 @@ export const UserPortal: React.FC<{
     const diff = d.getTime() - Date.now();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
+
+  const currentAligner = profile?.currentAligner || 1;
+  const totalAligners = profile?.totalAligners || 20;
 
   // --- Page Components ---
 
@@ -313,8 +390,8 @@ export const UserPortal: React.FC<{
           <div className="flex flex-col h-full justify-between gap-8 relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-3xl font-black text-white italic tracking-tighter">Aligner {profile?.currentAligner}</p>
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] mt-2">Stage {profile?.currentAligner} of {profile?.totalAligners}</p>
+                <p className="text-3xl font-black text-white italic tracking-tighter">Aligner {currentAligner}</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] mt-2">Stage {currentAligner} of {totalAligners}</p>
                 <p className="text-sm font-bold text-[#87CEEB] mt-4">Change on {profile?.nextAlignerChange?.toDate?.() ? profile.nextAlignerChange.toDate().toLocaleDateString() : 'TBD'}</p>
               </div>
               <div className="flex gap-4">
@@ -369,7 +446,7 @@ export const UserPortal: React.FC<{
            {/* Treatment Progress */}
           <SectionCard title="Overall Progress">
             <div className="space-y-6">
-              <ModernProgressBar progress={calculateProgress()} label={`Week ${Math.floor(profile!.currentAligner! * 7 / 7)} of ${profile?.totalAligners}`} />
+              <ModernProgressBar progress={calculateProgress()} label={`Week ${currentAligner} of ${totalAligners}`} />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest italic">Days Completed</p>
@@ -456,6 +533,51 @@ export const UserPortal: React.FC<{
     </div>
   );
 
+  const AccountDocuments = () => (
+    <div className="space-y-8 pb-10">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Documents</h1>
+        <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Files shared by your clinical team.</p>
+      </div>
+
+      <SectionCard title="Account Files" icon={FileText}>
+        {accountDocuments.length === 0 ? (
+          <div className="py-16 text-center bg-white/[0.02] border-2 border-dashed border-white/5 rounded-[32px]">
+            <FileText className="w-14 h-14 text-white/10 mx-auto mb-5" />
+            <p className="text-sm font-black text-white/40 uppercase tracking-widest">No documents yet</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {accountDocuments.map(doc => (
+              <div key={doc.id} className="flex flex-col md:flex-row md:items-center justify-between gap-5 p-5 bg-white/5 rounded-[24px] border border-white/5">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-royal/15 flex items-center justify-center text-royal shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-white truncate">{doc.name || doc.fileName}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
+                      {doc.category || 'Document'} • {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Pending'}
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={doc.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-royal hover:bg-royal/80 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                >
+                  <Download className="w-4 h-4" />
+                  Open
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+    </div>
+  );
+
   const Timeline = () => (
     <div className="space-y-12 pb-20">
       <div className="space-y-2">
@@ -467,10 +589,10 @@ export const UserPortal: React.FC<{
         <div className="lg:col-span-2 space-y-12">
           <SectionCard title="Your Journey Map">
             <div className="relative flex flex-wrap gap-4 items-center justify-center p-8 bg-white/5 rounded-[24px]">
-              {Array.from({ length: profile?.totalAligners || 22 }).map((_, i) => {
+              {Array.from({ length: totalAligners }).map((_, i) => {
                 const alignerNum = i + 1;
-                const isCurrent = alignerNum === profile?.currentAligner;
-                const isPast = alignerNum < profile?.currentAligner!;
+                const isCurrent = alignerNum === currentAligner;
+                const isPast = alignerNum < currentAligner;
                 return (
                   <div key={i} className="flex flex-col items-center gap-2 group relative">
                     <div className={`
@@ -494,7 +616,7 @@ export const UserPortal: React.FC<{
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <SectionCard title="Current Phase" icon={CheckCircle2}>
                <div className="space-y-6">
-                  <p className="text-4xl font-black text-white italic tracking-tighter">Aligner {profile?.currentAligner}</p>
+                  <p className="text-4xl font-black text-white italic tracking-tighter">Aligner {currentAligner}</p>
                   <div className="space-y-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Instructions:</p>
                     <ul className="text-sm font-bold text-white/80 space-y-3">
@@ -507,7 +629,7 @@ export const UserPortal: React.FC<{
             </SectionCard>
             <SectionCard title="Coming Up" icon={ChevronRight}>
                <div className="space-y-6">
-                  <p className="text-4xl font-black text-white/10 italic tracking-tighter">Aligner {profile!.currentAligner! + 1}</p>
+                  <p className="text-4xl font-black text-white/10 italic tracking-tighter">Aligner {currentAligner + 1}</p>
                   <p className="text-sm font-bold text-white/40 leading-relaxed italic">
                     Strategic evolution of your smile. Minimal adjustment pressure anticipated in the initial phase.
                   </p>
@@ -879,6 +1001,7 @@ export const UserPortal: React.FC<{
             {activeTab === 'dashboard' && <Dashboard />}
             {activeTab === 'upload' && <UploadScan />}
             {activeTab === 'timeline' && <Timeline />}
+            {activeTab === 'documents' && <AccountDocuments />}
             {activeTab === 'appointment' && <AppointmentDetails />}
             {activeTab === 'instructions' && <Instructions />}
             {activeTab === 'settings' && <SettingsPage />}
@@ -891,4 +1014,3 @@ export const UserPortal: React.FC<{
     </div>
   );
 };
-

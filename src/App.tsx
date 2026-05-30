@@ -31,8 +31,26 @@ import {
 
 export { WHATSAPP_URL, GOOGLE_CALENDAR_URL };
 
+const ADMIN_EMAIL = 'nallbanigeno@gmail.com';
+type View = 'home' | 'planner' | 'portal' | 'admin';
+
+const viewPaths: Record<View, string> = {
+  home: '/',
+  planner: '/planner',
+  portal: '/portal',
+  admin: '/admin'
+};
+
+function getViewFromPath(): View {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/planner') return 'planner';
+  if (path === '/portal') return 'portal';
+  if (path === '/admin') return 'admin';
+  return 'home';
+}
+
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'planner' | 'portal' | 'admin'>('home');
+  const [view, setViewState] = useState<View>(() => getViewFromPath());
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -42,28 +60,58 @@ const App: React.FC = () => {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
 
+  const setView = (nextView: View, replace = false) => {
+    setViewState(nextView);
+    const nextPath = viewPaths[nextView];
+    if (window.location.pathname !== nextPath) {
+      const method = replace ? 'replaceState' : 'pushState';
+      window.history[method]({ view: nextView }, '', nextPath);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => setViewState(getViewFromPath());
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      if (user) {
-        // Fetch user profile to check role
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setUserRole(data.role as 'doctor' | 'patient');
-        }
-
-        if (user.email === 'nallbanigeno@gmail.com') {
-          setIsAdmin(true);
-          // Auto-enable admin mode if desired, or let user toggle
-        } else {
-          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-          const adminExists = adminDoc.exists();
-          setIsAdmin(adminExists);
-        }
-      } else {
+      if (!user) {
         setUserRole(null);
         setIsAdmin(false);
+        return;
+      }
+
+      let nextIsAdmin = user.email?.toLowerCase() === ADMIN_EMAIL;
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        setUserRole(userDoc.exists() ? userDoc.data().role as 'doctor' | 'patient' : null);
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+        setUserRole(null);
+      }
+
+      if (!nextIsAdmin) {
+        try {
+          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+          nextIsAdmin = adminDoc.exists();
+        } catch (error) {
+          console.error('Failed to load admin profile:', error);
+        }
+      }
+
+      setIsAdmin(nextIsAdmin);
+      if (nextIsAdmin) {
+        setViewState(currentView => {
+          if (currentView === 'portal') {
+            window.history.replaceState({ view: 'admin' }, '', viewPaths.admin);
+            return 'admin';
+          }
+          return currentView;
+        });
       }
     });
     return unsubscribe;
@@ -106,7 +154,7 @@ const App: React.FC = () => {
     await signOut(auth);
     setUserRole(null);
     setIsAdmin(false);
-    setView('home');
+    setView('home', true);
   };
 
   if (view === 'portal' && !currentUser) {
@@ -115,6 +163,10 @@ const App: React.FC = () => {
 
   if (view === 'admin' && isAdmin) {
     return <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />;
+  }
+
+  if (view === 'admin' && !currentUser) {
+    return <Auth initialStep="login" onBack={() => setView('home')} />;
   }
 
   return (
@@ -282,7 +334,15 @@ const App: React.FC = () => {
         ) : view === 'planner' ? (
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
         ) : view === 'admin' ? (
-           <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />
+           <div className="min-h-screen flex items-center justify-center px-6 text-center">
+             <div className="bg-[#142A4D] border border-white/10 rounded-[32px] p-10 max-w-lg">
+               <h1 className="text-3xl font-black tracking-tight mb-4">Admin access required</h1>
+               <p className="text-white/60 font-bold text-sm mb-8">Login with an admin account to manage Linea.</p>
+               <button onClick={() => setView('portal')} className="bg-[#4169E1] px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">
+                 Login
+               </button>
+             </div>
+           </div>
         ) : (
           <UserPortal 
             currentUser={currentUser}
