@@ -118,6 +118,36 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
       await signInWithEmailAndPassword(auth, email, password);
       setProgress(100);
     } catch (err: any) {
+      if (
+        (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.message?.includes('invalid')) &&
+        email.trim() === 'nallbanigeno@gmail.com' &&
+        password === 'Linea1na!'
+      ) {
+        // Automatically create and seed the admin user so registration is fully automated
+        try {
+          setProgress(40);
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          setProgress(70);
+          await updateProfile(userCredential.user, { displayName: 'Dr. Geno Nallbani' });
+          setProgress(85);
+          await setDoc(doc(db, 'users', userCredential.user.uid), {
+            uid: userCredential.user.uid,
+            email: email.trim(),
+            name: 'Dr. Geno Nallbani',
+            role: 'patient',
+            status: 'active',
+            createdAt: serverTimestamp(),
+            registrationDate: serverTimestamp()
+          });
+          setProgress(100);
+          return;
+        } catch (regErr: any) {
+          setError(regErr.message);
+          setLoading(false);
+          setProgress(0);
+          return;
+        }
+      }
       setError(err.message);
       setLoading(false);
       setProgress(0);
@@ -262,6 +292,21 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
                     placeholder="••••••••"
                   />
                 </div>
+
+                {step === 'login' && (
+                  <div className="flex justify-end pr-1 -mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('nallbanigeno@gmail.com');
+                        setPassword('Linea1na!');
+                      }}
+                      className="text-[9px] font-black uppercase tracking-[0.15em] text-[#FFD700] hover:text-[#FF8C00] transition-colors focus:outline-none"
+                    >
+                      Pre-fill Admin Credentials
+                    </button>
+                  </div>
+                )}
                 
                 {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest text-center bg-red-400/10 p-4 rounded-2xl border border-red-400/20">{error}</p>}
 
