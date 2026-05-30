@@ -71,6 +71,18 @@ interface UserProfile {
   treatmentStartDate?: any;
 }
 
+interface AccountDocument {
+  id: string;
+  name: string;
+  fileName: string;
+  fileType: string;
+  category: string;
+  fileSize: number;
+  downloadUrl: string;
+  uploadedBy: string;
+  createdAt: any;
+}
+
 // --- Sub-components ---
 
 const ModernProgressBar: React.FC<{ progress: number; label?: string; showPercentage?: boolean }> = ({ 
@@ -142,6 +154,7 @@ export const UserPortal: React.FC<{
   const [activeTab, setActiveTab] = useState('dashboard');
   const [scans, setScans] = useState<Scan[]>([]);
   const [doctorId, setDoctorId] = useState<string | null>(null);
+  const [accountDocuments, setAccountDocuments] = useState<AccountDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -182,9 +195,23 @@ export const UserPortal: React.FC<{
       setLoading(false);
     });
 
+    const docsQuery = query(
+      collection(db, 'users', currentUser.uid, 'documents'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubDocuments = onSnapshot(docsQuery, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AccountDocument));
+      setAccountDocuments(docs);
+    }, (err) => {
+      console.error("Failed to load account documents:", err);
+      setAccountDocuments([]);
+    });
+
     return () => {
       unsubProfile();
       unsubScans();
+      unsubDocuments();
     };
   }, [currentUser]);
 
@@ -270,6 +297,7 @@ export const UserPortal: React.FC<{
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'upload', label: 'Upload Scan', icon: Upload },
     { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'appointment', label: 'Appointment', icon: Calendar },
     { id: 'instructions', label: 'Instructions', icon: HelpCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -453,6 +481,51 @@ export const UserPortal: React.FC<{
         <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em] italic">Your Scan Library</h2>
         <ScansList patientId={currentUser.uid} />
       </div>
+    </div>
+  );
+
+  const AccountDocuments = () => (
+    <div className="space-y-8 pb-10">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Documents</h1>
+        <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Files shared by your clinical team.</p>
+      </div>
+
+      <SectionCard title="Account Files" icon={FileText}>
+        {accountDocuments.length === 0 ? (
+          <div className="py-16 text-center bg-white/[0.02] border-2 border-dashed border-white/5 rounded-[32px]">
+            <FileText className="w-14 h-14 text-white/10 mx-auto mb-5" />
+            <p className="text-sm font-black text-white/40 uppercase tracking-widest">No documents yet</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {accountDocuments.map(doc => (
+              <div key={doc.id} className="flex flex-col md:flex-row md:items-center justify-between gap-5 p-5 bg-white/5 rounded-[24px] border border-white/5">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-royal/15 flex items-center justify-center text-royal shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-white truncate">{doc.name || doc.fileName}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
+                      {doc.category || 'Document'} • {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Pending'}
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={doc.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-royal hover:bg-royal/80 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                >
+                  <Download className="w-4 h-4" />
+                  Open
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
     </div>
   );
 
@@ -879,6 +952,7 @@ export const UserPortal: React.FC<{
             {activeTab === 'dashboard' && <Dashboard />}
             {activeTab === 'upload' && <UploadScan />}
             {activeTab === 'timeline' && <Timeline />}
+            {activeTab === 'documents' && <AccountDocuments />}
             {activeTab === 'appointment' && <AppointmentDetails />}
             {activeTab === 'instructions' && <Instructions />}
             {activeTab === 'settings' && <SettingsPage />}
@@ -891,4 +965,3 @@ export const UserPortal: React.FC<{
     </div>
   );
 };
-

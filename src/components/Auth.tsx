@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { notifyRegistration } from '../lib/notifications';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProgressBar } from './ProgressBar';
 import { Stethoscope, User, ArrowLeft, Loader2 } from 'lucide-react';
@@ -39,9 +40,9 @@ export const Auth: React.FC = () => {
       // Check if user has a profile, if not create one as patient by default
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', result.user.uid), {
+        const profileData = {
           uid: result.user.uid,
-          email: result.user.email,
+          email: result.user.email || '',
           name: result.user.displayName || 'Unnamed User',
           role: 'patient',
           status: 'active',
@@ -52,6 +53,16 @@ export const Auth: React.FC = () => {
           clinicName: 'Medident Dental Clinic',
           clinicAddress: 'Prishtina, Kosovo',
           registrationDate: serverTimestamp()
+        };
+
+        await setDoc(doc(db, 'users', result.user.uid), profileData);
+        await notifyRegistration(result.user, {
+          userId: result.user.uid,
+          name: profileData.name,
+          email: profileData.email,
+          role: 'patient',
+          status: 'active',
+          source: 'google'
         });
       }
       setProgress(100);
@@ -94,6 +105,14 @@ export const Auth: React.FC = () => {
       }
 
       await setDoc(doc(db, 'users', userCredential.user.uid), profileData);
+      await notifyRegistration(userCredential.user, {
+        userId: userCredential.user.uid,
+        name,
+        email,
+        role,
+        status: 'active',
+        source: 'password'
+      });
       
       setProgress(100);
     } catch (err: any) {
