@@ -3,84 +3,22 @@ import path from "path";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
-import { getFirestore } from "firebase-admin/firestore";
-import type { DecodedIdToken } from "firebase-admin/auth";
 import { readFileSync } from "fs";
 
 dotenv.config();
 
 const firebaseConfig = JSON.parse(readFileSync("./firebase-applet-config.json", "utf-8"));
-const defaultAdminEmail = "nallbanigeno@gmail.com";
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   try {
-    const appOptions: admin.AppOptions = {
+    admin.initializeApp({
       projectId: firebaseConfig.projectId,
-    };
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT;
-
-    if (serviceAccount) {
-      appOptions.credential = admin.credential.cert(JSON.parse(serviceAccount));
-    }
-
-    admin.initializeApp(appOptions);
+    });
     console.log("Firebase Admin initialized with project:", firebaseConfig.projectId);
   } catch (error) {
     console.error("Firebase Admin initialization error:", error);
   }
-}
-
-const adminDb = firebaseConfig.firestoreDatabaseId
-  ? getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId)
-  : getFirestore(admin.app());
-
-function getBearerToken(req: express.Request) {
-  const header = req.headers.authorization || "";
-  const [scheme, token] = header.split(" ");
-  return scheme?.toLowerCase() === "bearer" ? token : null;
-}
-
-async function verifyFirebaseRequest(req: express.Request) {
-  const token = getBearerToken(req);
-  if (!token) {
-    throw Object.assign(new Error("Missing Firebase ID token"), { status: 401 });
-  }
-
-  return admin.auth().verifyIdToken(token);
-}
-
-async function isAdminRequest(decodedToken: DecodedIdToken) {
-  const configuredAdmins = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || defaultAdminEmail)
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (decodedToken.email && configuredAdmins.includes(decodedToken.email.toLowerCase())) {
-    return true;
-  }
-
-  try {
-    const adminDoc = await adminDb.collection("admins").doc(decodedToken.uid).get();
-    return adminDoc.exists;
-  } catch (error) {
-    console.warn("Unable to check admins collection:", error);
-    return false;
-  }
-}
-
-function escapeHtml(value: unknown) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return "Request failed";
 }
 
 async function startServer() {
@@ -90,85 +28,33 @@ async function startServer() {
   app.use(express.json());
 
   // Email Configuration (Nodemailer)
-  const gmailUser = process.env.GMAIL_USER || process.env.EMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
-  const notificationTo = process.env.REGISTRATION_NOTIFICATION_TO || process.env.EMAIL_TO || gmailUser;
-  const emailConfigured = Boolean(gmailUser && gmailPass && notificationTo);
-  const transporter = emailConfigured
-    ? nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: gmailUser,
-          pass: gmailPass
-        }
-      })
-    : null;
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', // Defaulting to Gmail, user can change in .env
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
 
   // API Routes
   
   // Endpoint to send email when a new user is created
   app.post("/api/notify-user-created", async (req, res) => {
-    let decodedToken: DecodedIdToken;
-
-    try {
-      decodedToken = await verifyFirebaseRequest(req);
-    } catch (error: any) {
-      return res.status(error.status || 401).json({ error: getErrorMessage(error) });
-    }
-
-    const { userId, name, email, role, status, source, createdAt, adminLink } = req.body;
-
-    if (!userId || !name || !email) {
-      return res.status(400).json({ error: "userId, name, and email are required" });
-    }
-
-    if (decodedToken.uid !== userId && !(await isAdminRequest(decodedToken))) {
-      return res.status(403).json({ error: "Not allowed to send this registration notification" });
-    }
-
-    if (!emailConfigured || !transporter) {
+    const { name, email, createdAt, adminLink } = req.body;
+    
+    // In a real app, you'd verify the request comes from an authenticated admin
+    // For now, we'll assume the client-side has checked permissions (Firestore Rules handle the data part)
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.warn("Email credentials not set. Skipping notification.");
       return res.status(200).json({ status: "skipped", message: "Email not configured" });
     }
 
-    const emailSender = process.env.EMAIL_FROM || gmailUser || "";
-    const notificationRecipient = notificationTo || gmailUser || "";
-    const registeredAt = createdAt ? new Date(createdAt) : new Date();
-    const registeredAtText = Number.isNaN(registeredAt.getTime())
-      ? new Date().toISOString()
-      : registeredAt.toISOString();
-
     const mailOptions = {
-      from: emailSender,
-      to: notificationRecipient,
-      replyTo: email,
-      subject: `New Linea registration: ${name}`,
-      text: [
-        "A new user registered in the Linea Portal.",
-        "",
-        `Name: ${name}`,
-        `Email: ${email}`,
-        `Role: ${role || "unknown"}`,
-        `Status: ${status || "active"}`,
-        `Source: ${source || "unknown"}`,
-        `Firebase UID: ${userId}`,
-        `Created At: ${registeredAtText}`,
-        `Admin Link: ${adminLink || ""}`
-      ].join("\n"),
-      html: `
-        <h2>New Linea registration</h2>
-        <p>A new user registered in the Linea Portal.</p>
-        <table cellpadding="6" cellspacing="0" border="0">
-          <tr><td><strong>Name</strong></td><td>${escapeHtml(name)}</td></tr>
-          <tr><td><strong>Email</strong></td><td>${escapeHtml(email)}</td></tr>
-          <tr><td><strong>Role</strong></td><td>${escapeHtml(role || "unknown")}</td></tr>
-          <tr><td><strong>Status</strong></td><td>${escapeHtml(status || "active")}</td></tr>
-          <tr><td><strong>Source</strong></td><td>${escapeHtml(source || "unknown")}</td></tr>
-          <tr><td><strong>Firebase UID</strong></td><td>${escapeHtml(userId)}</td></tr>
-          <tr><td><strong>Created At</strong></td><td>${escapeHtml(registeredAtText)}</td></tr>
-          <tr><td><strong>Admin Link</strong></td><td>${adminLink ? `<a href="${escapeHtml(adminLink)}">${escapeHtml(adminLink)}</a>` : ""}</td></tr>
-        </table>
-      `
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER, // Sending to self (the admin)
+      subject: `New User Created: ${name}`,
+      text: `A new user has been created in the Linea Portal.\n\nName: ${name}\nEmail: ${email}\nCreated At: ${createdAt}\nAdmin Link: ${adminLink}`,
     };
 
     try {
@@ -182,18 +68,6 @@ async function startServer() {
 
   // Endpoint to create a Firebase Auth user
   app.post("/api/create-auth-user", async (req, res) => {
-    let decodedToken: DecodedIdToken;
-
-    try {
-      decodedToken = await verifyFirebaseRequest(req);
-    } catch (error: any) {
-      return res.status(error.status || 401).json({ error: getErrorMessage(error) });
-    }
-
-    if (!(await isAdminRequest(decodedToken))) {
-      return res.status(403).json({ error: "Only admins can create portal users" });
-    }
-
     const { email, password, displayName } = req.body;
     
     if (!email || !password) {

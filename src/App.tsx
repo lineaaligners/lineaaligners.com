@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [language, setLanguage] = useState<'en' | 'sq'>('en');
+  const [authInitialStep, setAuthInitialStep] = useState<'login' | 'register'>('login');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
 
@@ -91,7 +92,8 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const openPortal = () => {
+  const openPortal = (step: 'login' | 'register' = 'login') => {
+    setAuthInitialStep(step);
     setView('portal');
     window.scrollTo(0, 0);
   };
@@ -108,7 +110,7 @@ const App: React.FC = () => {
   };
 
   if (view === 'portal' && !currentUser) {
-    return <Auth />;
+    return <Auth initialStep={authInitialStep} onBack={() => setView('home')} />;
   }
 
   if (view === 'admin' && isAdmin) {

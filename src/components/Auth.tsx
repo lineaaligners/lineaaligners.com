@@ -9,13 +9,17 @@ import {
 } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { notifyRegistration } from '../lib/notifications';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProgressBar } from './ProgressBar';
 import { Stethoscope, User, ArrowLeft, Loader2 } from 'lucide-react';
 
-export const Auth: React.FC = () => {
-  const [step, setStep] = useState<'login' | 'register'>('login');
+export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () => void }> = ({ initialStep = 'login', onBack }) => {
+  const [step, setStep] = useState<'choice' | 'login' | 'register'>('login');
+  
+  // Update step if initialStep prop changes
+  React.useEffect(() => {
+    if (initialStep) setStep(initialStep);
+  }, [initialStep]);
   const [role, setRole] = useState<'doctor' | 'patient'>('patient');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,9 +44,9 @@ export const Auth: React.FC = () => {
       // Check if user has a profile, if not create one as patient by default
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       if (!userDoc.exists()) {
-        const profileData = {
+        await setDoc(doc(db, 'users', result.user.uid), {
           uid: result.user.uid,
-          email: result.user.email || '',
+          email: result.user.email,
           name: result.user.displayName || 'Unnamed User',
           role: 'patient',
           status: 'active',
@@ -53,16 +57,6 @@ export const Auth: React.FC = () => {
           clinicName: 'Medident Dental Clinic',
           clinicAddress: 'Prishtina, Kosovo',
           registrationDate: serverTimestamp()
-        };
-
-        await setDoc(doc(db, 'users', result.user.uid), profileData);
-        await notifyRegistration(result.user, {
-          userId: result.user.uid,
-          name: profileData.name,
-          email: profileData.email,
-          role: 'patient',
-          status: 'active',
-          source: 'google'
         });
       }
       setProgress(100);
@@ -105,14 +99,6 @@ export const Auth: React.FC = () => {
       }
 
       await setDoc(doc(db, 'users', userCredential.user.uid), profileData);
-      await notifyRegistration(userCredential.user, {
-        userId: userCredential.user.uid,
-        name,
-        email,
-        role,
-        status: 'active',
-        source: 'password'
-      });
       
       setProgress(100);
     } catch (err: any) {
@@ -153,6 +139,67 @@ export const Auth: React.FC = () => {
       </div>
 
       <AnimatePresence mode="wait">
+        {step === 'choice' && (
+          <motion.div 
+            key="choice"
+            variants={containerVariants}
+            initial="hidden" animate="visible" exit="exit"
+            className="w-full max-w-xl space-y-12 text-center relative z-10"
+          >
+            <div className="space-y-4 text-center">
+              <h1 className="text-8xl font-black tracking-tighter italic text-white uppercase leading-none">LINE<span className="text-royal">A</span></h1>
+              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[10px]">Managed Aligner Ecosystem</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <button 
+                onClick={() => setStep('login')}
+                className="group relative h-72 bg-white/5 backdrop-blur-2xl rounded-[40px] border border-white/5 overflow-hidden transition-all hover:border-royal/50 hover:bg-white/10 flex flex-col items-center justify-center gap-6"
+              >
+                <div className="p-8 bg-royal/10 rounded-[32px] group-hover:scale-110 transition-transform">
+                  <User className="w-12 h-12 text-royal" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-xl font-black uppercase italic">Log In</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 italic">Already a member</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setStep('register')}
+                className="group relative h-72 bg-white/10 backdrop-blur-2xl rounded-[40px] border-2 border-royal/20 overflow-hidden transition-all hover:border-royal/50 hover:bg-white/20 flex flex-col items-center justify-center gap-6 shadow-[0_0_50px_rgba(65,105,225,0.1)]"
+              >
+                <div className="p-8 bg-royal/20 rounded-[32px] group-hover:scale-110 transition-transform">
+                  <Stethoscope className="w-12 h-12 text-royal" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-xl font-black uppercase italic">Create Account</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#87CEEB] italic">Start your journey</p>
+                </div>
+              </button>
+            </div>
+
+            <div className="pt-6 space-y-4">
+              <button 
+                onClick={handleGoogleLogin}
+                className="w-full bg-white text-navy font-black py-5 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/90 transition-all shadow-xl"
+              >
+                <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+                CONTINUE WITH GOOGLE
+              </button>
+              
+              {onBack && (
+                <button 
+                  onClick={onBack}
+                  className="text-white/20 hover:text-white/60 font-black uppercase tracking-widest text-[10px] transition-all"
+                >
+                  Back to Website
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {(step === 'login' || step === 'register') && (
           <motion.div 
             key={step}
@@ -165,6 +212,13 @@ export const Auth: React.FC = () => {
                 <ProgressBar progress={progress} height="h-1.5" showPercentage={false} />
               </div>
             )}
+
+            <button 
+              onClick={() => setStep('choice')}
+              className="absolute top-12 left-12 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-white/40 hover:text-white group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            </button>
 
             <div className="text-center mb-10">
               <h1 className="text-6xl font-black tracking-tighter italic text-white uppercase leading-none mb-2">LINE<span className="text-royal">A</span></h1>

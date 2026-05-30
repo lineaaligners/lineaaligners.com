@@ -8,7 +8,7 @@ export const Navbar: React.FC<{
   setView: (v: 'home' | 'planner' | 'portal' | 'admin') => void; 
   view: 'home' | 'planner' | 'portal' | 'admin';
   onBookClick?: () => void;
-  onPortalClick?: () => void;
+  onPortalClick?: (step?: 'login' | 'register') => void;
   language: 'en' | 'sq';
   setLanguage: (l: 'en' | 'sq') => void;
   isAdmin?: boolean;
@@ -125,13 +125,20 @@ export const Navbar: React.FC<{
                   </div>
                 )}
                 <button 
-                  onClick={onPortalClick}
+                  onClick={() => onPortalClick?.('login')}
                   className="flex items-center gap-2 group px-4 py-2 hover:bg-white/5 rounded-lg transition-all"
                 >
                   <User className="w-3.5 h-3.5 text-white/40 group-hover:text-[#87CEEB] transition-colors" />
                   <span className="text-[10px] font-black text-white/50 uppercase tracking-widest group-hover:text-white transition-colors">
-                    {language === 'en' ? 'Sign In' : 'Identifikohu'}
+                    {language === 'en' ? 'Log In' : 'Kyçu'}
                   </span>
+                </button>
+                <div className="w-px h-4 bg-white/10"></div>
+                <button 
+                  onClick={() => onPortalClick?.('register')}
+                  className="px-4 py-2 text-[10px] font-black text-[#87CEEB] uppercase tracking-widest hover:text-white transition-colors"
+                >
+                  {language === 'en' ? 'Join' : 'Bashkohu'}
                 </button>
                 <div className="w-px h-4 bg-white/10"></div>
                 <div className="flex items-center gap-1">
@@ -163,7 +170,7 @@ export const Navbar: React.FC<{
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center gap-4">
              <button 
-                onClick={onPortalClick}
+                onClick={() => onPortalClick?.('login')}
                 className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white"
                 aria-label={language === 'en' ? "Patient Portal" : "Portali i Pacientit"}
               >
@@ -216,13 +223,21 @@ export const Navbar: React.FC<{
                       {language === 'en' ? 'Admin Control' : 'Kontrolli Admin'}
                     </button>
                  )}
+                 <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => { onPortalClick?.('login'); setIsOpen(false); }}
+                      className="w-full py-4 rounded-2xl border border-white/10 text-white font-bold text-center hover:bg-white/5 uppercase tracking-widest text-[10px]"
+                    >
+                      {language === 'en' ? 'Log In' : 'Kyçu'}
+                    </button>
+                    <button 
+                      onClick={() => { onPortalClick?.('register'); setIsOpen(false); }}
+                      className="w-full py-4 rounded-2xl border border-[#4169E1]/30 bg-[#4169E1]/10 text-[#87CEEB] font-bold text-center hover:bg-[#4169E1]/20 uppercase tracking-widest text-[10px]"
+                    >
+                      {language === 'en' ? 'Sign Up' : 'Regjistrohu'}
+                    </button>
+                 </div>
                  <button 
-                  onClick={() => { onPortalClick?.(); setIsOpen(false); }}
-                  className="w-full py-4 rounded-2xl border border-white/10 text-white font-bold text-center hover:bg-white/5"
-                >
-                  {language === 'en' ? 'Patient Portal' : 'Portali i Pacientit'}
-                </button>
-                <button 
                   onClick={(e) => { e.preventDefault(); onBookClick?.(); setIsOpen(false); }}
                   className="w-full bg-[#4169E1] text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl"
                 >
