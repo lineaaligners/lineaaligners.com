@@ -69,6 +69,7 @@ interface UserProfile {
   clinicAddress?: string;
   appointmentType?: string;
   treatmentStartDate?: any;
+  createdAt?: any;
 }
 
 // --- Sub-components ---
@@ -134,7 +135,8 @@ export const UserPortal: React.FC<{
   const [activeTab, setActiveTab] = useState('dashboard');
   const [scans, setScans] = useState<Scan[]>([]);
   const [doctorId, setDoctorId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [scansLoaded, setScansLoaded] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -196,6 +198,7 @@ export const UserPortal: React.FC<{
           treatmentStartDate: data.treatmentStartDate || data.createdAt || null
         } as UserProfile);
       }
+      setProfileLoaded(true);
     });
 
     // Load assigned scans
@@ -208,7 +211,7 @@ export const UserPortal: React.FC<{
     const unsubScans = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Scan));
       setScans(docs);
-      setLoading(false);
+      setScansLoaded(true);
     });
 
     return () => {
@@ -237,12 +240,38 @@ export const UserPortal: React.FC<{
   const getEstimatedFinishDate = () => {
     if (!profile) return 'Pending...';
     try {
-      const remainingWeeks = Math.max(0, (profile.totalAligners || 15) - (profile.currentAligner || 1));
-      const remainingDays = remainingWeeks * 7;
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + remainingDays);
+      const total = profile.totalAligners || 15;
+      
+      // Get treatment start date as a JS Date
+      let startJSDate = new Date();
+      if (profile.treatmentStartDate) {
+        if (typeof profile.treatmentStartDate.toDate === 'function') {
+          startJSDate = profile.treatmentStartDate.toDate();
+        } else {
+          startJSDate = new Date(profile.treatmentStartDate);
+        }
+      } else if (profile.createdAt) {
+        if (typeof profile.createdAt.toDate === 'function') {
+          startJSDate = profile.createdAt.toDate();
+        } else {
+          startJSDate = new Date(profile.createdAt);
+        }
+      }
+
+      // Check if startJSDate is valid, if not use current date
+      if (isNaN(startJSDate.getTime())) {
+        startJSDate = new Date();
+      }
+
+      // Each stage is 10 days, so the total treatment takes total * 10 days from start
+      const totalDays = total * 10;
+      
+      const targetDate = new Date(startJSDate.getTime());
+      targetDate.setDate(targetDate.getDate() + totalDays);
+      
       return targetDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
     } catch (e) {
+      console.error(e);
       return 'TBD';
     }
   };
@@ -332,7 +361,7 @@ export const UserPortal: React.FC<{
     if (files.length > 0) onDrop(files);
   };
 
-  if (loading) return <ScreenLoader message="Building your journey..." />;
+  if (!profileLoaded || !scansLoaded || !profile) return <ScreenLoader message="Building your journey..." />;
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -361,13 +390,9 @@ export const UserPortal: React.FC<{
     <div className="space-y-8 pb-20">
       {/* Hero Header */}
       <div className="space-y-3">
-        <motion.h2 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-8xl font-black text-white italic tracking-tighter leading-[0.8]"
-        >
+        <h2 className="text-5xl md:text-8xl font-black text-white italic tracking-tighter leading-[0.8]">
           Your Smile<br /><span className="text-[#87CEEB]">Journey.</span>
-        </motion.h2>
+        </h2>
         <p className="text-white/60 font-black uppercase tracking-widest text-xs">
           Aligner Hub • Welcome back, {profile?.name || 'User'}
         </p>
@@ -666,9 +691,9 @@ export const UserPortal: React.FC<{
            <SectionCard title="Milestones">
               <div className="space-y-10 py-4">
                  {[
-                   { label: "Treatment Start", date: profile?.treatmentStartDate?.toDate().toLocaleDateString(), completed: true },
+                   { label: "Treatment Start", date: profile?.treatmentStartDate ? (typeof profile.treatmentStartDate.toDate === 'function' ? profile.treatmentStartDate.toDate().toLocaleDateString() : new Date(profile.treatmentStartDate).toLocaleDateString()) : (profile?.createdAt ? (typeof profile.createdAt.toDate === 'function' ? profile.createdAt.toDate().toLocaleDateString() : new Date(profile.createdAt).toLocaleDateString()) : "Setting up..."), completed: true },
                    { label: "Phase 1 Transition", date: "June 12, 2026", completed: false },
-                   { label: "Final Reveal Hub", date: "Sept 15, 2026", completed: false }
+                   { label: "Final Reveal Hub", date: getEstimatedFinishDate(), completed: false }
                  ].map((m, i) => (
                    <div key={i} className="flex gap-6 relative">
                       {i < 2 && <div className="absolute left-[11px] top-8 bottom-[-40px] w-px bg-white/10" />}
