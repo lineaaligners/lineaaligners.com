@@ -196,17 +196,20 @@ interface User {
   name: string;
   email: string;
   status: 'active' | 'inactive';
+  role?: 'doctor' | 'patient' | 'admin';
+  currentAligner?: number;
+  totalAligners?: number;
+  nextAlignerChange?: any;
+  nextAppointmentDate?: any;
+  doctorName?: string;
+  appointmentType?: string;
+  clinicAddress?: string;
+  nextVisitUrl?: string;
   createdAt: any;
 }
 
-type AdminTab = 'dashboard' | 'users' | 'patients' | 'cases' | 'scans';
-const ADMIN_TABS: AdminTab[] = ['dashboard', 'users', 'patients', 'cases', 'scans'];
-
 export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: () => void }> = ({ onLogout, onSwitchToPatient }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
-    const hash = window.location.hash.slice(1) as AdminTab;
-    return ADMIN_TABS.includes(hash) ? hash : 'dashboard';
-  });
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'patients' | 'cases' | 'scans'>('dashboard');
   const [users, setUsers] = useState<User[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [scans, setScans] = useState<ScanRecord[]>([]);
@@ -256,15 +259,31 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
   const [urlInput, setUrlInput] = useState('');
   const [isFilesLoading, setIsFilesLoading] = useState(false);
 
+  // Advanced Client Controller States
+  const [isClientControlModalOpen, setIsClientControlModalOpen] = useState(false);
+  const [controlFormData, setControlFormData] = useState({
+    name: '',
+    email: '',
+    status: 'active' as 'active' | 'inactive',
+    role: 'patient' as 'doctor' | 'patient',
+    currentAligner: 1,
+    totalAligners: 20,
+    nextAlignerChange: '',
+    doctorName: '',
+    appointmentType: '',
+    nextAppointmentDate: '',
+    clinicAddress: '',
+    nextVisitUrl: ''
+  });
+  const [clientScans, setClientScans] = useState<any[]>([]);
+  const [isControlUploading, setIsControlUploading] = useState(false);
+  const [controlFileUploadProgress, setControlFileUploadProgress] = useState(0);
+  const [customLinkName, setCustomLinkName] = useState('');
+  const [customLinkUrl, setCustomLinkUrl] = useState('');
+
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (window.location.pathname === '/admin' && window.location.hash !== `#${activeTab}`) {
-      window.history.replaceState({ view: 'admin', tab: activeTab }, '', `/admin#${activeTab}`);
-    }
-  }, [activeTab]);
 
   useEffect(() => {
     const fetchFileCounts = async () => {
@@ -347,6 +366,215 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     return () => unsubscribe();
   }, [selectedCase]);
 
+  // Advanced Client Controls Handlers
+  const fetchClientScans = async (userId: string) => {
+    try {
+      const q = query(
+        collection(db, 'scans'),
+        where('patientId', '==', userId),
+        orderBy('uploadDate', 'desc')
+      );
+      const snap = await getDocs(q);
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setClientScans(list);
+    } catch (err) {
+      console.error("Error fetching client scans:", err);
+    }
+  };
+
+  const handleOpenClientControl = (user: any) => {
+    setSelectedUser(user);
+    
+    let changeDateStr = '';
+    if (user.nextAlignerChange) {
+      const changeDate = user.nextAlignerChange.toDate ? user.nextAlignerChange.toDate() : new Date(user.nextAlignerChange);
+      try {
+        changeDateStr = changeDate.toISOString().split('T')[0];
+      } catch (e) {
+        changeDateStr = '';
+      }
+    }
+    
+    let apptDateStr = '';
+    if (user.nextAppointmentDate) {
+      const apptDate = user.nextAppointmentDate.toDate ? user.nextAppointmentDate.toDate() : new Date(user.nextAppointmentDate);
+      try {
+        const offset = apptDate.getTimezoneOffset() * 60000;
+        apptDateStr = new Date(apptDate.getTime() - offset).toISOString().substring(0, 16);
+      } catch (e) {
+        apptDateStr = '';
+      }
+    }
+
+    setControlFormData({
+      name: user.name || '',
+      email: user.email || '',
+      status: user.status || 'active',
+      role: user.role || 'patient',
+      currentAligner: user.currentAligner || 1,
+      totalAligners: user.totalAligners || 20,
+      nextAlignerChange: changeDateStr,
+      doctorName: user.doctorName || 'Dr. Geno Nallbani',
+      appointmentType: user.appointmentType || 'Progress Check & Scan',
+      nextAppointmentDate: apptDateStr,
+      clinicAddress: user.clinicAddress || 'Medident Clinic, Prishtina',
+      nextVisitUrl: user.nextVisitUrl || ''
+    });
+
+    fetchClientScans(user.id);
+    setIsClientControlModalOpen(true);
+  };
+
+  const handleUpdateAlignerStage = async (userId: string, currentVal: number, totalVal: number, change: number) => {
+    try {
+      const newStage = Math.max(1, Math.min(totalVal, currentVal + change));
+      const userRef = doc(db, 'users', userId);
+      const tenDaysFromNow = new Date();
+      tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
+
+      await updateDoc(userRef, {
+        currentAligner: newStage,
+        nextAlignerChange: tenDaysFromNow
+      });
+      // Instantly apply state change to UI
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, currentAligner: newStage, nextAlignerChange: tenDaysFromNow } : u));
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to update aligner phase: " + err.message);
+    }
+  };
+
+  const handleSaveClientControl = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    
+    setLoading(true);
+    try {
+      const userRef = doc(db, 'users', selectedUser.id);
+      const updateData: any = {
+        name: controlFormData.name,
+        status: controlFormData.status,
+        role: controlFormData.role,
+        currentAligner: Number(controlFormData.currentAligner) || 1,
+        totalAligners: Number(controlFormData.totalAligners) || 20,
+        doctorName: controlFormData.doctorName || '',
+        appointmentType: controlFormData.appointmentType || '',
+        clinicAddress: controlFormData.clinicAddress || '',
+        nextVisitUrl: controlFormData.nextVisitUrl || ''
+      };
+
+      if (controlFormData.nextAlignerChange) {
+        updateData.nextAlignerChange = new Date(controlFormData.nextAlignerChange);
+      } else {
+        updateData.nextAlignerChange = null;
+      }
+
+      if (controlFormData.nextAppointmentDate) {
+        updateData.nextAppointmentDate = new Date(controlFormData.nextAppointmentDate);
+      } else {
+        updateData.nextAppointmentDate = null;
+      }
+
+      await updateDoc(userRef, updateData);
+      
+      fetchData();
+      setIsClientControlModalOpen(false);
+      alert("Client profile and professional controls synchronized!");
+    } catch (err: any) {
+      console.error(err);
+      alert("Synchronization failed: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadSTLForClient = async (files: File[]) => {
+    if (!selectedUser) return;
+    const file = files[0];
+    if (!file) return;
+
+    const isSTL = file.name.toLowerCase().endsWith('.stl');
+    
+    setIsControlUploading(true);
+    setControlFileUploadProgress(0);
+
+    const fileId = Math.random().toString(36).substring(7);
+    const storagePath = `patient_scans/${selectedUser.id}/${fileId}_${file.name}`;
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on('state_changed', 
+      (snapshot) => {
+        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setControlFileUploadProgress(p);
+      }, 
+      (err) => {
+        console.error("Advanced STL upload issue:", err);
+        setIsControlUploading(false);
+        alert("Upload failed: " + err.message);
+      }, 
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        
+        await addDoc(collection(db, 'scans'), {
+          fileName: file.name,
+          fileUrl: downloadURL,
+          fileSize: formatFileSize(file.size),
+          fileType: isSTL ? 'stl' : (file.type.startsWith('image/') ? 'image' : 'pdf'),
+          uploadDate: serverTimestamp(),
+          uploadedBy: auth.currentUser?.uid || selectedUser.id,
+          assignedTo: [selectedUser.id],
+          patientId: selectedUser.id,
+          isProcessed: false
+        });
+
+        setIsControlUploading(false);
+        setControlFileUploadProgress(0);
+        alert(`Successfully deployed scan asset "${file.name}" to the client portal!`);
+        fetchClientScans(selectedUser.id);
+      }
+    );
+  };
+
+  const handleAddCustomLinkForClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser || !customLinkName || !customLinkUrl) return;
+
+    try {
+      await addDoc(collection(db, 'scans'), {
+        fileName: customLinkName,
+        fileUrl: customLinkUrl,
+        fileSize: 'Secure Portal Link',
+        fileType: 'pdf',
+        uploadDate: serverTimestamp(),
+        uploadedBy: auth.currentUser?.uid || selectedUser.id,
+        assignedTo: [selectedUser.id],
+        patientId: selectedUser.id,
+        isProcessed: true
+      });
+
+      setCustomLinkName('');
+      setCustomLinkUrl('');
+      alert("Successfully posted external link resource!");
+      fetchClientScans(selectedUser.id);
+    } catch (err: any) {
+      console.error(err);
+      alert("Posting link failed: " + err.message);
+    }
+  };
+
+  const handleDeleteClientScan = async (scanId: string) => {
+    if (!confirm("Are you sure you want to delete this scan file / link?")) return;
+    try {
+      await deleteDoc(doc(db, 'scans', scanId));
+      if (selectedUser) {
+        fetchClientScans(selectedUser.id);
+      }
+    } catch (err: any) {
+      alert("Failed to delete record: " + err.message);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -366,16 +594,10 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
     setLoading(true);
     try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('Admin session expired. Please sign in again.');
-
       // 1. Create Auth User via Backend
       const authResponse = await fetch('/api/create-auth-user', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: userFormData.email,
           password: userFormData.password,
@@ -390,7 +612,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       }
 
       // 2. Create Firestore User Document using the same UID
-      const newUser = {
+      const newUser: any = {
         name: userFormData.name,
         email: userFormData.email,
         status: userFormData.status,
@@ -398,15 +620,20 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
         createdAt: serverTimestamp()
       };
       
+      if (userFormData.role === 'patient') {
+        newUser.currentAligner = 1;
+        newUser.totalAligners = 20;
+        newUser.doctorName = 'Dr. Geno Nallbani';
+        newUser.appointmentType = 'Progress Check & Scan';
+        newUser.clinicAddress = 'Medident Clinic, Prishtina';
+      }
+      
       await setDoc(doc(db, 'users', authData.uid), newUser);
       
       // 3. Trigger email notification via backend
-      const notifyResponse = await fetch('/api/notify-user-created', {
+      await fetch('/api/notify-user-created', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: userFormData.name,
           email: userFormData.email,
@@ -414,16 +641,11 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
           adminLink: window.location.origin + '/admin'
         })
       });
-      if (!notifyResponse.ok) {
-        console.warn('User was created, but the notification email failed.');
-      }
 
       setIsUserModalOpen(false);
       setUserFormData({ name: '', email: '', password: '', status: 'active', role: 'patient' });
       fetchData();
-      alert(authData.existed
-        ? `Existing auth user linked to ${userFormData.name}. UID: ${authData.uid}`
-        : `User ${userFormData.name} created successfully! UID: ${authData.uid}`);
+      alert(`User ${userFormData.name} created successfully! UID: ${authData.uid}`);
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Error creating user');
@@ -611,107 +833,81 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     setSelectedPatient(patient);
     const user = users.find(u => u.id === patient.userId);
     setSelectedUser(user || null);
-    setCategoryFilter('All');
-    setIsDocumentModalOpen(true);
-  };
-
-  const handleOpenUserDocManager = (user: User) => {
-    const patient = patients.find(p => p.userId === user.id) || null;
-    setSelectedUser(user);
-    setSelectedPatient(patient);
-    setCategoryFilter('All');
-    setIsDocumentModalOpen(true);
-  };
-
-  useEffect(() => {
-    if (!isDocumentModalOpen || (!selectedUser && !selectedPatient)) {
-      setDocuments([]);
-      return;
-    }
-
-    const docsRef = selectedUser
-      ? collection(db, 'users', selectedUser.id, 'documents')
-      : collection(db, 'patients', selectedPatient!.id, 'documents');
-    const q = query(docsRef, orderBy('createdAt', 'desc'));
+    
+    // Real-time listener for current patient documents
+    const q = query(collection(db, 'patients', patient.id, 'documents'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as DocumentRecord));
       setDocuments(docs);
-    }, (err) => {
-      console.error("Error loading client documents:", err);
-      setDocuments([]);
     });
-    return () => unsubscribe();
-  }, [isDocumentModalOpen, selectedUser?.id, selectedPatient?.id]);
+
+    setIsDocumentModalOpen(true);
+    return unsubscribe;
+  };
 
   const uploadFile = async (file: File, category: DocumentRecord['category']) => {
-    if (!selectedUser && !selectedPatient) return;
-
+    if (!selectedPatient) return;
+    
     const fileId = Math.random().toString(36).substring(7);
-    const accountId = selectedUser?.id || selectedPatient!.id;
-    const storagePath = `${selectedUser ? 'users' : 'patients'}/${accountId}/documents/${fileId}_${file.name}`;
-
+    const storagePath = `patients/${selectedPatient.id}/documents/${fileId}_${file.name}`;
+    const storageRef = ref(storage, storagePath);
+    
     setIsUploading(true);
     setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
 
-    const storageRef = ref(storage, storagePath);
-    const uploadTask = uploadBytesResumable(storageRef, file, {
-      contentType: file.type || 'application/octet-stream'
-    });
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-    const downloadUrl = await new Promise<string>((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        snapshot => {
-          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
-        },
-        reject,
+    return new Promise<void>((resolve, reject) => {
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(prev => ({ ...prev, [file.name]: Math.round(progress) }));
+        }, 
+        (error) => {
+          console.error("Upload error:", error);
+          reject(error);
+        }, 
         async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          
+          const docData = {
+            name: file.name.split('.').slice(0, -1).join('.') || file.name,
+            fileName: file.name,
+            fileType: file.type,
+            category,
+            fileSize: file.size,
+            storagePath,
+            downloadUrl,
+            uploadedBy: auth.currentUser?.email || 'admin',
+            createdAt: serverTimestamp(),
+            patientId: selectedPatient.id
+          };
+
           try {
-            resolve(await getDownloadURL(uploadTask.snapshot.ref));
-          } catch (error) {
-            reject(error);
+            await addDoc(collection(db, 'patients', selectedPatient.id, 'documents'), docData);
+            if (selectedUser) {
+              await addDoc(collection(db, 'users', selectedUser.id, 'documents'), docData);
+            }
+            setUploadSuccess(true);
+            setTimeout(() => setUploadSuccess(false), 3000);
+            resolve();
+          } catch (err) {
+            reject(err);
           }
         }
       );
     });
-
-    setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
-
-    const docData = {
-      name: file.name.split('.').slice(0, -1).join('.') || file.name,
-      fileName: file.name,
-      fileType: file.type,
-      category,
-      fileSize: file.size,
-      storagePath,
-      downloadUrl,
-      uploadedBy: auth.currentUser?.email || 'admin',
-      createdAt: serverTimestamp(),
-      patientId: selectedPatient?.id || '',
-      userId: selectedUser?.id || selectedPatient?.userId || ''
-    };
-
-    if (selectedUser) {
-      await addDoc(collection(db, 'users', selectedUser.id, 'documents'), docData);
-    }
-    if (selectedPatient) {
-      await addDoc(collection(db, 'patients', selectedPatient.id, 'documents'), docData);
-    }
-
-    setUploadSuccess(true);
-    setTimeout(() => setUploadSuccess(false), 3000);
   };
 
   const handleMultiUpload = async (files: File[], category: DocumentRecord['category']) => {
     setIsUploading(true);
     try {
       await Promise.all(files.map(f => uploadFile(f, category)));
+      setUploadProgress({});
     } catch (err) {
       console.error(err);
       alert("Some uploads failed.");
     } finally {
-      setUploadProgress({});
       setIsUploading(false);
     }
   };
@@ -721,17 +917,17 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     
     try {
       const storageRef = ref(storage, docObj.storagePath);
-      await deleteObject(storageRef).catch((err) => {
-        console.warn("Storage delete failed, removing Firestore records anyway:", err);
-      });
-
-      if (selectedUser) {
-        await deleteDoc(doc(db, 'users', selectedUser.id, 'documents', docObj.id));
-      }
+      await deleteObject(storageRef);
 
       if (selectedPatient) {
-        const patientDocsSnap = await getDocs(query(collection(db, 'patients', selectedPatient.id, 'documents'), where('storagePath', '==', docObj.storagePath)));
-        await Promise.all(patientDocsSnap.docs.map((d) => deleteDoc(doc(db, 'patients', selectedPatient.id, 'documents', d.id))));
+        await deleteDoc(doc(db, 'patients', selectedPatient.id, 'documents', docObj.id));
+      }
+
+      if (selectedUser) {
+        const userDocsSnap = await getDocs(query(collection(db, 'users', selectedUser.id, 'documents'), where('storagePath', '==', docObj.storagePath)));
+        userDocsSnap.forEach(async (d) => {
+          await deleteDoc(doc(db, 'users', selectedUser.id, 'documents', d.id));
+        });
       }
     } catch (err) {
       console.error(err);
@@ -740,27 +936,19 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
   };
 
   const handleRenameDoc = async (docId: string, newName: string) => {
-    if (!newName || (!selectedUser && !selectedPatient)) return;
+    if (!newName || !selectedPatient) return;
     try {
+      await updateDoc(doc(db, 'patients', selectedPatient.id, 'documents', docId), { name: newName });
       if (selectedUser) {
-        await updateDoc(doc(db, 'users', selectedUser.id, 'documents', docId), { name: newName });
-      }
-      if (selectedPatient) {
-        const storagePath = documents.find(d => d.id === docId)?.storagePath;
-        if (storagePath) {
-          const patientDocsSnap = await getDocs(query(collection(db, 'patients', selectedPatient.id, 'documents'), where('storagePath', '==', storagePath)));
-          await Promise.all(patientDocsSnap.docs.map((d) => updateDoc(doc(db, 'patients', selectedPatient.id, 'documents', d.id), { name: newName })));
-        }
+        const userDocsSnap = await getDocs(query(collection(db, 'users', selectedUser.id, 'documents'), where('storagePath', '==', documents.find(d => d.id === docId)?.storagePath)));
+        userDocsSnap.forEach(async (d) => {
+          await updateDoc(doc(db, 'users', selectedUser.id, 'documents', d.id), { name: newName });
+        });
       }
     } catch (err) {
       console.error(err);
     }
   };
-
-  const documentOwnerName = selectedPatient?.name || selectedUser?.name || 'Client';
-  const documentOwnerMeta = selectedPatient
-    ? `${selectedPatient.dob} • ${selectedPatient.condition}`
-    : selectedUser?.email || 'Client account';
 
   return (
     <div className="flex min-h-screen bg-[#193D6D] text-white overflow-hidden">
@@ -844,6 +1032,17 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
         {activeTab === 'dashboard' && (
           <div className="space-y-12">
+            {/* Helpful Quicktip Banner */}
+            <div className="bg-amber-400/10 border border-amber-400/30 rounded-[32px] p-8 flex items-start gap-4 shadow-lg">
+              <span className="text-2xl mt-0.5">💡</span>
+              <div>
+                <h4 className="font-semibold text-base text-amber-300 uppercase tracking-wider mb-2">Linea Aligner & Patient Journey Controls</h4>
+                <p className="text-xs text-white/80 leading-relaxed font-semibold">
+                  To easily configure a patient's **total number of aligners**, change their **current active aligner**, update their clinical appointment date, set telehealth progress links, or upload 3D scans/STL models, simply click the <span className="text-amber-400 font-extrabold uppercase bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20">Journey / Aligners</span> button on the Clients or Patients list (or click on any user registration card below).
+                </p>
+              </div>
+            </div>
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
@@ -869,7 +1068,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
               <h3 className="text-xl font-black mb-8 px-2">Recent User Registrations</h3>
               <div className="space-y-4">
                 {users.slice(0, 5).map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
+                  <div key={user.id} onClick={() => handleOpenClientControl(user)} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 rounded-2xl bg-[#4169E1] flex items-center justify-center font-black">
                         {user.name.charAt(0)}
@@ -899,6 +1098,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                 <tr>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Client Name</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Email Address</th>
+                  <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Aligners Journey</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Status</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Created</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Actions</th>
@@ -910,6 +1110,47 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                     <td className="p-8 font-black text-lg">{user.name}</td>
                     <td className="p-8 text-white/60 font-medium">{user.email}</td>
                     <td className="p-8">
+                      {user.role === 'patient' ? (
+                        <div className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl w-fit border border-white/5 font-sans">
+                          <input 
+                            type="number"
+                            min="1"
+                            value={user.currentAligner || 1}
+                            onChange={async (e) => {
+                              const newStage = Number(e.target.value) || 1;
+                              const userRef = doc(db, 'users', user.id);
+                              const tenDaysFromNow = new Date();
+                              tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
+                              
+                              await updateDoc(userRef, { 
+                                currentAligner: newStage,
+                                nextAlignerChange: tenDaysFromNow
+                              });
+                              setUsers(prev => prev.map(u => u.id === user.id ? { ...u, currentAligner: newStage, nextAlignerChange: tenDaysFromNow } : u));
+                            }}
+                            className="bg-[#193D6D] border border-white/10 rounded-xl w-14 p-2 text-center text-xs font-black text-amber-400 focus:border-amber-400 hover:bg-white/[0.08] transition-all outline-none font-mono"
+                            title="Edit Active Stage"
+                          />
+                          <span className="text-[10px] font-black text-white/40 uppercase">of</span>
+                          <input 
+                            type="number"
+                            min="1"
+                            value={user.totalAligners || 20}
+                            onChange={async (e) => {
+                              const newTotal = Number(e.target.value) || 20;
+                              const userRef = doc(db, 'users', user.id);
+                              await updateDoc(userRef, { totalAligners: newTotal });
+                              setUsers(prev => prev.map(u => u.id === user.id ? { ...u, totalAligners: newTotal } : u));
+                            }}
+                            className="bg-[#193D6D] border border-white/10 rounded-xl w-14 p-2 text-center text-xs font-black text-white/70 focus:border-amber-400 hover:bg-white/[0.08] transition-all outline-none font-mono"
+                            title="Edit Total Aligners"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-white/20 italic text-xs uppercase tracking-wider font-bold">N/A ({user.role})</span>
+                      )}
+                    </td>
+                    <td className="p-8">
                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${user.status === 'active' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                         {user.status}
                       </span>
@@ -918,14 +1159,28 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                     <td className="p-8">
                       <div className="flex gap-4 items-center">
                         <button 
-                          onClick={() => handleOpenUserDocManager(user)}
+                          onClick={() => {
+                            const patient = patients.find(p => p.userId === user.id);
+                            if (patient) {
+                               handleOpenDocManager(patient);
+                            } else {
+                               alert("This client does not have a linked patient record yet.");
+                            }
+                          }}
                           title="Upload Files"
                           className="flex items-center gap-3 px-6 py-3 bg-[#4169E1] text-white rounded-2xl hover:bg-[#5A8DFF] transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/40 border-2 border-white/20"
                         >
                           <Upload className="w-4 h-4" />
                           <span>Upload File</span>
                         </button>
-                        <button className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border-2 border-white/10 text-white/60 hover:text-white"><Edit2 className="w-4 h-4" /></button>
+                        <button 
+                          onClick={() => handleOpenClientControl(user)}
+                          title="Manage Treatment journey, aligners count and telehealth links"
+                          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-400 to-[#FF8C00] text-slate-950 rounded-2xl hover:brightness-110 hover:shadow-lg transition-all font-black text-[11px] uppercase tracking-wider border-2 border-amber-300"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          <span>Journey / Aligners</span>
+                        </button>
                         <button onClick={() => handleDeleteUser(user.id)} className="p-4 bg-white/5 rounded-2xl hover:bg-red-500 transition-all text-red-400 hover:text-white border-2 border-white/10"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>
@@ -945,6 +1200,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">D.O.B</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Condition</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Related Client</th>
+                  <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Aligners Journey</th>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
@@ -958,6 +1214,49 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                       {users.find(u => u.id === patient.userId)?.name || 'Unknown'}
                     </td>
                     <td className="p-8">
+                      {(() => {
+                        const associatedUser = users.find(u => u.id === patient.userId);
+                        if (!associatedUser) return <span className="text-white/20 italic text-xs uppercase font-bold">No client link</span>;
+                        return (
+                          <div className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl w-fit border border-white/5 font-sans">
+                            <input 
+                              type="number"
+                              min="1"
+                              value={associatedUser.currentAligner || 1}
+                              onChange={async (e) => {
+                                const newStage = Number(e.target.value) || 1;
+                                const userRef = doc(db, 'users', associatedUser.id);
+                                const tenDaysFromNow = new Date();
+                                tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
+                                
+                                await updateDoc(userRef, { 
+                                  currentAligner: newStage,
+                                  nextAlignerChange: tenDaysFromNow
+                                });
+                                setUsers(prev => prev.map(u => u.id === associatedUser.id ? { ...u, currentAligner: newStage, nextAlignerChange: tenDaysFromNow } : u));
+                              }}
+                              className="bg-[#193D6D] border border-white/10 rounded-xl w-14 p-2 text-center text-xs font-black text-amber-400 focus:border-amber-400 hover:bg-white/[0.08] transition-all outline-none font-mono"
+                              title="Edit Active Stage"
+                            />
+                            <span className="text-[10px] font-black text-white/40 uppercase">of</span>
+                            <input 
+                              type="number"
+                              min="1"
+                              value={associatedUser.totalAligners || 20}
+                              onChange={async (e) => {
+                                const newTotal = Number(e.target.value) || 20;
+                                const userRef = doc(db, 'users', associatedUser.id);
+                                await updateDoc(userRef, { totalAligners: newTotal });
+                                setUsers(prev => prev.map(u => u.id === associatedUser.id ? { ...u, totalAligners: newTotal } : u));
+                              }}
+                              className="bg-[#193D6D] border border-white/10 rounded-xl w-14 p-2 text-center text-xs font-black text-white/70 focus:border-amber-400 hover:bg-white/[0.08] transition-all outline-none font-mono"
+                              title="Edit Total Aligners"
+                            />
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td className="p-8">
                       <div className="flex gap-4 items-center">
                         <button 
                           onClick={() => handleOpenDocManager(patient)}
@@ -967,6 +1266,19 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                           <Upload className="w-4 h-4" />
                           <span>Upload File</span>
                         </button>
+                        {(() => {
+                          const associatedUser = users.find(u => u.id === patient.userId);
+                          return associatedUser ? (
+                            <button 
+                              onClick={() => handleOpenClientControl(associatedUser)}
+                              title="Manage Treatment journey, aligners count and telehealth links"
+                              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-400 to-[#FF8C00] text-slate-950 rounded-2xl hover:brightness-110 hover:shadow-lg transition-all font-black text-[11px] uppercase tracking-wider border-2 border-amber-300"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                              <span>Journey / Aligners</span>
+                            </button>
+                          ) : null;
+                        })()}
                         <button onClick={() => handleDeletePatient(patient.id)} className="p-4 bg-white/5 rounded-2xl hover:bg-red-500 transition-all text-red-400 hover:text-white border-2 border-white/10"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>
@@ -1443,7 +1755,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
         </div>
       )}
 
-      {isDocumentModalOpen && (selectedUser || selectedPatient) && (
+      {isDocumentModalOpen && selectedPatient && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-hidden">
           <div className="bg-[#142A4D] rounded-[56px] w-full max-w-6xl h-[85vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
             {/* Header */}
@@ -1453,18 +1765,16 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                     <UserIcon className="w-8 h-8" />
                  </div>
                  <div>
-                    <h2 className="text-3xl font-black tracking-tight">{documentOwnerName}</h2>
+                    <h2 className="text-3xl font-black tracking-tight">{selectedPatient.name}</h2>
                     <div className="flex items-center gap-4 text-white/50 text-sm font-bold">
-                       <span className="flex items-center gap-2 max-w-[360px] truncate"><Info className="w-4 h-4" /> {documentOwnerMeta}</span>
+                       <span className="flex items-center gap-2"><Calendar className="w-4 h-4" /> {selectedPatient.dob}</span>
+                       <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                       <span className="flex items-center gap-2 max-w-[200px] truncate"><Info className="w-4 h-4" /> {selectedPatient.condition}</span>
                     </div>
                  </div>
               </div>
               <button 
-                onClick={() => {
-                  setIsDocumentModalOpen(false);
-                  setUploadProgress({});
-                  setIsUploading(false);
-                }}
+                onClick={() => setIsDocumentModalOpen(false)}
                 className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
               >
                 <X className="w-6 h-6 border-white/10" />
@@ -1605,6 +1915,307 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                   </div>
                </main>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isClientControlModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl overflow-hidden">
+          <div className="bg-[#142A4D] rounded-[56px] w-full max-w-7xl h-[90vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
+            
+            {/* Header */}
+            <header className="p-10 border-b border-b-white/10 bg-white/5 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-[24px] bg-amber-400 text-slate-900 flex items-center justify-center shadow-lg font-black text-2xl italic">
+                  {controlFormData.name ? controlFormData.name.charAt(0).toUpperCase() : 'C'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-3xl font-black tracking-tight">{controlFormData.name}</h2>
+                    <span className="px-3 py-1 bg-amber-400/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-400/20">
+                      JOURNEY CONTROL PANEL
+                    </span>
+                  </div>
+                  <p className="text-white/50 text-sm font-bold uppercase tracking-wide mt-1">{controlFormData.email} • UID: {selectedUser.id}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsClientControlModalOpen(false)}
+                className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 hover:text-white border border-white/10 text-white/60 transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </header>
+
+            {/* Scrollable Layout Form */}
+            <form onSubmit={handleSaveClientControl} className="flex-grow flex flex-col lg:flex-row overflow-hidden">
+              <div className="flex-grow p-10 overflow-y-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+                
+                {/* Column 1: Client Identity & Aligner Phase */}
+                <div className="space-y-8 bg-white/[0.02] p-8 border border-white/5 rounded-[40px] shadow-2xl">
+                  <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                    <div className="w-2 h-6 bg-amber-400 rounded-full" />
+                    <h3 className="text-lg font-black uppercase tracking-tight italic">Phase 1: Aligner Aligners</h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Client Name</label>
+                      <input 
+                        required 
+                        value={controlFormData.name} 
+                        onChange={e => setControlFormData({...controlFormData, name: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 hover:bg-white/[0.08]" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Current Aligner</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          required 
+                          value={controlFormData.currentAligner === 0 ? '' : controlFormData.currentAligner} 
+                          onChange={e => {
+                            const val = e.target.value === '' ? '' : Number(e.target.value);
+                            setControlFormData({...controlFormData, currentAligner: val as any});
+                          }} 
+                          className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 hover:bg-white/[0.08] transition-all" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Total Aligners</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          required 
+                          value={controlFormData.totalAligners === 0 ? '' : controlFormData.totalAligners} 
+                          onChange={e => {
+                            const val = e.target.value === '' ? '' : Number(e.target.value);
+                            setControlFormData({...controlFormData, totalAligners: val as any});
+                          }} 
+                          className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 hover:bg-white/[0.08] transition-all" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Next Aligner Change Date</label>
+                      <input 
+                        type="date"
+                        value={controlFormData.nextAlignerChange} 
+                        onChange={e => setControlFormData({...controlFormData, nextAlignerChange: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 hover:bg-white/[0.08]" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Account Role</label>
+                      <select 
+                        value={controlFormData.role} 
+                        onChange={e => setControlFormData({...controlFormData, role: e.target.value as any})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 cursor-pointer"
+                      >
+                        <option value="patient" className="bg-slate-900">Patient</option>
+                        <option value="doctor" className="bg-slate-900">Doctor</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Membership Status</label>
+                      <select 
+                        value={controlFormData.status} 
+                        onChange={e => setControlFormData({...controlFormData, status: e.target.value as any})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 cursor-pointer"
+                      >
+                        <option value="active" className="bg-slate-900">Active</option>
+                        <option value="inactive" className="bg-slate-900">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2: Clinical Visit Details */}
+                <div className="space-y-8 bg-white/[0.02] p-8 border border-white/5 rounded-[40px] shadow-2xl">
+                  <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                    <div className="w-2 h-6 bg-royal rounded-full" />
+                    <h3 className="text-lg font-black uppercase tracking-tight italic">Phase 2: Clinical Visit</h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Assigned Doctor</label>
+                      <input 
+                        value={controlFormData.doctorName} 
+                        onChange={e => setControlFormData({...controlFormData, doctorName: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-royal hover:bg-white/[0.08]" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Appointment Action / Type</label>
+                      <input 
+                        value={controlFormData.appointmentType} 
+                        onChange={e => setControlFormData({...controlFormData, appointmentType: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-royal hover:bg-white/[0.08]" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Next Appointment Date & Time</label>
+                      <input 
+                        type="datetime-local"
+                        value={controlFormData.nextAppointmentDate} 
+                        onChange={e => setControlFormData({...controlFormData, nextAppointmentDate: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-royal hover:bg-white/[0.08]" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Medical Centre Hub Location</label>
+                      <input 
+                        value={controlFormData.clinicAddress} 
+                        onChange={e => setControlFormData({...controlFormData, clinicAddress: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-royal hover:bg-white/[0.08]" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Active External Telehealth / Custom Link</label>
+                      <input 
+                        placeholder="https://clinicalvisit.example.com/checkup"
+                        value={controlFormData.nextVisitUrl} 
+                        onChange={e => setControlFormData({...controlFormData, nextVisitUrl: e.target.value})} 
+                        className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-xs font-bold text-white outline-none focus:border-royal hover:bg-white/[0.08]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 3: 3D Model STL Viewer & Direct Link Uploaders */}
+                <div className="space-y-8 bg-white/[0.02] p-8 border border-white/5 rounded-[40px] shadow-2xl flex flex-col h-full">
+                  <div className="flex items-center gap-3 border-b border-white/5 pb-4 shrink-0">
+                    <div className="w-2 h-6 bg-[#87CEEB] rounded-full" />
+                    <h3 className="text-lg font-black uppercase tracking-tight italic">Phase 3: Digital Scan & STL Uploader</h3>
+                  </div>
+
+                  <div className="space-y-6 flex-grow overflow-y-auto pr-2">
+                    {/* Drag and Drop/Files uploader block */}
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-[#87CEEB] rounded-3xl p-6 bg-white/5 cursor-pointer hover:bg-white/[0.08] transition-all group shrink-0">
+                       <Upload className="w-8 h-8 text-white/30 group-hover:text-[#87CEEB] group-hover:scale-110 transition-all mb-2" />
+                       <span className="text-xs font-black uppercase text-white/60 tracking-wider">Upload New Scan / STL</span>
+                       <span className="text-[9px] text-white/30 tracking-widest uppercase mt-1">Supports STL 3D models & general records</span>
+                       <input 
+                         type="file" 
+                         onChange={(e) => {
+                           if (e.target.files) {
+                             handleUploadSTLForClient(Array.from(e.target.files));
+                           }
+                         }} 
+                         className="hidden" 
+                       />
+                    </label>
+
+                    {isControlUploading && (
+                       <div className="space-y-2 shrink-0 bg-white/5 p-4 rounded-2xl border border-white/5">
+                          <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-[#87CEEB]">
+                             <span>Deploying patient assets...</span>
+                             <span>{Math.round(controlFileUploadProgress)}%</span>
+                          </div>
+                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                             <div className="bg-[#87CEEB] h-full transition-all duration-300" style={{ width: `${controlFileUploadProgress}%` }} />
+                          </div>
+                       </div>
+                    )}
+
+                    {/* External Link Uploader Form */}
+                    <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4 shrink-0">
+                       <h4 className="text-[10px] font-black uppercase tracking-wider text-[#87CEEB]">Attach Custom Portal Link</h4>
+                       <div className="space-y-3">
+                          <input 
+                             placeholder="Link Label (e.g., Clincheck Animation)" 
+                             value={customLinkName} 
+                             onChange={e => setCustomLinkName(e.target.value)} 
+                             className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs font-bold outline-none text-white focus:border-royal"
+                          />
+                          <input 
+                             placeholder="Destination URL (https://...)" 
+                             value={customLinkUrl} 
+                             onChange={e => setCustomLinkUrl(e.target.value)} 
+                             className="w-full bg-white/5 border border-[#193D6D] rounded-2xl p-4 text-xs font-bold outline-none text-white focus:border-royal"
+                          />
+                          <button 
+                            type="button"
+                            onClick={handleAddCustomLinkForClient}
+                            className="w-full py-4 bg-royal text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-royal/20"
+                          >
+                             Publish Portal Asset
+                          </button>
+                       </div>
+                    </div>
+
+                    {/* Active Scan Files / Links list */}
+                    <div className="space-y-3 shrink-0">
+                       <h4 className="text-[10px] font-black uppercase tracking-wider text-white/50">Stored Digital Assets</h4>
+                       {clientScans.length === 0 ? (
+                          <p className="text-[9px] font-black text-white/30 uppercase tracking-widest p-6 bg-white/5 rounded-2xl text-center border-2 border-dashed border-white/5">
+                            No digital scans or links allocated to this client.
+                          </p>
+                       ) : (
+                          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                             {clientScans.map((scan) => (
+                                <div key={scan.id} className="flex justify-between items-center bg-[#193D6D]/40 p-4 border border-white/5 rounded-2xl hover:border-white/10 transition-all">
+                                   <div className="truncate max-w-[170px]">
+                                      <span className="font-bold text-xs text-white truncate block uppercase">{scan.fileName}</span>
+                                      <span className="text-[8px] font-black text-[#87CEEB] uppercase tracking-widest block mt-0.5">{scan.fileSize} • {scan.fileType}</span>
+                                   </div>
+                                   <div className="flex gap-1.5 shrink-0">
+                                      <button 
+                                         type="button"
+                                         onClick={() => window.open(scan.fileUrl, '_blank')} 
+                                         className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white/60 hover:text-white transition-all"
+                                         title="Review File"
+                                      >
+                                         <Eye className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button 
+                                         type="button"
+                                         onClick={() => handleDeleteClientScan(scan.id)} 
+                                         className="p-2.5 bg-white/5 hover:bg-[#142A4D] rounded-xl text-red-400 hover:text-red-300 transition-all"
+                                         title="Remove"
+                                      >
+                                         <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                       )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Sticky Footer */}
+              <footer className="p-8 border-t border-t-white/10 bg-white/5 flex gap-4 shrink-0 justify-end font-sans">
+                <button 
+                  type="button" 
+                  onClick={() => setIsClientControlModalOpen(false)} 
+                  className="px-8 py-5 bg-white/5 hover:bg-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-white/70 transition-all"
+                >
+                  Discard Changes
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-10 py-5 bg-gradient-to-r from-amber-400 to-[#FF8C00] text-slate-900 rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all hover:scale-[1.02] active:scale-95"
+                >
+                  Synchronize Patient Journey
+                </button>
+              </footer>
+            </form>
+
           </div>
         </div>
       )}

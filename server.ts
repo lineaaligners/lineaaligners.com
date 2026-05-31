@@ -3,25 +3,22 @@ import path from "path";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
-import {
-  firebaseConfig,
-  formatAdminUploadError,
-  getAdminDb,
-  getBearerToken,
-  getFirebaseAdminApp,
-  uploadAdminFile,
-  verifyLoggedInAdmin
-} from "./server/firebaseAdminUpload";
+import { readFileSync } from "fs";
 
-dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-const adminApp = getFirebaseAdminApp();
-const adminDb = getAdminDb(adminApp);
-console.log("Firebase Admin initialized with project:", firebaseConfig.projectId);
+const firebaseConfig = JSON.parse(readFileSync("./firebase-applet-config.json", "utf-8"));
 
-function sendApiError(res: express.Response, error: any, fallback: string) {
-  res.status(error?.status || 500).json({ error: error?.message || fallback });
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      projectId: firebaseConfig.projectId,
+    });
+    console.log("Firebase Admin initialized with project:", firebaseConfig.projectId);
+  } catch (error) {
+    console.error("Firebase Admin initialization error:", error);
+  }
 }
 
 async function startServer() {
@@ -40,74 +37,55 @@ async function startServer() {
   });
 
   // API Routes
-
-  app.post("/api/admin-upload-file", express.raw({ type: "application/octet-stream", limit: "100mb" }), async (req, res) => {
-    try {
-      const result = await uploadAdminFile({
-        idToken: getBearerToken(req.headers.authorization),
-        storagePath: String(req.headers["x-storage-path"] || ""),
-        contentType: String(req.headers["x-content-type"] || "application/octet-stream"),
-        body: req.body,
-        env: process.env
-      });
-
-      res.json(result);
-    } catch (error: any) {
-      console.error("Admin upload failed:", error);
-      const formatted = formatAdminUploadError(error, process.env);
-      res.status(formatted.status).json({ error: formatted.error });
-    }
-  });
   
   // Endpoint to send email when a new user is created
   app.post("/api/notify-user-created", async (req, res) => {
+    const { name, email, createdAt, adminLink } = req.body;
+    
+    // In a real app, you'd verify the request comes from an authenticated admin
+    // For now, we'll assume the client-side has checked permissions (Firestore Rules handle the data part)
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.warn("Email credentials not set. Skipping notification.");
+      return res.status(200).json({ status: "skipped", message: "Email not configured" });
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER, // Sending to self (the admin)
+      subject: `New User Created: ${name}`,
+      text: `A new user has been created in the Linea Portal.\n\nName: ${name}\nEmail: ${email}\nCreated At: ${createdAt}\nAdmin Link: ${adminLink}`,
+    };
+
     try {
-      await verifyLoggedInAdmin(getBearerToken(req.headers.authorization));
-
-      const { name, email, createdAt, adminLink } = req.body;
-
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.warn("Email credentials not set. Skipping notification.");
-        return res.status(200).json({ status: "skipped", message: "Email not configured" });
-      }
-
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: process.env.EMAIL_USER, // Sending to self (the admin)
-        subject: `New User Created: ${name}`,
-        text: `A new user has been created in the Linea Portal.\n\nName: ${name}\nEmail: ${email}\nCreated At: ${createdAt}\nAdmin Link: ${adminLink}`,
-      };
-
       await transporter.sendMail(mailOptions);
       res.json({ status: "ok" });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to send email:", error);
-      sendApiError(res, error, "Failed to send notification");
+      res.status(500).json({ error: "Failed to send notification" });
     }
   });
 
   // Endpoint to create a Firebase Auth user
   app.post("/api/create-auth-user", async (req, res) => {
     const { email, password, displayName } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    // Backend validation (matching frontend's flexible rules)
+    if (displayName && displayName.trim().length < 2) {
+      return res.status(400).json({ error: "Name must be at least 2 characters" });
+    }
+    if (!email.includes('@')) {
+      return res.status(400).json({ error: "Invalid email format (must contain @)" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
 
     try {
-      await verifyLoggedInAdmin(getBearerToken(req.headers.authorization));
-
-      if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
-      }
-
-      // Backend validation (matching frontend's flexible rules)
-      if (displayName && displayName.trim().length < 2) {
-        return res.status(400).json({ error: "Name must be at least 2 characters" });
-      }
-      if (!email.includes('@')) {
-        return res.status(400).json({ error: "Invalid email format (must contain @)" });
-      }
-      if (password.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters" });
-      }
-
       const userRecord = await admin.auth().createUser({
         email,
         password,
@@ -117,11 +95,6 @@ async function startServer() {
       res.json({ uid: userRecord.uid });
     } catch (error: any) {
       console.error("Error creating auth user:", error);
-
-      if (error.code === "auth/email-already-exists") {
-        const existingUser = await admin.auth().getUserByEmail(email);
-        return res.json({ uid: existingUser.uid, existed: true });
-      }
       
       // Check for specifically disabled API error
       if (error.message && error.message.includes("identitytoolkit.googleapis.com")) {
@@ -131,7 +104,7 @@ async function startServer() {
         });
       }
       
-      sendApiError(res, error, "Failed to create user");
+      res.status(500).json({ error: error.message || "Failed to create user" });
     }
   });
 

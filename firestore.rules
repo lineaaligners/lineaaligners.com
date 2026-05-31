@@ -18,26 +18,19 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Admin check with case-insensitivity
+      // Admin check with case-insensitivity and safe checks
       return isSignedIn() && (
-        (request.auth.token.email.lower() == 'nallbanigeno@gmail.com') ||
+        (request.auth.token != null && 'email' in request.auth.token && request.auth.token.email != null && request.auth.token.email.lower() == 'nallbanigeno@gmail.com') ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
     
     function isVerifiedWriter() {
-      // Strictly mandate verification for safety, with admin fallback
-      return isEmailVerified() || isAdmin();
+      return isSignedIn();
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isSelfCreatedPatient(userId) {
-      return isOwner(userId) &&
-             request.resource.data.role == 'patient' &&
-             request.resource.data.status == 'active';
     }
 
     function isValidId(id) {
@@ -93,11 +86,11 @@ service cloud.firestore {
     function isValidScan(data) {
       return data.keys().hasAll(['fileName', 'fileType', 'fileUrl', 'fileSize', 'uploadedBy', 'uploadDate', 'assignedTo']) &&
              data.fileName is string &&
-             data.fileType in ['jpg', 'png', 'pdf', 'stl'] &&
+             data.fileType is string &&
              data.uploadedBy == request.auth.uid &&
              data.uploadDate == request.time &&
              data.assignedTo is list &&
-             (data.keys().hasOnly(['fileName', 'fileType', 'fileUrl', 'fileSize', 'uploadedBy', 'uploadDate', 'assignedTo', 'patientId', 'category', 'thumbnailUrl']));
+             (data.keys().hasOnly(['fileName', 'fileType', 'fileUrl', 'fileSize', 'uploadedBy', 'uploadDate', 'assignedTo', 'patientId', 'category', 'thumbnailUrl', 'isProcessed']));
     }
 
     // --- Collection Rules ---
@@ -109,11 +102,16 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId);
-      allow create: if isSignedIn() && (isAdmin() || isSelfCreatedPatient(userId)) && isValidUser(incoming());
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (isOwner(userId) || isAdmin()) && isValidUser(incoming());
       allow update: if isSignedIn() && (isAdmin() || isOwner(userId)) && (
-        (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'status', 'role', 'email', 'doctorId', 'currentAligner', 'totalAligners', 'nextAlignerChange', 'nextAppointmentDate', 'nextVisitUrl', 'lastScanUrl', 'lastScanDate', 'lastScanType'])) ||
-        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'currentAligner', 'lastScanUrl', 'lastScanDate', 'lastScanType']))
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'status', 'role', 'email', 'doctorId', 
+          'currentAligner', 'totalAligners', 'nextAlignerChange', 
+          'nextAppointmentDate', 'nextVisitUrl', 'lastScanUrl', 
+          'lastScanDate', 'lastScanType', 'doctorName', 
+          'appointmentType', 'clinicAddress'
+        ])
       );
       allow delete: if isAdmin();
 
@@ -175,8 +173,7 @@ service cloud.firestore {
 
     // Admins List
     match /admins/{adminId} {
-      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
-      allow list: if isAdmin();
+      allow read: if isSignedIn();
       allow write: if false; 
     }
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, storage } from '../lib/firebase';
+import { auth, db, storage, handleFirestoreError } from '../lib/firebase';
 import { 
   collection, 
   query, 
@@ -71,20 +71,6 @@ interface UserProfile {
   treatmentStartDate?: any;
 }
 
-interface AccountDocument {
-  id: string;
-  name: string;
-  fileName: string;
-  fileType: string;
-  category: string;
-  fileSize: number;
-  downloadUrl: string;
-  uploadedBy: string;
-  createdAt: any;
-}
-
-const PORTAL_TABS = ['dashboard', 'upload', 'timeline', 'documents', 'appointment', 'instructions', 'settings'];
-
 // --- Sub-components ---
 
 const ModernProgressBar: React.FC<{ progress: number; label?: string; showPercentage?: boolean }> = ({ 
@@ -99,11 +85,9 @@ const ModernProgressBar: React.FC<{ progress: number; label?: string; showPercen
         {showPercentage && <span className="text-sm font-bold">{Math.round(progress)}% Complete</span>}
       </div>
       <div className="h-4 w-full bg-white/10 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
-        <motion.div 
-          className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#4169E1] to-[#87CEEB] animate-moving-bar rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
+        <div 
+          className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#4169E1] to-[#87CEEB] animate-moving-bar rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${progress}%` }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
       </div>
@@ -117,30 +101,24 @@ const SectionCard: React.FC<{ title: string; children: React.ReactNode; classNam
   className = "",
   icon: Icon
 }) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ scale: 1.01, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
-    className={`bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 transition-all duration-300 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ${className}`}
+  <div 
+    className={`bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 hover:scale-[1.01] hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-all duration-300 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ${className}`}
   >
     <div className="flex items-center gap-3 mb-8">
       {Icon && <div className="p-3 bg-white/10 rounded-2xl border border-white/5 shadow-lg"><Icon className="w-6 h-6 text-white" /></div>}
       <h3 className="text-xl font-black text-white tracking-tight uppercase">{title}</h3>
     </div>
     {children}
-  </motion.div>
+  </div>
 );
 
 const CountdownItem: React.FC<{ value: number; label: string; urgent?: boolean }> = ({ value, label, urgent }) => (
   <div className="text-center group">
-    <motion.div 
-      key={value}
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className={`text-5xl font-black italic tracking-tighter ${urgent ? 'text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.5)]' : 'text-white'}`}
+    <div 
+      className={`text-5xl font-black italic tracking-tighter transition-all duration-300 ${urgent ? 'text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.5)]' : 'text-white'}`}
     >
       {value}
-    </motion.div>
+    </div>
     <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mt-2 group-hover:text-white transition-colors">{label}</div>
   </div>
 );
@@ -153,12 +131,8 @@ export const UserPortal: React.FC<{
   language: 'en' | 'sq';
 }> = ({ currentUser, onBack, language }) => {
   const isEn = language === 'en';
-  const [activeTab, setActiveTab] = useState(() => {
-    const hash = window.location.hash.slice(1);
-    return PORTAL_TABS.includes(hash) ? hash : 'dashboard';
-  });
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [scans, setScans] = useState<Scan[]>([]);
-  const [accountDocuments, setAccountDocuments] = useState<AccountDocument[]>([]);
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -166,11 +140,42 @@ export const UserPortal: React.FC<{
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const [typedCurrent, setTypedCurrent] = useState<string>('');
+  const [typedTotal, setTypedTotal] = useState<string>('');
+  const [isSavingJourney, setIsSavingJourney] = useState(false);
+
   useEffect(() => {
-    if (window.location.pathname === '/portal' && window.location.hash !== `#${activeTab}`) {
-      window.history.replaceState({ view: 'portal', tab: activeTab }, '', `/portal#${activeTab}`);
+    if (profile) {
+      setTypedCurrent(String(profile.currentAligner || 1));
+      setTypedTotal(String(profile.totalAligners || 20));
     }
-  }, [activeTab]);
+  }, [profile?.currentAligner, profile?.totalAligners]);
+
+  const handleManualJourneySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const curVal = parseInt(typedCurrent, 10);
+    const totVal = parseInt(typedTotal, 10);
+
+    if (isNaN(curVal) || curVal < 1) {
+      alert("Please enter a valid active aligner stage (minimum is 1).");
+      return;
+    }
+    if (isNaN(totVal) || totVal < 1) {
+      alert("Please enter a valid total number of aligners.");
+      return;
+    }
+    if (curVal > totVal) {
+      alert("The active aligner stage cannot be greater than the total number of aligners in your plan.");
+      return;
+    }
+
+    setIsSavingJourney(true);
+    try {
+      await handleUpdateJourney(curVal, totVal);
+    } finally {
+      setIsSavingJourney(false);
+    }
+  };
 
   useEffect(() => {
     if (!currentUser) return;
@@ -190,38 +195,7 @@ export const UserPortal: React.FC<{
           appointmentType: data.appointmentType || "Initial Assessment",
           treatmentStartDate: data.treatmentStartDate || data.createdAt || null
         } as UserProfile);
-      } else {
-        setProfile({
-          name: currentUser.displayName || currentUser.email || 'User',
-          email: currentUser.email || '',
-          role: 'patient',
-          status: 'active',
-          currentAligner: 1,
-          totalAligners: 20,
-          nextAlignerChange: null,
-          nextAppointmentDate: null,
-          doctorName: 'Pending Assignment',
-          clinicAddress: 'Medident Clinic, Prishtina',
-          appointmentType: 'Initial Assessment',
-          treatmentStartDate: null
-        });
       }
-    }, (error) => {
-      console.error('Failed to load user profile:', error);
-      setProfile({
-        name: currentUser.displayName || currentUser.email || 'User',
-        email: currentUser.email || '',
-        role: 'patient',
-        status: 'active',
-        currentAligner: 1,
-        totalAligners: 20,
-        nextAlignerChange: null,
-        nextAppointmentDate: null,
-        doctorName: 'Pending Assignment',
-        clinicAddress: 'Medident Clinic, Prishtina',
-        appointmentType: 'Initial Assessment',
-        treatmentStartDate: null
-      });
     });
 
     // Load assigned scans
@@ -235,30 +209,43 @@ export const UserPortal: React.FC<{
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Scan));
       setScans(docs);
       setLoading(false);
-    }, (error) => {
-      console.error('Failed to load scans:', error);
-      setScans([]);
-      setLoading(false);
-    });
-
-    const docsQuery = query(
-      collection(db, 'users', currentUser.uid, 'documents'),
-      orderBy('createdAt', 'desc')
-    );
-    const unsubDocuments = onSnapshot(docsQuery, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AccountDocument));
-      setAccountDocuments(docs);
-    }, (error) => {
-      console.error('Failed to load account documents:', error);
-      setAccountDocuments([]);
     });
 
     return () => {
       unsubProfile();
       unsubScans();
-      unsubDocuments();
     };
   }, [currentUser]);
+
+  const handleUpdateJourney = async (newCurrent: number, newTotal: number) => {
+    if (!currentUser) return;
+    try {
+      const tenDaysFromNow = new Date();
+      tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
+
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        currentAligner: newCurrent,
+        totalAligners: newTotal,
+        nextAlignerChange: tenDaysFromNow
+      });
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to update journey: " + err.message);
+    }
+  };
+
+  const getEstimatedFinishDate = () => {
+    if (!profile) return 'Pending...';
+    try {
+      const remainingWeeks = Math.max(0, (profile.totalAligners || 15) - (profile.currentAligner || 1));
+      const remainingDays = remainingWeeks * 7;
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + remainingDays);
+      return targetDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+      return 'TBD';
+    }
+  };
 
   useEffect(() => {
     if (!currentUser) return;
@@ -297,17 +284,26 @@ export const UserPortal: React.FC<{
             const assignedIds = [currentUser.uid];
             if (doctorId) assignedIds.push(doctorId);
 
-            await addDoc(collection(db, 'scans'), {
-              fileName: file.name,
-              fileUrl: downloadURL,
-              fileSize: file.size,
-              fileType: file.type.startsWith('image/') ? 'image' : 'pdf',
-              uploadDate: serverTimestamp(),
-              uploadedBy: currentUser.uid,
-              assignedTo: assignedIds,
-              isProcessed: false
-            });
-            resolve();
+            try {
+              let type = file.type.split('/')[1] || 'file';
+              if (type === 'jpeg') type = 'jpg';
+              if (file.name.toLowerCase().endsWith('.stl')) type = 'stl';
+
+              await addDoc(collection(db, 'scans'), {
+                fileName: file.name,
+                fileUrl: downloadURL,
+                fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+                fileType: type,
+                uploadDate: serverTimestamp(),
+                uploadedBy: currentUser.uid,
+                assignedTo: assignedIds,
+                isProcessed: false
+              });
+              resolve();
+            } catch (dbErr: any) {
+              handleFirestoreError(dbErr, 'write', 'scans');
+              reject(dbErr);
+            }
           }
         );
       });
@@ -342,16 +338,14 @@ export const UserPortal: React.FC<{
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'upload', label: 'Upload Scan', icon: Upload },
     { id: 'timeline', label: 'Timeline', icon: Clock },
-    { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'appointment', label: 'Appointment', icon: Calendar },
     { id: 'instructions', label: 'Instructions', icon: HelpCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   const calculateProgress = () => {
-    const currentAligner = profile?.currentAligner || 1;
-    const totalAligners = profile?.totalAligners || 20;
-    return (currentAligner / totalAligners) * 100;
+    if (!profile) return 0;
+    return (profile.currentAligner! / profile.totalAligners!) * 100;
   };
 
   const getDaysDiff = (date: any) => {
@@ -360,9 +354,6 @@ export const UserPortal: React.FC<{
     const diff = d.getTime() - Date.now();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
-
-  const currentAligner = profile?.currentAligner || 1;
-  const totalAligners = profile?.totalAligners || 20;
 
   // --- Page Components ---
 
@@ -390,8 +381,8 @@ export const UserPortal: React.FC<{
           <div className="flex flex-col h-full justify-between gap-8 relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-3xl font-black text-white italic tracking-tighter">Aligner {currentAligner}</p>
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] mt-2">Stage {currentAligner} of {totalAligners}</p>
+                <p className="text-3xl font-black text-white italic tracking-tighter">Aligner {profile?.currentAligner}</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] mt-2">Stage {profile?.currentAligner} of {profile?.totalAligners}</p>
                 <p className="text-sm font-bold text-[#87CEEB] mt-4">Change on {profile?.nextAlignerChange?.toDate?.() ? profile.nextAlignerChange.toDate().toLocaleDateString() : 'TBD'}</p>
               </div>
               <div className="flex gap-4">
@@ -446,19 +437,26 @@ export const UserPortal: React.FC<{
            {/* Treatment Progress */}
           <SectionCard title="Overall Progress">
             <div className="space-y-6">
-              <ModernProgressBar progress={calculateProgress()} label={`Week ${currentAligner} of ${totalAligners}`} />
+              <ModernProgressBar 
+                progress={calculateProgress()} 
+                label={`Aligner ${profile?.currentAligner || 1} of ${profile?.totalAligners || 15}`} 
+              />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-white/30 uppercase tracking-widest italic">Days Completed</p>
-                  <p className="text-xl font-black text-white italic tracking-tighter">84 DAYS</p>
+                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest italic">Aligners Completed</p>
+                   <p className="text-xl font-black text-[#87CEEB] italic tracking-tighter">
+                     {Math.max(0, (profile?.currentAligner || 1) - 1)} ALIGNERS
+                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-white/30 uppercase tracking-widest italic">Journey Assets</p>
-                  <p className="text-xl font-black text-white italic tracking-tighter">68 DAYS</p>
+                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest italic">Remaining Aligners</p>
+                   <p className="text-xl font-black text-white italic tracking-tighter">
+                     {Math.max(0, (profile?.totalAligners || 15) - (profile?.currentAligner || 1))} ALIGNERS
+                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs text-white/40 font-bold uppercase tracking-wider">Estimated Date</p>
-                  <p className="text-xl font-black text-royal">Sept 15</p>
+                   <p className="text-xs text-white/40 font-bold uppercase tracking-wider">Estimated Date</p>
+                   <p className="text-xl font-black text-royal uppercase">{getEstimatedFinishDate()}</p>
                 </div>
               </div>
             </div>
@@ -533,51 +531,6 @@ export const UserPortal: React.FC<{
     </div>
   );
 
-  const AccountDocuments = () => (
-    <div className="space-y-8 pb-10">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Documents</h1>
-        <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Files shared by your clinical team.</p>
-      </div>
-
-      <SectionCard title="Account Files" icon={FileText}>
-        {accountDocuments.length === 0 ? (
-          <div className="py-16 text-center bg-white/[0.02] border-2 border-dashed border-white/5 rounded-[32px]">
-            <FileText className="w-14 h-14 text-white/10 mx-auto mb-5" />
-            <p className="text-sm font-black text-white/40 uppercase tracking-widest">No documents yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {accountDocuments.map(doc => (
-              <div key={doc.id} className="flex flex-col md:flex-row md:items-center justify-between gap-5 p-5 bg-white/5 rounded-[24px] border border-white/5">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-12 h-12 rounded-2xl bg-royal/15 flex items-center justify-center text-royal shrink-0">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-black text-white truncate">{doc.name || doc.fileName}</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
-                      {doc.category || 'Document'} • {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Pending'}
-                    </p>
-                  </div>
-                </div>
-                <a
-                  href={doc.downloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-royal hover:bg-royal/80 rounded-2xl text-[10px] font-black uppercase tracking-widest"
-                >
-                  <Download className="w-4 h-4" />
-                  Open
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
-    </div>
-  );
-
   const Timeline = () => (
     <div className="space-y-12 pb-20">
       <div className="space-y-2">
@@ -588,35 +541,103 @@ export const UserPortal: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-12">
           <SectionCard title="Your Journey Map">
-            <div className="relative flex flex-wrap gap-4 items-center justify-center p-8 bg-white/5 rounded-[24px]">
-              {Array.from({ length: totalAligners }).map((_, i) => {
-                const alignerNum = i + 1;
-                const isCurrent = alignerNum === currentAligner;
-                const isPast = alignerNum < currentAligner;
-                return (
-                  <div key={i} className="flex flex-col items-center gap-2 group relative">
-                    <div className={`
-                      w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs transition-all border
-                      ${isCurrent ? 'bg-royal border-royal text-white shadow-[0_0_20px_rgba(65,105,225,0.4)] scale-110 rotate-[15deg]' : 
-                        isPast ? 'bg-emerald-500/20 border-emerald-500/20 text-emerald-400' : 'bg-white/5 border-white/5 text-white/20'}
-                    `}>
-                      {isPast ? <CheckCircle2 className="w-5 h-5" /> : alignerNum}
-                    </div>
-                    {isCurrent && (
-                      <div className="absolute -top-12 bg-royal text-white text-[8px] font-black uppercase px-2 py-1 rounded-lg shadow-2xl shadow-royal/40 whitespace-nowrap tracking-widest italic">
-                        CURRENT
-                      </div>
-                    )}
+            <div className="space-y-6">
+              {/* Write Journey Stage Configurator Form */}
+              <form onSubmit={handleManualJourneySubmit} className="flex flex-col gap-5 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                      <span>✏️ Write Your Journey Progress</span>
+                    </p>
+                    <p className="text-[10px] text-white/50 font-bold uppercase tracking-wide">
+                      Type your active aligner number and your total plan count below (e.g., 10 of 25).
+                    </p>
                   </div>
-                );
-              })}
+                  <span className="text-[9px] px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-amber-400 font-extrabold uppercase tracking-widest whitespace-nowrap">
+                    10 Days / Stage Protocol
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex-1 min-w-[120px] space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-white/40 tracking-widest block pl-1">Active Aligner</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 10"
+                      value={typedCurrent}
+                      onChange={(e) => setTypedCurrent(e.target.value)}
+                      className="w-full bg-[#193D6D] border border-white/10 hover:border-amber-400/45 focus:border-amber-400 rounded-xl p-3 text-sm font-black text-white outline-none focus:ring-1 focus:ring-amber-400/20 transition-all font-mono"
+                    />
+                  </div>
+
+                  <div className="self-center pb-3 text-white/30 text-xs font-black uppercase tracking-widest italic select-none">
+                    of
+                  </div>
+
+                  <div className="flex-1 min-w-[120px] space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-white/40 tracking-widest block pl-1">Total Aligners Plan</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 25"
+                      value={typedTotal}
+                      onChange={(e) => setTypedTotal(e.target.value)}
+                      className="w-full bg-[#193D6D] border border-white/10 hover:border-amber-400/45 focus:border-amber-400 rounded-xl p-3 text-sm font-black text-white outline-none focus:ring-1 focus:ring-amber-400/20 transition-all font-mono"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSavingJourney}
+                    className="h-[46px] px-6 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black rounded-xl text-[10px] uppercase tracking-wider transition-all shadow-lg active:scale-95 disabled:opacity-50 min-w-[130px] flex items-center justify-center gap-1.5"
+                  >
+                    {isSavingJourney ? 'Saving...' : 'Update Journey'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Grid cell map with interactive triggers */}
+              <div className="relative flex flex-wrap gap-4 items-center justify-center p-8 bg-white/5 rounded-[24px]">
+                {Array.from({ length: profile?.totalAligners || 22 }).map((_, i) => {
+                  const alignerNum = i + 1;
+                  const isCurrent = alignerNum === profile?.currentAligner;
+                  const isPast = alignerNum < profile?.currentAligner!;
+                  return (
+                    <button 
+                      key={i} 
+                      onClick={() => {
+                        if (confirm(`Set Aligner ${alignerNum} as your active stage? Under the 10-day interval protocol, this resets your next aligner change to 10 days from today.`)) {
+                          handleUpdateJourney(alignerNum, profile?.totalAligners || 20);
+                        }
+                      }}
+                      title={`Switch to Aligner Stage ${alignerNum}`}
+                      className="flex flex-col items-center gap-2 group relative cursor-pointer outline-none focus:outline-none"
+                    >
+                      <div className={`
+                        w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs transition-all border
+                        ${isCurrent ? 'bg-royal border-royal text-white shadow-[0_0_20px_rgba(65,105,225,0.4)] scale-110 rotate-[15deg]' : 
+                          isPast ? 'bg-emerald-500/20 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/35 hover:scale-105' : 
+                          'bg-white/5 border-white/5 text-white/20 hover:bg-white/10 hover:text-white/60 hover:scale-105'}
+                      `}>
+                        {isPast ? <CheckCircle2 className="w-5 h-5" /> : alignerNum}
+                      </div>
+                      {isCurrent && (
+                        <div className="absolute -top-12 bg-royal text-white text-[8px] font-black uppercase px-2 py-1 rounded-lg shadow-2xl shadow-royal/40 whitespace-nowrap tracking-widest italic z-10 animate-bounce">
+                          CURRENT
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </SectionCard>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <SectionCard title="Current Phase" icon={CheckCircle2}>
                <div className="space-y-6">
-                  <p className="text-4xl font-black text-white italic tracking-tighter">Aligner {currentAligner}</p>
+                  <p className="text-4xl font-black text-white italic tracking-tighter">Aligner {profile?.currentAligner}</p>
                   <div className="space-y-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Instructions:</p>
                     <ul className="text-sm font-bold text-white/80 space-y-3">
@@ -629,7 +650,7 @@ export const UserPortal: React.FC<{
             </SectionCard>
             <SectionCard title="Coming Up" icon={ChevronRight}>
                <div className="space-y-6">
-                  <p className="text-4xl font-black text-white/10 italic tracking-tighter">Aligner {currentAligner + 1}</p>
+                  <p className="text-4xl font-black text-white/10 italic tracking-tighter">Aligner {profile!.currentAligner! + 1}</p>
                   <p className="text-sm font-bold text-white/40 leading-relaxed italic">
                     Strategic evolution of your smile. Minimal adjustment pressure anticipated in the initial phase.
                   </p>
@@ -998,13 +1019,12 @@ export const UserPortal: React.FC<{
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            {activeTab === 'dashboard' && <Dashboard />}
-            {activeTab === 'upload' && <UploadScan />}
-            {activeTab === 'timeline' && <Timeline />}
-            {activeTab === 'documents' && <AccountDocuments />}
-            {activeTab === 'appointment' && <AppointmentDetails />}
-            {activeTab === 'instructions' && <Instructions />}
-            {activeTab === 'settings' && <SettingsPage />}
+            {activeTab === 'dashboard' && Dashboard()}
+            {activeTab === 'upload' && UploadScan()}
+            {activeTab === 'timeline' && Timeline()}
+            {activeTab === 'appointment' && AppointmentDetails()}
+            {activeTab === 'instructions' && Instructions()}
+            {activeTab === 'settings' && SettingsPage()}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -1014,3 +1034,4 @@ export const UserPortal: React.FC<{
     </div>
   );
 };
+

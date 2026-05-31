@@ -19,8 +19,8 @@ import { TransformationGallery } from './components/TransformationGallery';
 import { VideoModal } from './components/VideoModal';
 import { auth, db } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, ShieldCheck } from 'lucide-react';
-import { onIdTokenChanged, signOut, type User } from 'firebase/auth';
+import { ShieldCheck, LayoutGrid, UserCircle } from 'lucide-react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { 
   TRANSLATIONS, 
@@ -31,127 +31,42 @@ import {
 
 export { WHATSAPP_URL, GOOGLE_CALENDAR_URL };
 
-const ADMIN_EMAIL = 'nallbanigeno@gmail.com';
-type View = 'home' | 'planner' | 'portal' | 'admin';
-type UserRole = 'doctor' | 'patient';
-
-const viewPaths: Record<View, string> = {
-  home: '/',
-  planner: '/planner',
-  portal: '/portal',
-  admin: '/admin'
-};
-
-function getViewFromPath(): View {
-  const path = window.location.pathname.replace(/\/+$/, '') || '/';
-  if (path === '/planner') return 'planner';
-  if (path === '/portal') return 'portal';
-  if (path === '/admin') return 'admin';
-  return 'home';
-}
-
-const SessionLoadingScreen: React.FC = () => (
-  <div className="min-h-screen bg-[#070B14] text-white flex items-center justify-center">
-    <div className="flex flex-col items-center gap-5">
-      <Loader2 className="w-8 h-8 animate-spin text-[#87CEEB]" />
-      <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/40">
-        Restoring session
-      </p>
-    </div>
-  </div>
-);
-
 const App: React.FC = () => {
-  const [view, setViewState] = useState<View>(() => getViewFromPath());
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [view, setView] = useState<'home' | 'planner' | 'portal' | 'admin'>('home');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [language, setLanguage] = useState<'en' | 'sq'>('en');
   const [authInitialStep, setAuthInitialStep] = useState<'login' | 'register'>('login');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
 
-  const setView = (nextView: View, replace = false) => {
-    setViewState(nextView);
-    const nextPath = viewPaths[nextView];
-    if (window.location.pathname !== nextPath) {
-      const method = replace ? 'replaceState' : 'pushState';
-      window.history[method]({ view: nextView }, '', nextPath);
-    }
-  };
-
   useEffect(() => {
-    const handlePopState = () => setViewState(getViewFromPath());
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        // Fetch user profile to check role
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserRole(data.role as 'doctor' | 'patient');
+        }
 
-  useEffect(() => {
-    let isActive = true;
-    let sessionRequest = 0;
-
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      const requestId = sessionRequest + 1;
-      sessionRequest = requestId;
-      setIsSessionLoading(true);
-
-      if (!user) {
-        if (!isActive || requestId !== sessionRequest) return;
-        setCurrentUser(null);
+        if (user.email === 'nallbanigeno@gmail.com') {
+          setIsAdmin(true);
+          // Auto-enable admin mode if desired, or let user toggle
+        } else {
+          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+          const adminExists = adminDoc.exists();
+          setIsAdmin(adminExists);
+        }
+      } else {
         setUserRole(null);
         setIsAdmin(false);
-        setIsSessionLoading(false);
-        return;
       }
-
-      let nextRole: UserRole | null = null;
-      let nextIsAdmin = user.email?.toLowerCase() === ADMIN_EMAIL;
-
-      try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        const role = userDoc.exists() ? userDoc.data().role : null;
-        nextRole = role === 'doctor' || role === 'patient' ? role : null;
-      } catch (error) {
-        console.error('Failed to load user profile:', error);
-      }
-
-      if (!nextIsAdmin) {
-        try {
-          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-          nextIsAdmin = adminDoc.exists();
-        } catch (error) {
-          console.error('Failed to load admin profile:', error);
-        }
-      }
-
-      if (!isActive || requestId !== sessionRequest) return;
-
-      setCurrentUser(user);
-      setUserRole(nextRole);
-      setIsAdmin(nextIsAdmin);
-      setIsSessionLoading(false);
-
-      if (nextIsAdmin) {
-        setViewState(currentView => {
-          if (currentView === 'portal') {
-            window.history.replaceState({ view: 'admin' }, '', viewPaths.admin);
-            return 'admin';
-          }
-          return currentView;
-        });
-      }
-    }, (error) => {
-      console.error('Failed to restore Firebase session:', error);
-      setCurrentUser(null);
-      setUserRole(null);
-      setIsAdmin(false);
-      setIsSessionLoading(false);
     });
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
   const toggleAdminMode = () => {
@@ -191,12 +106,8 @@ const App: React.FC = () => {
     await signOut(auth);
     setUserRole(null);
     setIsAdmin(false);
-    setView('home', true);
+    setView('home');
   };
-
-  if ((view === 'portal' || view === 'admin') && isSessionLoading) {
-    return <SessionLoadingScreen />;
-  }
 
   if (view === 'portal' && !currentUser) {
     return <Auth initialStep={authInitialStep} onBack={() => setView('home')} />;
@@ -204,10 +115,6 @@ const App: React.FC = () => {
 
   if (view === 'admin' && isAdmin) {
     return <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />;
-  }
-
-  if (view === 'admin' && !currentUser) {
-    return <Auth initialStep="login" onBack={() => setView('home')} />;
   }
 
   return (
@@ -375,15 +282,7 @@ const App: React.FC = () => {
         ) : view === 'planner' ? (
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
         ) : view === 'admin' ? (
-           <div className="min-h-screen flex items-center justify-center px-6 text-center">
-             <div className="bg-[#142A4D] border border-white/10 rounded-[32px] p-10 max-w-lg">
-               <h1 className="text-3xl font-black tracking-tight mb-4">Admin access required</h1>
-               <p className="text-white/60 font-bold text-sm mb-8">Login with an admin account to manage Linea.</p>
-               <button onClick={() => setView('portal')} className="bg-[#4169E1] px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">
-                 Login
-               </button>
-             </div>
-           </div>
+           <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />
         ) : (
           <UserPortal 
             currentUser={currentUser}
