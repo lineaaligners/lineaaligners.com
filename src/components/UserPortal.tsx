@@ -51,7 +51,7 @@ interface Scan {
   fileUrl: string;
   uploadDate: any;
   fileType: string;
-  fileSize?: number;
+  fileSize?: number | string;
   thumbnailUrl?: string;
 }
 
@@ -141,6 +141,10 @@ export const UserPortal: React.FC<{
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [viewingPortalUrl, setViewingPortalUrl] = useState<string | null>(null);
+  const [viewingPortalName, setViewingPortalName] = useState<string>('');
+  const [editedJourneyUrl, setEditedJourneyUrl] = useState('');
+  const [isEditingJourneyUrl, setIsEditingJourneyUrl] = useState(false);
 
   const [typedCurrent, setTypedCurrent] = useState<string>('');
   const [typedTotal, setTypedTotal] = useState<string>('');
@@ -152,6 +156,12 @@ export const UserPortal: React.FC<{
       setTypedTotal(String(profile.totalAligners || 20));
     }
   }, [profile?.currentAligner, profile?.totalAligners]);
+
+  useEffect(() => {
+    if (profile?.nextVisitUrl) {
+      setEditedJourneyUrl(profile.nextVisitUrl);
+    }
+  }, [profile?.nextVisitUrl]);
 
   const handleManualJourneySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,6 +244,19 @@ export const UserPortal: React.FC<{
     } catch (err: any) {
       console.error(err);
       alert("Failed to update journey: " + err.message);
+    }
+  };
+
+  const handleUpdateJourneyUrl = async (newUrl: string) => {
+    if (!currentUser) return;
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        nextVisitUrl: newUrl
+      });
+      alert("Journey link updated successfully on your dashboard!");
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to update journey link: " + err.message);
     }
   };
 
@@ -379,27 +402,288 @@ export const UserPortal: React.FC<{
 
   const getDaysDiff = (date: any) => {
     if (!date) return 0;
-    const d = date.toDate();
+    const d = typeof date.toDate === 'function' ? date.toDate() : new Date(date);
     const diff = d.getTime() - Date.now();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days < 0 ? 0 : days;
+  };
+
+  const renderAlignerCalendarTracker = () => {
+    const nextChange = profile?.nextAlignerChange?.toDate 
+      ? profile.nextAlignerChange.toDate() 
+      : (profile?.nextAlignerChange ? new Date(profile.nextAlignerChange) : null);
+    
+    if (!nextChange) {
+      return (
+        <div className="p-4 bg-white/5 border border-white/5 rounded-2xl text-center">
+          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-relaxed">
+            Please setup your active aligner to start tracking your 10-day calendar!
+          </p>
+        </div>
+      );
+    }
+
+    const durationDays = 10;
+    const daysArray = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build the 10 days array relative to the change date
+    for (let i = 1; i <= durationDays; i++) {
+      const dayDate = new Date(nextChange.getTime());
+      dayDate.setDate(dayDate.getDate() - (durationDays - i));
+      dayDate.setHours(0, 0, 0, 0);
+      daysArray.push({
+        dayNumber: i,
+        date: dayDate,
+        isToday: dayDate.getTime() === today.getTime(),
+        isPast: dayDate.getTime() < today.getTime(),
+        isFuture: dayDate.getTime() > today.getTime()
+      });
+    }
+
+    // Count days remaining (today or in future)
+    const daysLeft = daysArray.filter(d => d.isFuture || d.isToday).length;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+          <span className="text-[9px] font-black uppercase text-purple-400 tracking-widest">
+            10-Day Phase Calendar Tracker
+          </span>
+          <span className="text-[9px] font-black uppercase text-amber-400 tracking-widest bg-[#8B5CF6]/10 px-2.5 py-1 rounded-md border border-[#8B5CF6]/20">
+            {daysLeft} of 10 Days Left
+          </span>
+        </div>
+
+        {/* Start Date configuration picker */}
+        <div className="flex items-center justify-between gap-2 p-3 bg-white/[0.02] border border-white/5 rounded-xl">
+          <span className="text-white/40 font-bold uppercase text-[9px] tracking-wide">
+            Adjust Date Started:
+          </span>
+          <input 
+            type="date"
+            onChange={async (e) => {
+              if (!e.target.value || !currentUser) return;
+              try {
+                const selectedStart = new Date(e.target.value);
+                // Ends 10 days later
+                const newNextChange = new Date(selectedStart.getTime() + 10 * 24 * 60 * 60 * 1000);
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                  nextAlignerChange: newNextChange
+                });
+              } catch (err: any) {
+                console.error(err);
+                alert("Failed to adjust calendar start date: " + err.message);
+              }
+            }}
+            value={new Date(nextChange.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+            className="bg-slate-900 border border-white/10 rounded-lg px-2.5 py-1 text-[9px] font-black font-mono text-amber-400 focus:outline-none"
+          />
+        </div>
+
+        {/* 10-Day Calendar Grid */}
+        <div className="grid grid-cols-5 gap-2">
+          {daysArray.map((day) => {
+            const formattedDate = day.date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            const weekday = day.date.toLocaleDateString([], { weekday: 'short' });
+            
+            return (
+              <div 
+                key={day.dayNumber}
+                className={`relative p-2 rounded-2xl flex flex-col items-center justify-between border transition-all text-center group cursor-default
+                  ${day.isToday 
+                    ? 'bg-royal border-royal text-white shadow-[0_0_15px_rgba(65,105,225,0.4)] scale-105' 
+                    : day.isPast 
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                      : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'
+                  }
+                `}
+                title={`Day ${day.dayNumber}: ${weekday}, ${formattedDate} (${day.isToday ? 'Today' : day.isPast ? 'Completed' : 'Days Left'})`}
+              >
+                <div className="text-[7px] font-black uppercase tracking-widest opacity-40">
+                  D{day.dayNumber}
+                </div>
+                
+                <div className="my-1.5 text-xs font-black tracking-tight font-mono">
+                  {day.isPast ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 mx-auto text-emerald-400" />
+                  ) : (
+                    day.date.getDate()
+                  )}
+                </div>
+
+                <div className="text-[7px] font-black uppercase tracking-wider opacity-60">
+                  {weekday}
+                </div>
+
+                {day.isToday && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#87CEEB] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#87CEEB]"></span>
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   // --- Page Components ---
 
-  const Dashboard = () => (
-    <div className="space-y-8 pb-20">
-      {/* Hero Header */}
-      <div className="space-y-3">
-        <h2 className="text-5xl md:text-8xl font-black text-white italic tracking-tighter leading-[0.8]">
-          Your Smile<br /><span className="text-[#87CEEB]">Journey.</span>
-        </h2>
-        <p className="text-white/60 font-black uppercase tracking-widest text-xs">
-          Aligner Hub • Welcome back, {profile?.name || 'User'}
-        </p>
-      </div>
+  const Dashboard = () => {
+    const journeyLinks = scans.filter(s => s.fileSize === 'Secure Portal Link' || s.fileType?.toLowerCase() === 'url');
+    
+    return (
+      <div className="space-y-8 pb-20">
+        {/* Hero Header */}
+        <div className="space-y-3">
+          <h2 className="text-5xl md:text-8xl font-black text-white italic tracking-tighter leading-[0.8]">
+            Your Smile<br /><span className="text-[#C084FC]">Journey.</span>
+          </h2>
+          <p className="text-white/60 font-black uppercase tracking-widest text-xs">
+            Aligner Hub • Welcome back, {profile?.name || 'User'}
+          </p>
+        </div>
 
-      {/* Progress Keeper Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Full-width Treatment Journey Launcher */}
+        {profile?.nextVisitUrl && (
+          <div className="relative group bg-gradient-to-r from-[#8B5CF6] via-[#A78BFA] to-indigo-600 rounded-[32px] p-8 md:p-10 border border-white/10 shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-purple-900/40 hover:scale-[1.01] active:scale-[0.99]">
+            {/* Ambient Animated Glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-pink-400/20 rounded-full blur-3xl group-hover:bg-pink-400/30 transition-all duration-500" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <span className="px-3.5 py-1 bg-white/15 text-white text-[9px] font-black uppercase tracking-widest rounded-full backdrop-blur-md border border-white/10">
+                  CLINCHECK / INTERACTIVE PORTAL
+                </span>
+                <h3 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-none mt-1">
+                  View your Treatment Journey
+                </h3>
+                <p className="text-sm font-bold text-white/85 tracking-wide max-w-xl">
+                  Inspect your custom 3D clear aligner plan, staging, and final cosmetic projections published securely by your doctor.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
+                <button 
+                  onClick={() => {
+                    setViewingPortalUrl(profile.nextVisitUrl || '');
+                    setViewingPortalName('Your Treatment Journey');
+                  }}
+                  className="w-full sm:w-auto px-8 py-5 bg-white text-slate-900 hover:bg-slate-100 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 shrink-0"
+                >
+                  <Eye className="w-5 h-5 text-royal stroke-[3]" />
+                  OPEN JOURNEY VIEW
+                </button>
+                <button 
+                  onClick={() => setIsEditingJourneyUrl(!isEditingJourneyUrl)}
+                  className="w-full sm:w-auto px-5 py-5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black uppercase text-xs tracking-widest border border-white/15 transition-all flex items-center justify-center gap-2 shrink-0"
+                >
+                  ✏️ {isEditingJourneyUrl ? 'Close Link Editor' : 'Edit Link'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Journey Link Configuration Panel */}
+        {(!profile?.nextVisitUrl || isEditingJourneyUrl) && (
+          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 md:p-8 space-y-6 animate-fade-in relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-[#8B5CF6]/5 blur-[70px] rounded-full" />
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="px-3 py-1 bg-[#8B5CF6]/10 text-[#C084FC] text-[8px] font-black uppercase tracking-widest rounded-full border border-[#8B5CF6]/20">
+                    Interactive Workspace Link
+                  </span>
+                  <h3 className="text-xl font-black text-white italic tracking-tight uppercase mt-2">Configure Treatment Link</h3>
+                </div>
+                {profile?.nextVisitUrl && (
+                  <button 
+                    onClick={() => setIsEditingJourneyUrl(false)}
+                    className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-widest"
+                  >
+                    Close [X]
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-white/50 leading-relaxed font-bold">
+                Pasting a custom 3D clear aligner plan or digital simulation Web Link allows you to view it directly within the interactive dashboard sandbox.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <input 
+                  type="url"
+                  placeholder="Paste URL (e.g. https://my-clincheck.com/plan)"
+                  value={editedJourneyUrl}
+                  onChange={(e) => setEditedJourneyUrl(e.target.value)}
+                  className="flex-grow bg-white/5 border border-white/10 hover:border-[#8B5CF6]/45 focus:border-[#8B5CF6] rounded-2xl p-4 text-xs font-bold outline-none text-white focus:ring-1 focus:ring-[#8B5CF6]/20 transition-all font-mono"
+                />
+                <button 
+                  onClick={async () => {
+                    await handleUpdateJourneyUrl(editedJourneyUrl);
+                    setIsEditingJourneyUrl(false);
+                  }}
+                  className="px-6 py-4 bg-royal hover:bg-royal/80 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-lg shadow-royal/20"
+                >
+                  Save Journey Link
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stored Custom Journey Links */}
+        {journeyLinks.length > 0 && (
+          <div className="relative bg-gradient-to-br from-white/[0.03] to-transparent p-8 rounded-[40px] border border-white/5 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-6 bg-[#C084FC] rounded-full" />
+              <h3 className="text-xl font-black uppercase tracking-tight italic">Allocated Interactive Links</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {journeyLinks.map((link) => (
+                <div 
+                  key={link.id} 
+                  className="group bg-white/5 border border-white/5 hover:border-[#C084FC]/30 rounded-3xl p-6 transition-all flex flex-col justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <span className="text-[8px] font-black uppercase text-[#C084FC] tracking-widest block">Portal Platform</span>
+                    <h4 className="text-lg font-black text-white italic truncate uppercase">{link.fileName}</h4>
+                    <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                      Published {link.uploadDate?.toDate?.() ? link.uploadDate.toDate().toLocaleDateString() : 'Syncing...'}
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setViewingPortalUrl(link.fileUrl);
+                        setViewingPortalName(link.fileName);
+                      }}
+                      className="flex-grow py-3 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/30 text-white rounded-xl font-bold uppercase text-[9px] tracking-widest border border-[#8B5CF6]/20 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#C084FC]" /> In-App View
+                    </button>
+                    <button 
+                      onClick={() => window.open(link.fileUrl, '_blank')}
+                      className="py-3 px-4 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-xl border border-white/10 transition-all"
+                      title="Open in external browser window"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Progress Keeper Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Next Aligner Change */}
         <SectionCard title="Aligner Phase" icon={Clock} className="relative overflow-hidden group">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-royal/10 blur-[100px] rounded-full group-hover:bg-royal/30 transition-colors" />
@@ -414,11 +698,8 @@ export const UserPortal: React.FC<{
                 <CountdownItem value={getDaysDiff(profile?.nextAlignerChange)} label="Days Left" urgent={getDaysDiff(profile?.nextAlignerChange) <= 2} />
               </div>
             </div>
-            <div className="bg-white/5 border border-white/5 p-6 rounded-[24px] backdrop-blur-md">
-              <div className="text-xs font-bold text-white leading-relaxed flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-royal animate-pulse shadow-[0_0_10px_rgba(65,105,225,0.8)]" />
-                Your next aligner set is ready for transition.
-              </div>
+            <div className="bg-white/5 border border-white/5 p-6 rounded-[24px] backdrop-blur-md space-y-4">
+              {renderAlignerCalendarTracker()}
             </div>
           </div>
         </SectionCard>
@@ -537,6 +818,7 @@ export const UserPortal: React.FC<{
       </div>
     </div>
   );
+};
 
   const UploadScan = () => (
     <div className="space-y-8 pb-10">
@@ -949,15 +1231,15 @@ export const UserPortal: React.FC<{
   );
 
   return (
-    <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-royal/30 selection:text-white">
+    <div className="min-h-screen bg-[#070512] text-white font-sans selection:bg-royal/30 selection:text-white">
       {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-royal/10 blur-[150px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#87CEEB]/5 blur-[150px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#C084FC]/5 blur-[150px] rounded-full" />
       </div>
 
       {/* Top Navigation */}
-      <nav className="sticky top-0 z-50 bg-[#070B14]/60 backdrop-blur-2xl border-b border-white/5">
+      <nav className="sticky top-0 z-50 bg-[#070512]/60 backdrop-blur-2xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-8">
              <button 
@@ -1015,7 +1297,7 @@ export const UserPortal: React.FC<{
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden p-4">
-        <div className="bg-[#070B14]/80 backdrop-blur-2xl border border-white/5 rounded-[32px] p-2 flex items-center justify-around shadow-2xl">
+        <div className="bg-[#070512]/80 backdrop-blur-2xl border border-white/5 rounded-[32px] p-2 flex items-center justify-around shadow-2xl">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -1056,6 +1338,76 @@ export const UserPortal: React.FC<{
 
       {/* Bottom Padding for Mobile */}
       <div className="h-20 lg:hidden" />
+
+      {/* Modern In-App Portal / Link Viewer Modal */}
+      {viewingPortalUrl && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl animate-fade-in text-white">
+          <div className="bg-[#142A4D] rounded-[32px] md:rounded-[48px] w-full max-w-7xl h-[94vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
+            {/* Header bar */}
+            <header className="p-4 sm:p-6 md:p-8 border-b border-b-white/10 bg-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 flex items-center justify-center text-[#C084FC] shadow-lg shadow-purple-900/20">
+                  <ExternalLink className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h3 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase text-white">{viewingPortalName || 'Interactive Portal'}</h3>
+                    <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /> Connection Established
+                    </span>
+                  </div>
+                  <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mt-1">Operational Secure Link Sandbox Viewer</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto self-stretch sm:self-auto shrink-0 justify-end">
+                <button
+                  type="button"
+                  onClick={() => window.open(viewingPortalUrl, '_blank')}
+                  className="flex-grow sm:flex-grow-0 px-5 h-12 bg-royal hover:bg-royal/80 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-royal/20"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Full Window
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setViewingPortalUrl(null);
+                    setViewingPortalName('');
+                  }}
+                  className="w-12 h-12 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-2xl border border-white/10 transition-all flex items-center justify-center"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </header>
+
+            {/* Sandbox Container */}
+            <div className="flex-grow bg-[#070512] relative flex flex-col justify-between overflow-hidden">
+              {/* Context Banner */}
+              <div className="absolute top-4 left-4 right-4 z-40 bg-[#142A4D]/80 border border-white/5 p-4 rounded-2xl backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> 
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">
+                    Interact with your 3D Clincheck animation or web portal directly inside this workspace.
+                  </span>
+                </div>
+                <span className="text-[9px] font-black text-[#C084FC] uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/5">
+                  Sandboxed Environment
+                </span>
+              </div>
+              
+              {/* Iframe element */}
+              <iframe 
+                src={viewingPortalUrl} 
+                className="w-full h-full border-0 bg-transparent select-none pt-20"
+                title={viewingPortalName}
+                allow="fullscreen; autoplay; clipboard-write"
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

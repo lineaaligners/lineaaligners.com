@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { storage, db, auth, handleFirestoreError } from '../lib/firebase';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
+import firebaseConfig from '../../firebase-applet-config.json';
 import { 
   collection, 
   query, 
@@ -53,7 +56,8 @@ import {
   Calendar,
   Info,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  Menu
 } from 'lucide-react';
 
 const formatFileSize = (bytes: number) => {
@@ -210,6 +214,7 @@ interface User {
 
 export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: () => void }> = ({ onLogout, onSwitchToPatient }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'patients' | 'cases' | 'scans'>('dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [scans, setScans] = useState<ScanRecord[]>([]);
@@ -593,23 +598,30 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     }
 
     setLoading(true);
+    let tempApp;
     try {
-      // 1. Create Auth User via Backend
-      const authResponse = await fetch('/api/create-auth-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: userFormData.email,
-          password: userFormData.password,
-          displayName: userFormData.name
-        })
-      });
-
-      const authData = await authResponse.json();
+      // 1. Create Auth User via Isolate Client-Side Secondary App instance
+      const tempAppName = `temp-user-creator-${Date.now()}`;
+      tempApp = initializeApp(firebaseConfig, tempAppName);
+      const tempAuth = getAuth(tempApp);
       
-      if (!authResponse.ok) {
-        throw new Error(authData.error || 'Failed to create authentication account');
+      const userCredential = await createUserWithEmailAndPassword(
+        tempAuth,
+        userFormData.email,
+        userFormData.password
+      );
+      
+      // Update display name
+      if (userFormData.name && userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: userFormData.name
+        });
       }
+      
+      // Sign out from the temporary session
+      await signOut(tempAuth);
+      
+      const targetUid = userCredential.user.uid;
 
       // 2. Create Firestore User Document using the same UID
       const newUser: any = {
@@ -628,28 +640,39 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
         newUser.clinicAddress = 'Medident Clinic, Prishtina';
       }
       
-      await setDoc(doc(db, 'users', authData.uid), newUser);
+      await setDoc(doc(db, 'users', targetUid), newUser);
       
       // 3. Trigger email notification via backend
-      await fetch('/api/notify-user-created', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: userFormData.name,
-          email: userFormData.email,
-          createdAt: new Date().toISOString(),
-          adminLink: window.location.origin + '/admin'
-        })
-      });
+      try {
+        await fetch('/api/notify-user-created', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: userFormData.name,
+            email: userFormData.email,
+            createdAt: new Date().toISOString(),
+            adminLink: window.location.origin + '/admin'
+          })
+        });
+      } catch (notifyErr) {
+        console.warn("Failed to trigger email notification:", notifyErr);
+      }
 
       setIsUserModalOpen(false);
       setUserFormData({ name: '', email: '', password: '', status: 'active', role: 'patient' });
       fetchData();
-      alert(`User ${userFormData.name} created successfully! UID: ${authData.uid}`);
+      alert(`User ${userFormData.name} created successfully!`);
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Error creating user');
     } finally {
+      if (tempApp) {
+        try {
+          await deleteApp(tempApp);
+        } catch (delErr) {
+          console.error("Error clean deleting app:", delErr);
+        }
+      }
       setLoading(false);
     }
   };
@@ -951,12 +974,31 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
   };
 
   return (
-    <div className="flex min-h-screen bg-[#193D6D] text-white overflow-hidden">
+    <div className="flex min-h-screen bg-[#193D6D] text-white overflow-hidden relative">
+      {/* Sidebar Backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-all duration-300 animate-fade-in"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 bg-[#142A4D] border-r border-white/5 p-8 flex flex-col gap-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#4169E1] rounded-xl flex items-center justify-center font-black">L</div>
-          <span className="text-xl font-black tracking-tighter uppercase">Linea Admin</span>
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-[#142A4D] border-r border-white/5 p-8 flex flex-col gap-10 transition-transform duration-300 lg:static lg:translate-x-0
+        ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#4169E1] rounded-xl flex items-center justify-center font-black">L</div>
+            <span className="text-xl font-black tracking-tighter uppercase">Linea Admin</span>
+          </div>
+          <button 
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="lg:hidden p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-grow space-y-2">
@@ -969,7 +1011,10 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => {
+                setActiveTab(item.id as any);
+                setIsMobileSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-bold text-sm ${activeTab === item.id ? 'bg-[#4169E1] text-white shadow-xl' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}
             >
               <item.icon className="w-5 h-5" />
@@ -979,7 +1024,10 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
           
           {onSwitchToPatient && (
             <button
-              onClick={onSwitchToPatient}
+              onClick={() => {
+                onSwitchToPatient();
+                setIsMobileSidebarOpen(false);
+              }}
               className="w-full flex items-center gap-4 px-5 py-4 mt-6 rounded-2xl text-[#87CEEB] hover:bg-white/5 transition-all font-black text-[10px] uppercase tracking-widest border border-white/5"
             >
               <ShieldAlert className="w-5 h-5" />
@@ -998,8 +1046,29 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       </aside>
 
       {/* Main Content */}
-      <main className="flex-grow p-12 overflow-y-auto">
-        <header className="mb-12 flex justify-between items-center">
+      <main className="flex-grow p-4 sm:p-8 lg:p-12 overflow-y-auto min-w-0 w-full">
+        {/* Mobile Top Bar */}
+        <div className="lg:hidden flex items-center justify-between mb-8 bg-white/5 border border-white/10 p-4 rounded-3xl">
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-black tracking-widest uppercase">Linea Admin</span>
+          </div>
+          {onSwitchToPatient && (
+            <button
+              onClick={onSwitchToPatient}
+              className="px-4 py-2 bg-[#4169E1]/10 text-[#C084FC] border border-[#4169E1]/20 rounded-2xl font-black text-[9px] uppercase tracking-widest"
+            >
+              Patient View
+            </button>
+          )}
+        </div>
+        <header className="mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div>
             <h1 className="text-4xl font-black tracking-tight capitalize">
               {activeTab === 'cases' ? 'Clear Aligners Files' : activeTab}
@@ -1093,7 +1162,8 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
         {activeTab === 'users' && (
           <div className="bg-[#142A4D] rounded-[48px] overflow-hidden border border-white/5">
-            <table className="w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[900px]">
               <thead className="bg-white/5">
                 <tr>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Client Name</th>
@@ -1188,12 +1258,14 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 
         {activeTab === 'patients' && (
           <div className="bg-[#142A4D] rounded-[48px] overflow-hidden border border-white/5">
-            <table className="w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[900px]">
               <thead className="bg-white/5">
                 <tr>
                   <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Patient Name</th>
@@ -1286,12 +1358,13 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         {activeTab === 'cases' && (
-          <div className="flex h-[calc(100vh-250px)] gap-8 animate-fade-in">
+          <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-250px)] gap-8 animate-fade-in">
             {/* Left Sidebar: Case List */}
-            <div className="w-80 bg-[#142A4D]/50 backdrop-blur-md rounded-[32px] border border-white/5 flex flex-col overflow-hidden shadow-2xl">
+            <div className="w-full lg:w-80 shrink-0 bg-[#142A4D]/50 backdrop-blur-md rounded-[32px] border border-white/5 flex flex-col h-[40vh] lg:h-auto overflow-hidden shadow-2xl">
                <div className="p-6 border-b border-white/5 bg-white/5">
                   <div className="relative mb-4">
                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
@@ -1339,7 +1412,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
             </div>
 
             {/* Right Main Area: Case Details & Files */}
-            <div className="flex-grow flex flex-col gap-8 overflow-hidden">
+            <div className="flex-grow flex flex-col gap-8 overflow-y-auto lg:overflow-hidden">
                {selectedCase ? (
                   <>
                      {/* Case Info Header */}
@@ -1576,7 +1649,8 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                 <h3 className="text-xl font-black uppercase tracking-tight">Global Scan Repository</h3>
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{scans.length} Total Clinical Records</span>
               </div>
-              <table className="w-full text-left">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[800px]">
                 <thead className="bg-white/5">
                   <tr>
                     <th className="p-8 text-[10px] font-black text-white/40 uppercase tracking-widest">Filename</th>
@@ -1628,6 +1702,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
@@ -1683,39 +1758,59 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       )}
 
       {isUserModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#142A4D] rounded-[40px] p-12 w-full max-w-md border border-white/10 shadow-2xl space-y-8">
-            <h2 className="text-3xl font-black tracking-tight">Create New User</h2>
-            <form onSubmit={handleCreateUser} className="space-y-6">
-              <div className="space-y-2">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#142A4D] rounded-[40px] p-10 w-full max-w-6xl border border-white/10 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-6 bg-blue-500 rounded-full" />
+                <h2 className="text-2xl font-black tracking-tight italic uppercase text-white">Create New User</h2>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsUserModalOpen(false)}
+                className="text-white/40 hover:text-white font-bold uppercase text-[10px] tracking-widest transition-colors"
+              >
+                Close [X]
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateUser} className="flex flex-col lg:flex-row items-end gap-4">
+              <div className="flex-grow space-y-1.5 w-full">
                 <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Full Name</label>
-                <input required value={userFormData.name} onChange={e => setUserFormData({...userFormData, name: e.target.value})} className="w-full bg-white/5 border-2 border-white/5 rounded-2xl p-5 text-white outline-none focus:border-[#4169E1]" />
+                <input required value={userFormData.name} onChange={e => setUserFormData({...userFormData, name: e.target.value})} className="w-full bg-white/5 border border-white/10 focus:border-[#4169E1] rounded-2xl p-4 text-xs font-bold text-white outline-none transition-all" placeholder="Enter Full Name" />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Email</label>
-                <input required type="email" value={userFormData.email} onChange={e => setUserFormData({...userFormData, email: e.target.value})} className="w-full bg-white/5 border-2 border-white/5 rounded-2xl p-5 text-white outline-none focus:border-[#4169E1]" />
+              
+              <div className="flex-grow space-y-1.5 w-full">
+                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Email Address</label>
+                <input required type="email" value={userFormData.email} onChange={e => setUserFormData({...userFormData, email: e.target.value})} className="w-full bg-white/5 border border-white/10 focus:border-[#4169E1] rounded-2xl p-4 text-xs font-bold text-white outline-none transition-all" placeholder="name@domain.com" />
               </div>
-              <div className="space-y-2">
+              
+              <div className="flex-grow space-y-1.5 w-full">
                 <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Password</label>
-                <input required type="text" value={userFormData.password} onChange={e => setUserFormData({...userFormData, password: e.target.value})} placeholder="Set initial password" title="Minimum 6 characters" className="w-full bg-white/5 border-2 border-white/5 rounded-2xl p-5 text-white outline-none focus:border-[#4169E1]" />
+                <input required type="text" value={userFormData.password} onChange={e => setUserFormData({...userFormData, password: e.target.value})} placeholder="Set initial password" title="Minimum 6 characters" className="w-full bg-white/5 border border-white/10 focus:border-[#4169E1] rounded-2xl p-4 text-xs font-bold text-white outline-none transition-all" />
               </div>
-              <div className="flex justify-between items-center bg-white/5 p-6 rounded-2xl border border-white/5">
-                <span className="font-bold">Status</span>
-                <select value={userFormData.status} onChange={e => setUserFormData({...userFormData, status: e.target.value as any})} className="bg-transparent text-[#4169E1] font-black outline-none cursor-pointer">
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+              
+              <div className="w-full lg:w-32 space-y-1.5">
+                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Status</label>
+                <select value={userFormData.status} onChange={e => setUserFormData({...userFormData, status: e.target.value as any})} className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-4 text-xs font-bold text-[#4169E1] hover:bg-white/[0.08] transition-all cursor-pointer outline-none font-sans">
+                  <option value="active" className="bg-[#142A4D] text-white">Active</option>
+                  <option value="inactive" className="bg-[#142A4D] text-white">Inactive</option>
                 </select>
               </div>
-              <div className="flex justify-between items-center bg-white/5 p-6 rounded-2xl border border-white/5">
-                <span className="font-bold">Role</span>
-                <select value={userFormData.role} onChange={e => setUserFormData({...userFormData, role: e.target.value as any})} className="bg-transparent text-[#87CEEB] font-black outline-none cursor-pointer">
-                  <option value="doctor">Doctor</option>
-                  <option value="patient">Patient</option>
+              
+              <div className="w-full lg:w-36 space-y-1.5">
+                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Role</label>
+                <select value={userFormData.role} onChange={e => setUserFormData({...userFormData, role: e.target.value as any})} className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-4 text-xs font-bold text-[#87CEEB] hover:bg-white/[0.08] transition-all cursor-pointer outline-none font-sans">
+                  <option value="patient" className="bg-[#142A4D] text-white">Patient</option>
+                  <option value="doctor" className="bg-[#142A4D] text-white">Doctor</option>
                 </select>
               </div>
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setIsUserModalOpen(false)} className="flex-grow py-5 bg-white/5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all">Cancel</button>
-                <button type="submit" disabled={loading} className="flex-grow py-5 bg-[#4169E1] rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-900/40 hover:bg-[#5A8DFF] transition-all">Create</button>
+              
+              <div className="flex gap-3 w-full lg:w-auto shrink-0 mt-4 lg:mt-0">
+                <button type="button" onClick={() => setIsUserModalOpen(false)} className="px-5 h-[50px] bg-white/5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all text-white/70">Cancel</button>
+                <button type="submit" disabled={loading} className="w-full lg:w-auto px-8 h-[50px] bg-[#4169E1] hover:bg-[#5A8DFF] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-900/40 hover:scale-[1.02] transition-all flex items-center justify-center whitespace-nowrap">
+                  {loading ? 'Creating...' : 'Create'}
+                </button>
               </div>
             </form>
           </div>
@@ -1756,34 +1851,34 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       )}
 
       {isDocumentModalOpen && selectedPatient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-hidden">
-          <div className="bg-[#142A4D] rounded-[56px] w-full max-w-6xl h-[85vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
+          <div className="bg-[#142A4D] rounded-[32px] md:rounded-[56px] w-full max-w-6xl h-[92vh] md:h-[85vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
             {/* Header */}
-            <header className="p-10 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
+            <header className="p-6 md:p-10 border-b border-white/5 bg-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
               <div className="flex items-center gap-6">
                  <div className="w-16 h-16 rounded-[24px] bg-[#4169E1] flex items-center justify-center text-white shadow-xl shadow-blue-900/40">
                     <UserIcon className="w-8 h-8" />
                  </div>
                  <div>
                     <h2 className="text-3xl font-black tracking-tight">{selectedPatient.name}</h2>
-                    <div className="flex items-center gap-4 text-white/50 text-sm font-bold">
+                    <div className="flex items-center gap-4 text-white/50 text-sm font-bold flex-wrap">
                        <span className="flex items-center gap-2"><Calendar className="w-4 h-4" /> {selectedPatient.dob}</span>
-                       <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                       <span className="w-1 h-1 rounded-full bg-white/20 hidden sm:inline"></span>
                        <span className="flex items-center gap-2 max-w-[200px] truncate"><Info className="w-4 h-4" /> {selectedPatient.condition}</span>
                     </div>
                  </div>
               </div>
               <button 
                 onClick={() => setIsDocumentModalOpen(false)}
-                className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/10"
+                className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/10 self-end sm:self-auto"
               >
                 <X className="w-6 h-6 border-white/10" />
               </button>
             </header>
-
-            <div className="flex flex-grow overflow-hidden">
+ 
+            <div className="flex flex-col lg:flex-row flex-grow overflow-y-auto lg:overflow-hidden">
                {/* Controls Sidebar */}
-               <aside className="w-80 border-r border-white/5 p-8 flex flex-col gap-10 bg-white/[0.02]">
+               <aside className="w-full lg:w-80 shrink-0 border-b lg:border-b-0 lg:border-r border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-10 bg-white/[0.02]">
                   <section className="space-y-4">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-[#4169E1]">File Category</h4>
                     <select 
@@ -1828,7 +1923,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                </aside>
 
                {/* File List & Upload Area */}
-               <main className="flex-grow p-10 overflow-y-auto bg-gradient-to-br from-transparent to-black/20 relative">
+               <main className="flex-grow p-6 md:p-10 overflow-y-auto bg-gradient-to-br from-transparent to-black/20 relative">
                   {/* Upload Dropzone */}
                   <div className="mb-12">
                      <FileDropzone onUpload={(files) => handleMultiUpload(files, categoryFilter === 'All' ? 'Other' : categoryFilter as any)} isUploading={isUploading} progress={uploadProgress} success={uploadSuccess} />
@@ -1920,28 +2015,28 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       )}
 
       {isClientControlModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl overflow-hidden">
-          <div className="bg-[#142A4D] rounded-[56px] w-full max-w-7xl h-[90vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-xl overflow-y-auto">
+          <div className="bg-[#142A4D] rounded-[32px] md:rounded-[56px] w-full max-w-7xl h-[95vh] md:h-[90vh] border-2 border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
             
             {/* Header */}
-            <header className="p-10 border-b border-b-white/10 bg-white/5 flex justify-between items-center shrink-0">
+            <header className="p-6 md:p-10 border-b border-b-white/10 bg-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-[24px] bg-amber-400 text-slate-900 flex items-center justify-center shadow-lg font-black text-2xl italic">
+                <div className="w-16 h-16 rounded-[24px] bg-amber-400 text-slate-900 flex items-center justify-center shadow-lg font-black text-2xl italic shrink-0">
                   {controlFormData.name ? controlFormData.name.charAt(0).toUpperCase() : 'C'}
                 </div>
                 <div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-wrap">
                     <h2 className="text-3xl font-black tracking-tight">{controlFormData.name}</h2>
                     <span className="px-3 py-1 bg-amber-400/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-400/20">
                       JOURNEY CONTROL PANEL
                     </span>
                   </div>
-                  <p className="text-white/50 text-sm font-bold uppercase tracking-wide mt-1">{controlFormData.email} • UID: {selectedUser.id}</p>
+                  <p className="text-white/50 text-sm font-bold uppercase tracking-wide mt-1 break-all">{controlFormData.email} • UID: {selectedUser.id}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setIsClientControlModalOpen(false)}
-                className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 hover:text-white border border-white/10 text-white/60 transition-all"
+                className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 hover:text-white border border-white/10 text-white/60 transition-all self-end sm:self-auto"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1949,7 +2044,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
             {/* Scrollable Layout Form */}
             <form onSubmit={handleSaveClientControl} className="flex-grow flex flex-col lg:flex-row overflow-hidden">
-              <div className="flex-grow p-10 overflow-y-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+              <div className="flex-grow p-6 md:p-10 overflow-y-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
                 
                 {/* Column 1: Client Identity & Aligner Phase */}
                 <div className="space-y-8 bg-white/[0.02] p-8 border border-white/5 rounded-[40px] shadow-2xl">

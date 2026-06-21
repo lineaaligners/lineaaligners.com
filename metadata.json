@@ -1,5 +1,6 @@
 {
   "name": "Linea",
   "description": "Professional clear aligner management system with dedicated Doctor and Patient portals, featuring ultra-fast parallel uploads and role-based access.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
