@@ -5,7 +5,7 @@ import { Instagram, Facebook, MessageCircle } from 'lucide-react';
 export const Footer: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const content = TRANSLATIONS[language];
   const isEn = language === 'en';
-  const logoUrl = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/linea%20vjollc%20png.png";
+  const logoUrl = "/linea-logo.svg";
 
   const socialLinks = [
     { id: 'ig', label: isEn ? 'Follow us on Instagram' : 'Na ndiqni në Instagram', href: 'https://instagram.com', icon: Instagram },

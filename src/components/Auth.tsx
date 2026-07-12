@@ -169,9 +169,9 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
             initial="hidden" animate="visible" exit="exit"
             className="w-full max-w-xl space-y-12 text-center relative z-10"
           >
-            <div className="space-y-4 text-center">
-              <h1 className="text-8xl font-black tracking-tighter italic text-white uppercase leading-none">LINE<span className="text-royal">A</span></h1>
-              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[10px]">Managed Aligner Ecosystem</p>
+            <div className="space-y-4 text-center flex flex-col items-center">
+              <img src="/linea-logo.svg" alt="Linea Aligners" className="h-24 w-auto brightness-0 invert" />
+              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[10px]">Linea Aligners Portal</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -243,9 +243,9 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             </button>
 
-            <div className="text-center mb-10">
-              <h1 className="text-6xl font-black tracking-tighter italic text-white uppercase leading-none mb-2">LINE<span className="text-royal">A</span></h1>
-              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[8px]">Managed Aligner Ecosystem</p>
+            <div className="text-center mb-10 flex flex-col items-center gap-2">
+              <img src="/linea-logo.svg" alt="Linea Aligners" className="h-16 w-auto brightness-0 invert" />
+              <p className="text-white/40 font-bold uppercase tracking-[0.4em] text-[8px]">Linea Aligners Portal</p>
             </div>
             
             <div className="space-y-10">

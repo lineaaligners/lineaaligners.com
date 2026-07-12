@@ -62,24 +62,38 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   );
 };
 
-export const ScreenLoader: React.FC<{ message?: string }> = ({ message = "Loading experience..." }) => {
-  const [progress, setProgress] = React.useState(0);
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress(prev => (prev < 90 ? prev + Math.random() * 5 : prev));
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
-
+export const ScreenLoader: React.FC<{ message?: string }> = ({ message = "Loading..." }) => {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050B18] p-12 space-y-6">
-      <div className="w-full max-w-sm space-y-4">
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-black tracking-tighter uppercase italic text-royal">Linea</h2>
-          <p className="text-xs text-white/40 font-medium tracking-widest uppercase">{message}</p>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050B18] p-12">
+      <div className="flex flex-col items-center gap-8">
+        {/* Pulsing brand logo */}
+        <div className="relative flex items-center justify-center">
+          <motion.div
+            className="absolute w-40 h-40 rounded-full bg-[#4e4f9e]/20 blur-2xl"
+            animate={{ scale: [1, 1.35, 1], opacity: [0.35, 0.7, 0.35] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.img
+            src="/linea-logo.svg"
+            alt="Linea Aligners"
+            className="w-32 h-auto relative z-10 brightness-0 invert drop-shadow-[0_0_25px_rgba(78,79,158,0.6)]"
+            animate={{ scale: [1, 1.08, 1], opacity: [0.75, 1, 0.75] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          />
         </div>
-        <ProgressBar progress={progress} height="h-3" />
+
+        {/* Message + animated dots */}
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm text-white/50 font-medium">{message}</p>
+          {[0, 1, 2].map(i => (
+            <motion.span
+              key={i}
+              className="w-1.5 h-1.5 rounded-full bg-[#87CEEB]"
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

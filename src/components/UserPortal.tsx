@@ -729,7 +729,7 @@ export const UserPortal: React.FC<{
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm font-semibold hidden sm:inline">{t.backToSite}</span>
             </button>
-            <span className="text-2xl font-bold tracking-tight shrink-0">Line<span className="text-[#4169E1]">a</span></span>
+            <img src="/linea-logo.svg" alt="Linea Aligners" className="h-9 w-auto shrink-0 brightness-0 invert" />
 
             {/* Desktop tabs */}
             <div className="hidden lg:flex items-center gap-1 ml-6">
