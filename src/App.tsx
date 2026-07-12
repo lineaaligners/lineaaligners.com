@@ -139,18 +139,21 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-[#4169E1] selection:text-white bg-[#193D6D] text-[#F5F7FA]">
-      <header role="banner">
-        <Navbar 
-          setView={setView} 
-          view={view} 
-          onBookClick={handleBookScan}
-          onPortalClick={openPortal}
-          language={language}
-          setLanguage={setLanguage}
-          isAdmin={isAdmin}
-          onAdminClick={toggleAdminMode}
-        />
-      </header>
+      {/* Site navbar only on the public homepage — portal & planner have their own top bars */}
+      {view === 'home' && (
+        <header role="banner">
+          <Navbar
+            setView={setView}
+            view={view}
+            onBookClick={handleBookScan}
+            onPortalClick={openPortal}
+            language={language}
+            setLanguage={setLanguage}
+            isAdmin={isAdmin}
+            onAdminClick={toggleAdminMode}
+          />
+        </header>
+      )}
       
       <main id="main-content" className="flex-grow" role="main">
         {view === 'home' ? (

@@ -17,7 +17,7 @@ export const Navbar: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const content = TRANSLATIONS[language];
-  const logoUrl = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/linea%20vjollc%20png.png";
+  const logoUrl = "/linea-logo.svg";
 
   useEffect(() => {
     const handleScroll = () => {
