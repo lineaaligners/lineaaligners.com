@@ -79,6 +79,21 @@ const App: React.FC = () => {
     }
   };
 
+  // Keep <html lang>, <title> and meta description in sync with the selected
+  // language — improves accessibility and local SEO for Albanian searches.
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = language === 'en'
+      ? "Linea Aligners - Kosovo's Premium Clear Aligners"
+      : 'Linea Aligners - Aparatet Transparente Premium në Kosovë';
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', language === 'en'
+        ? 'Clear aligners in Peja, Kosovo. Invisible, removable teeth straightening with 3D digital precision at Medident Dental Clinic. 0% financing, free smile scan.'
+        : 'Aparate transparente në Pejë, Kosovë. Drejtim i padukshëm i dhëmbëve me saktësi digjitale 3D në Medident Dental Clinic. 0% interes, skanim falas i buzëqeshjes.');
+    }
+  }, [language]);
+
   useEffect(() => {
     if (view === 'home' && window.location.hash) {
       const id = window.location.hash.substring(1);
