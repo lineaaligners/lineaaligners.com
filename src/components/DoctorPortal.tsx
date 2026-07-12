@@ -10,55 +10,74 @@ import {
   FolderOpen,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// Simple clinic (B2B) portal: how many cases the clinic has with Linea,
-// which patients they belong to, and the billing status of each case.
-// Read-only by design — clinics contact Linea on WhatsApp for anything else.
+// Clinic (B2B) management portal. A partner clinic sees ONLY:
+//  - the patients Linea has assigned to them, with live aligner progress
+//  - their cases grouped by month, each with price and paid / unpaid
+//  - money totals: billed, paid, outstanding
+// Read-only. Anything else goes through WhatsApp.
 // ---------------------------------------------------------------------------
 
 const T = {
   en: {
     title: 'Clinic Portal',
     hello: 'Welcome',
-    cases: 'Cases',
-    totalBilled: 'Total billed',
+    patients: 'Patients',
+    activeCases: 'Cases',
     outstanding: 'Outstanding',
-    yourCases: 'Your cases',
+    yourPatients: 'Your patients',
+    noPatients: 'No patients assigned yet. Patients appear here when Linea links them to your clinic.',
+    aligners: 'aligners',
+    done: 'Done',
+    inTreatment: 'In treatment',
+    monthly: 'Cases & billing by month',
+    noCases: 'No cases yet. New cases appear here as soon as Linea registers them.',
     patient: 'Patient',
     caseRef: 'Case',
-    date: 'Date',
     price: 'Price',
     status: 'Status',
     paid: 'Paid',
     unpaid: 'Unpaid',
-    noCases: 'No cases yet. New cases appear here as soon as Linea registers them.',
+    casesWord: 'cases',
+    billed: 'billed',
+    owed: 'owed',
+    allPaid: 'all paid',
     contact: 'Contact Linea on WhatsApp',
     backToSite: 'Back to site',
     signOut: 'Sign out',
-    loading: 'Loading your cases...'
+    loading: 'Loading your clinic data...'
   },
   sq: {
     title: 'Portali i Klinikës',
     hello: 'Mirë se vini',
-    cases: 'Raste',
-    totalBilled: 'Fatura totale',
+    patients: 'Pacientë',
+    activeCases: 'Raste',
     outstanding: 'Pa paguar',
-    yourCases: 'Rastet tuaja',
+    yourPatients: 'Pacientët tuaj',
+    noPatients: 'Ende nuk keni pacientë të caktuar. Pacientët shfaqen këtu kur Linea i lidh me klinikën tuaj.',
+    aligners: 'aparate',
+    done: 'Përfunduar',
+    inTreatment: 'Në trajtim',
+    monthly: 'Rastet dhe faturat sipas muajve',
+    noCases: 'Ende nuk ka raste. Rastet e reja shfaqen këtu sapo Linea t\'i regjistrojë.',
     patient: 'Pacienti',
     caseRef: 'Rasti',
-    date: 'Data',
     price: 'Çmimi',
     status: 'Statusi',
     paid: 'Paguar',
     unpaid: 'Pa paguar',
-    noCases: 'Ende nuk ka raste. Rastet e reja shfaqen këtu sapo Linea t\'i regjistrojë.',
+    casesWord: 'raste',
+    billed: 'faturuar',
+    owed: 'borxh',
+    allPaid: 'të gjitha të paguara',
     contact: 'Kontaktoni Linea në WhatsApp',
     backToSite: 'Kthehu te faqja',
     signOut: 'Dilni',
-    loading: 'Duke ngarkuar rastet tuaja...'
+    loading: 'Duke ngarkuar të dhënat e klinikës...'
   }
 };
 
@@ -71,6 +90,13 @@ interface ClinicCase {
   createdAt?: any;
 }
 
+interface ClinicPatient {
+  id: string;
+  name?: string;
+  currentAligner?: number;
+  totalAligners?: number;
+}
+
 export const DoctorPortal: React.FC<{
   currentUser: any;
   onBack: () => void;
@@ -78,37 +104,61 @@ export const DoctorPortal: React.FC<{
 }> = ({ currentUser, onBack, language }) => {
   const t = T[language] || T.en;
   const [cases, setCases] = useState<ClinicCase[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [patients, setPatients] = useState<ClinicPatient[]>([]);
+  const [casesLoaded, setCasesLoaded] = useState(false);
+  const [patientsLoaded, setPatientsLoaded] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!currentUser) return;
-    // No orderBy — avoids composite index requirements. Sorted client-side.
-    const q = query(collection(db, 'alignerCases'), where('clinicId', '==', currentUser.uid));
-    const unsub = onSnapshot(q, (snap) => {
+
+    // Cases assigned to this clinic (no orderBy — avoids composite indexes).
+    const qCases = query(collection(db, 'alignerCases'), where('clinicId', '==', currentUser.uid));
+    const unsubCases = onSnapshot(qCases, (snap) => {
       const docs = snap.docs
         .map(d => ({ id: d.id, ...d.data() } as ClinicCase))
         .sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setCases(docs);
-      setLoaded(true);
+      setCasesLoaded(true);
     }, (err) => {
       console.error('Clinic cases listener error:', err);
       setError(err.message || 'Could not load cases');
-      setLoaded(true);
+      setCasesLoaded(true);
     });
-    return () => unsub();
+
+    // Patients Linea assigned to this clinic (users.doctorId == clinic uid).
+    const qPatients = query(collection(db, 'users'), where('doctorId', '==', currentUser.uid));
+    const unsubPatients = onSnapshot(qPatients, (snap) => {
+      const docs = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as ClinicPatient))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setPatients(docs);
+      setPatientsLoaded(true);
+    }, (err) => {
+      console.error('Clinic patients listener error:', err);
+      setPatients([]);
+      setPatientsLoaded(true);
+    });
+
+    return () => { unsubCases(); unsubPatients(); };
   }, [currentUser]);
 
-  if (!loaded) return <ScreenLoader message={t.loading} />;
+  if (!casesLoaded || !patientsLoaded) return <ScreenLoader message={t.loading} />;
 
-  const totalBilled = cases.reduce((s, c) => s + (c.price || 0), 0);
   const outstanding = cases.filter(c => !c.paid).reduce((s, c) => s + (c.price || 0), 0);
 
-  const fmtDate = (d: any) => {
-    if (!d) return '—';
-    const date = typeof d.toDate === 'function' ? d.toDate() : new Date(d);
-    return date.toLocaleDateString(language === 'sq' ? 'sq-AL' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  const locale = language === 'sq' ? 'sq-AL' : 'en-GB';
+
+  // Group cases by month (newest month first — cases already sorted desc).
+  const months: { key: string; label: string; items: ClinicCase[] }[] = [];
+  for (const c of cases) {
+    const d = c.createdAt?.toDate ? c.createdAt.toDate() : null;
+    const key = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : 'unknown';
+    const label = d ? d.toLocaleDateString(locale, { month: 'long', year: 'numeric' }) : '—';
+    let group = months.find(m => m.key === key);
+    if (!group) { group = { key, label, items: [] }; months.push(group); }
+    group.items.push(c);
+  }
 
   return (
     <div className="min-h-screen bg-[#0B1220] text-white font-sans">
@@ -148,15 +198,15 @@ export const DoctorPortal: React.FC<{
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-6">
             <div className="flex items-center gap-3 text-white/50 text-sm font-semibold mb-2">
-              <FolderOpen className="w-4 h-4 text-[#87CEEB]" /> {t.cases}
+              <Users className="w-4 h-4 text-[#87CEEB]" /> {t.patients}
             </div>
-            <p className="text-5xl font-bold">{cases.length}</p>
+            <p className="text-5xl font-bold">{patients.length}</p>
           </div>
           <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-6">
             <div className="flex items-center gap-3 text-white/50 text-sm font-semibold mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-300" /> {t.totalBilled}
+              <FolderOpen className="w-4 h-4 text-[#87CEEB]" /> {t.activeCases}
             </div>
-            <p className="text-5xl font-bold">€{totalBilled.toLocaleString()}</p>
+            <p className="text-5xl font-bold">{cases.length}</p>
           </div>
           <div className={`border rounded-3xl p-6 ${outstanding > 0 ? 'bg-amber-500/10 border-amber-500/25' : 'bg-white/[0.04] border-white/10'}`}>
             <div className="flex items-center gap-3 text-white/50 text-sm font-semibold mb-2">
@@ -166,47 +216,106 @@ export const DoctorPortal: React.FC<{
           </div>
         </div>
 
-        {/* Cases table */}
+        {/* Patients with live aligner progress */}
         <div className="bg-white/[0.04] border border-white/10 rounded-3xl overflow-hidden">
           <div className="px-6 py-5 border-b border-white/10">
-            <h2 className="text-xl font-bold">{t.yourCases}</h2>
+            <h2 className="text-xl font-bold">{t.yourPatients}</h2>
+          </div>
+          {patients.length === 0 ? (
+            <p className="p-8 text-white/50 text-base">{t.noPatients}</p>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {patients.map(p => {
+                const current = p.currentAligner || 1;
+                const total = p.totalAligners || 20;
+                const pct = Math.min(100, Math.round((current / total) * 100));
+                const done = current >= total;
+                return (
+                  <div key={p.id} className="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                    <div className="flex items-center gap-4 min-w-0 sm:w-56 shrink-0">
+                      <div className="w-11 h-11 rounded-xl bg-[#4169E1]/20 border border-[#4169E1]/30 flex items-center justify-center font-bold text-[#87CEEB] shrink-0">
+                        {(p.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <p className="font-semibold text-base truncate">{p.name || '—'}</p>
+                    </div>
+                    <div className="flex-grow">
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-white/60 font-semibold">{current} / {total} {t.aligners}</span>
+                        <span className="text-white/40">{pct}%</span>
+                      </div>
+                      <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${done ? 'bg-emerald-400' : 'bg-gradient-to-r from-[#4169E1] to-[#87CEEB]'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {done ? (
+                        <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 text-sm font-bold px-3 py-1 rounded-full">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {t.done}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 bg-[#4169E1]/15 text-[#87CEEB] border border-[#4169E1]/25 text-sm font-bold px-3 py-1 rounded-full">
+                          <Clock className="w-3.5 h-3.5" /> {t.inTreatment}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Monthly cases & billing */}
+        <div className="bg-white/[0.04] border border-white/10 rounded-3xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-white/10">
+            <h2 className="text-xl font-bold">{t.monthly}</h2>
           </div>
           {cases.length === 0 ? (
             <p className="p-8 text-white/50 text-base">{t.noCases}</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="text-white/40 text-sm font-semibold border-b border-white/10">
-                    <th className="px-6 py-4">{t.patient}</th>
-                    <th className="px-6 py-4">{t.caseRef}</th>
-                    <th className="px-6 py-4">{t.date}</th>
-                    <th className="px-6 py-4">{t.price}</th>
-                    <th className="px-6 py-4">{t.status}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cases.map(c => (
-                    <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
-                      <td className="px-6 py-4 font-semibold text-base">{c.patientName || '—'}</td>
-                      <td className="px-6 py-4 text-white/60 text-base">{c.caseName || '—'}</td>
-                      <td className="px-6 py-4 text-white/60 text-base">{fmtDate(c.createdAt)}</td>
-                      <td className="px-6 py-4 font-semibold text-base">€{(c.price || 0).toLocaleString()}</td>
-                      <td className="px-6 py-4">
-                        {c.paid ? (
-                          <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 text-sm font-bold px-3 py-1 rounded-full">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> {t.paid}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/25 text-sm font-bold px-3 py-1 rounded-full">
-                            <Clock className="w-3.5 h-3.5" /> {t.unpaid}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div>
+              {months.map(m => {
+                const billed = m.items.reduce((s, c) => s + (c.price || 0), 0);
+                const owed = m.items.filter(c => !c.paid).reduce((s, c) => s + (c.price || 0), 0);
+                return (
+                  <div key={m.key} className="border-b border-white/5 last:border-0">
+                    <div className="px-6 py-4 bg-white/[0.03] flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-bold text-base capitalize">{m.label}</p>
+                      <p className="text-sm text-white/60 font-semibold">
+                        {m.items.length} {t.casesWord} • €{billed.toLocaleString()} {t.billed} •{' '}
+                        {owed > 0
+                          ? <span className="text-amber-300">€{owed.toLocaleString()} {t.owed}</span>
+                          : <span className="text-emerald-300">{t.allPaid}</span>}
+                      </p>
+                    </div>
+                    <div className="divide-y divide-white/5">
+                      {m.items.map(c => (
+                        <div key={c.id} className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-base truncate">{c.patientName || '—'}</p>
+                            <p className="text-white/50 text-sm truncate">{c.caseName || '—'}</p>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0">
+                            <span className="font-semibold text-base">€{(c.price || 0).toLocaleString()}</span>
+                            {c.paid ? (
+                              <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 text-sm font-bold px-3 py-1 rounded-full">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> {t.paid}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/25 text-sm font-bold px-3 py-1 rounded-full">
+                                <Clock className="w-3.5 h-3.5" /> {t.unpaid}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
