@@ -25,7 +25,7 @@ export const Footer: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   };
 
   return (
-    <footer className="bg-[#111827] text-white pt-24 pb-12 relative overflow-hidden" role="contentinfo">
+    <footer id="footer" className="bg-[#111827] text-white pt-24 pb-12 relative overflow-hidden" role="contentinfo">
       {/* Enhanced background glow for more depth */}
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#4169E1]/10 rounded-full blur-[140px] pointer-events-none" aria-hidden="true"></div>
       <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-[#87CEEB]/5 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>

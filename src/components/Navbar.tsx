@@ -174,7 +174,7 @@ export const Navbar: React.FC<{
                 className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white"
                 aria-label={language === 'en' ? "Patient Portal" : "Portali i Pacientit"}
               >
-                <div className="text-[10px] font-black">{language === 'en' ? 'PORT' : 'PORT'}</div>
+                <User className="w-5 h-5" />
               </button>
              <button 
               onClick={() => setLanguage(language === 'en' ? 'sq' : 'en')}
@@ -200,7 +200,8 @@ export const Navbar: React.FC<{
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 w-full bg-[#19376D] border-t border-white/10 shadow-2xl p-6 lg:hidden"
+            style={{ backgroundColor: '#132B52' }}
+            className="absolute top-full left-0 w-full bg-[#132B52] border-t border-white/10 shadow-2xl p-6 lg:hidden max-h-[calc(100vh-80px)] overflow-y-auto"
           >
             <div className="flex flex-col space-y-4">
               {content.nav.map((item) => (

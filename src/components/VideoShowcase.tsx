@@ -1,4 +1,6 @@
 import React from 'react';
+import { LazyVideo } from './LazyVideo';
+import { SCAN_VIDEO_URL } from '../constants';
 
 interface VideoShowcaseProps {
   language: 'en' | 'sq';
@@ -37,15 +39,10 @@ export const VideoShowcase: React.FC<VideoShowcaseProps> = ({ language }) => {
           </div>
           <div className="order-1 lg:order-2">
             <div className="relative aspect-[4/5] rounded-[80px] overflow-hidden shadow-[0_50px_100px_rgba(65,105,225,0.2)] border-[12px] border-white/10 group">
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
+              <LazyVideo
+                src={SCAN_VIDEO_URL}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-              >
-                <source src="https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/linea34.mp4" type="video/mp4" />
-              </video>
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#193D6D]/40 via-transparent to-transparent pointer-events-none"></div>
               <div className="absolute bottom-10 left-10 flex items-center gap-3">
                  <div className="w-3 h-3 rounded-full bg-[#87CEEB] animate-ping"></div>
