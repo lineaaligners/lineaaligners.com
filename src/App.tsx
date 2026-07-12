@@ -10,6 +10,7 @@ import { TreatmentPlanner } from './components/TreatmentPlanner';
 import { ImageGenerator } from './components/ImageGenerator';
 import { AIAssistant } from './components/AIAssistant';
 import { UserPortal } from './components/UserPortal';
+import { DoctorPortal } from './components/DoctorPortal';
 import { AdminPortal } from './components/AdminPortal';
 import { Auth } from './components/Auth';
 import { ProductSpotlight } from './components/ProductSpotlight';
@@ -320,8 +321,14 @@ const App: React.FC = () => {
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
         ) : view === 'admin' ? (
            <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />
+        ) : userRole === 'doctor' ? (
+          <DoctorPortal
+            currentUser={currentUser}
+            onBack={() => setView('home')}
+            language={language}
+          />
         ) : (
-          <UserPortal 
+          <UserPortal
             currentUser={currentUser}
             onBack={() => setView('home')}
             language={language}
