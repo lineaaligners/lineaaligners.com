@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, storage, handleFirestoreError } from '../lib/firebase';
 import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  orderBy, 
+  collection,
+  query,
+  where,
+  onSnapshot,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   serverTimestamp
 } from 'firebase/firestore';
@@ -193,9 +193,9 @@ export const UserPortal: React.FC<{
     if (!currentUser) return;
 
     // Load patient profile
-    const unsubProfile = onSnapshot(doc(db, 'users', currentUser.uid), (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
+    const unsubProfile = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
         setProfile({
           ...data,
           currentAligner: data.currentAligner || 1,
@@ -207,20 +207,51 @@ export const UserPortal: React.FC<{
           appointmentType: data.appointmentType || "Initial Assessment",
           treatmentStartDate: data.treatmentStartDate || data.createdAt || null
         } as UserProfile);
+        setProfileLoaded(true);
+      } else {
+        // Self-heal: the auth account exists but the profile document was never
+        // created (e.g. a failed registration write). Create it now so the
+        // portal doesn't hang on the loading screen forever.
+        setDoc(snap.ref, {
+          uid: currentUser.uid,
+          email: currentUser.email || '',
+          name: currentUser.displayName || 'Unnamed User',
+          role: 'patient',
+          status: 'active',
+          createdAt: serverTimestamp(),
+          registrationDate: serverTimestamp(),
+          currentAligner: 1,
+          totalAligners: 20,
+          clinicName: 'Medident Dental Clinic',
+          clinicAddress: 'Peja, Kosovo'
+        }).catch((err) => {
+          console.error('Failed to create missing profile:', err);
+          setProfileLoaded(true); // let the error screen render instead of hanging
+        });
       }
+    }, (err) => {
+      console.error('Profile listener error:', err);
       setProfileLoaded(true);
     });
 
-    // Load assigned scans
+    // Load assigned scans.
+    // NOTE: intentionally no orderBy here — combining array-contains with
+    // orderBy requires a composite Firestore index; if that index is missing
+    // the query errors and the portal used to hang forever. Sort client-side.
     const q = query(
       collection(db, 'scans'),
-      where('assignedTo', 'array-contains', currentUser.uid),
-      orderBy('uploadDate', 'desc')
+      where('assignedTo', 'array-contains', currentUser.uid)
     );
 
     const unsubScans = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Scan));
+      const docs = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() } as Scan))
+        .sort((a: any, b: any) => (b.uploadDate?.seconds || 0) - (a.uploadDate?.seconds || 0));
       setScans(docs);
+      setScansLoaded(true);
+    }, (err) => {
+      console.error('Scans listener error:', err);
+      setScans([]);
       setScansLoaded(true);
     });
 
@@ -384,7 +415,22 @@ export const UserPortal: React.FC<{
     if (files.length > 0) onDrop(files);
   };
 
-  if (!profileLoaded || !scansLoaded || !profile) return <ScreenLoader message="Building your journey..." />;
+  if (!profileLoaded || !scansLoaded) return <ScreenLoader message="Building your journey..." />;
+
+  // Loaded but no profile: something failed (permissions / network). Show a
+  // recoverable error instead of an infinite loading screen.
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-[#070B14] text-white flex flex-col items-center justify-center gap-6 p-6 text-center">
+        <p className="text-2xl font-black uppercase tracking-tight">We couldn't load your profile</p>
+        <p className="text-white/50 max-w-md text-sm font-bold">Please check your connection and try again. If this keeps happening, contact the clinic on WhatsApp.</p>
+        <div className="flex gap-4">
+          <button onClick={() => window.location.reload()} className="bg-[#4169E1] px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Try Again</button>
+          <button onClick={onBack} className="border border-white/20 px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Back to Website</button>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
