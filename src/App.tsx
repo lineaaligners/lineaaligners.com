@@ -99,7 +99,12 @@ const App: React.FC = () => {
   };
 
   const handleBookScan = () => {
-    window.open(WHATSAPP_URL, '_blank');
+    // window.open can be blocked by popup blockers (especially in in-app browsers
+    // like Instagram/TikTok). Fall back to same-tab navigation so the CTA never dies.
+    const win = window.open(WHATSAPP_URL, '_blank', 'noopener,noreferrer');
+    if (!win || win.closed) {
+      window.location.href = WHATSAPP_URL;
+    }
   };
 
   const handleLogout = async () => {
@@ -123,7 +128,7 @@ const App: React.FC = () => {
         <Navbar 
           setView={setView} 
           view={view} 
-          onBookClick={() => window.open(WHATSAPP_URL, '_blank')} 
+          onBookClick={handleBookScan}
           onPortalClick={openPortal}
           language={language}
           setLanguage={setLanguage}
