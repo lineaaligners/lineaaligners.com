@@ -282,7 +282,8 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     appointmentType: '',
     nextAppointmentDate: '',
     clinicAddress: '',
-    nextVisitUrl: ''
+    nextVisitUrl: '',
+    doctorId: ''
   });
   const [clientScans, setClientScans] = useState<any[]>([]);
   const [isControlUploading, setIsControlUploading] = useState(false);
@@ -427,7 +428,8 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
       appointmentType: user.appointmentType || 'Progress Check & Scan',
       nextAppointmentDate: apptDateStr,
       clinicAddress: user.clinicAddress || 'Medident Clinic, Prishtina',
-      nextVisitUrl: user.nextVisitUrl || ''
+      nextVisitUrl: user.nextVisitUrl || '',
+      doctorId: user.doctorId || ''
     });
 
     fetchClientScans(user.id);
@@ -467,6 +469,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
         currentAligner: Number(controlFormData.currentAligner) || 1,
         totalAligners: Number(controlFormData.totalAligners) || 20,
         doctorName: controlFormData.doctorName || '',
+        doctorId: controlFormData.doctorId || '',
         appointmentType: controlFormData.appointmentType || '',
         clinicAddress: controlFormData.clinicAddress || '',
         nextVisitUrl: controlFormData.nextVisitUrl || ''
@@ -2174,13 +2177,34 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
 
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Account Role</label>
-                      <select 
-                        value={controlFormData.role} 
-                        onChange={e => setControlFormData({...controlFormData, role: e.target.value as any})} 
+                      <select
+                        value={controlFormData.role}
+                        onChange={e => setControlFormData({...controlFormData, role: e.target.value as any})}
                         className="w-full bg-[#193D6D] border border-white/10 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 cursor-pointer"
                       >
                         <option value="patient" className="bg-slate-900">Patient</option>
                         <option value="doctor" className="bg-slate-900">Doctor</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-amber-300/70 uppercase tracking-widest ml-1">Assigned Clinic (partner sees this patient)</label>
+                      <select
+                        value={controlFormData.doctorId}
+                        onChange={e => {
+                          const clinic = users.find(u => u.id === e.target.value);
+                          setControlFormData({
+                            ...controlFormData,
+                            doctorId: e.target.value,
+                            doctorName: clinic ? clinic.name : controlFormData.doctorName
+                          });
+                        }}
+                        className="w-full bg-[#193D6D] border border-amber-400/20 rounded-2xl p-5 text-sm font-bold text-white outline-none focus:border-amber-400 cursor-pointer"
+                      >
+                        <option value="" className="bg-slate-900">— No clinic (Linea direct patient) —</option>
+                        {users.filter(u => u.role === 'doctor').map(u => (
+                          <option key={u.id} value={u.id} className="bg-slate-900">{u.name}</option>
+                        ))}
                       </select>
                     </div>
 
