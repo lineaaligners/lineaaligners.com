@@ -143,7 +143,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isAdmin() && isValidCase(incoming());
       allow update: if isAdmin() && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['fileCount', 'caseName', 'patientName'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['fileCount', 'caseName', 'patientName', 'clinicId', 'clinicName', 'price', 'paid'])
       );
       allow delete: if isAdmin();
 

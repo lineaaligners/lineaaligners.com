@@ -97,6 +97,10 @@ interface AlignerCase {
   patientName: string;
   createdAt: any;
   fileCount: number;
+  clinicId?: string;
+  clinicName?: string;
+  price?: number;
+  paid?: boolean;
 }
 
 interface AlignerFile {
@@ -260,7 +264,7 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
   const [selectedCase, setSelectedCase] = useState<AlignerCase | null>(null);
   const [caseFiles, setCaseFiles] = useState<AlignerFile[]>([]);
   const [isCaseModalOpen, setIsCaseModalOpen] = useState(false);
-  const [newCaseData, setNewCaseData] = useState({ caseName: '', patientName: '' });
+  const [newCaseData, setNewCaseData] = useState({ caseName: '', patientName: '', clinicId: '', price: '' });
   const [urlInput, setUrlInput] = useState('');
   const [isFilesLoading, setIsFilesLoading] = useState(false);
 
@@ -702,6 +706,15 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     }
   };
 
+  const handleTogglePaid = async (caseItem: AlignerCase) => {
+    try {
+      await updateDoc(doc(db, 'alignerCases', caseItem.id), { paid: !caseItem.paid });
+    } catch (err: any) {
+      console.error(err);
+      alert('Could not update payment status: ' + err.message);
+    }
+  };
+
   const handleDeleteUser = async (id: string) => {
     if (!confirm("Are you sure? This will delete the user profile.")) return;
     try {
@@ -726,14 +739,20 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
     e.preventDefault();
     setLoading(true);
     try {
+      const clinic = users.find(u => u.id === newCaseData.clinicId);
       const caseData = {
-        ...newCaseData,
+        caseName: newCaseData.caseName,
+        patientName: newCaseData.patientName,
+        clinicId: newCaseData.clinicId || '',
+        clinicName: clinic?.name || '',
+        price: Number(newCaseData.price) || 0,
+        paid: false,
         fileCount: 0,
         createdAt: serverTimestamp()
       };
       await addDoc(collection(db, 'alignerCases'), caseData);
       setIsCaseModalOpen(false);
-      setNewCaseData({ caseName: '', patientName: '' });
+      setNewCaseData({ caseName: '', patientName: '', clinicId: '', price: '' });
     } catch (err) {
       console.error("Error creating case:", err);
       // Fixed: handleFirestoreError needs 3 arguments
@@ -1395,7 +1414,12 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                                <h4 className="font-black text-sm truncate pr-2 uppercase tracking-tight">{caseItem.caseName}</h4>
                                <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">{caseItem.createdAt?.toDate ? caseItem.createdAt.toDate().toLocaleDateString() : 'New'}</span>
                             </div>
-                            <p className="text-[11px] font-bold text-white/50 mb-3">{caseItem.patientName}</p>
+                            <p className="text-[11px] font-bold text-white/50 mb-1">{caseItem.patientName}</p>
+                            {caseItem.clinicName && (
+                              <p className="text-[9px] font-black text-amber-300/70 uppercase tracking-widest mb-2">
+                                {caseItem.clinicName} • €{caseItem.price || 0} • {caseItem.paid ? 'PAID' : 'UNPAID'}
+                              </p>
+                            )}
                             <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest mt-2 border-t border-white/10 pt-3">
                                <span className="flex items-center gap-1.5 text-[#87CEEB]"><Files className="w-3 h-3" /> {caseItem.fileCount || 0} Assets</span>
                                <button 
@@ -1437,6 +1461,21 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                               <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Total Assets</p>
                               <p className="text-2xl font-black text-[#87CEEB] leading-none">{selectedCase.fileCount || 0}</p>
                            </div>
+                           {(selectedCase.price || 0) > 0 && (
+                             <>
+                               <div className="w-px h-10 bg-white/10"></div>
+                               <div className="text-center">
+                                  <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Billing • €{selectedCase.price}</p>
+                                  <button
+                                    onClick={() => handleTogglePaid(selectedCase)}
+                                    className={`text-xs font-black px-4 py-1.5 rounded-full transition-all ${selectedCase.paid ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'}`}
+                                    title="Click to toggle paid / unpaid"
+                                  >
+                                    {selectedCase.paid ? 'PAID ✓' : 'MARK PAID'}
+                                  </button>
+                               </div>
+                             </>
+                           )}
                            <div className="w-px h-10 bg-white/10"></div>
                            <div className="text-center">
                               <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Status</p>
@@ -1745,6 +1784,34 @@ export const AdminPortal: React.FC<{ onLogout: () => void; onSwitchToPatient?: (
                      onChange={e => setNewCaseData({...newCaseData, patientName: e.target.value})} 
                      className="w-full bg-white/5 border-2 border-white/5 rounded-3xl p-6 pl-16 text-white outline-none focus:border-[#4169E1] hover:bg-white/[0.08] transition-all font-bold" 
                    />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Clinic (optional)</label>
+                  <select
+                    value={newCaseData.clinicId}
+                    onChange={e => setNewCaseData({...newCaseData, clinicId: e.target.value})}
+                    className="w-full bg-white/5 border-2 border-white/5 rounded-3xl p-6 text-white outline-none focus:border-[#4169E1] hover:bg-white/[0.08] transition-all font-bold cursor-pointer"
+                  >
+                    <option value="" className="bg-slate-900">— No clinic —</option>
+                    {users.filter(u => u.role === 'doctor').map(u => (
+                      <option key={u.id} value={u.id} className="bg-slate-900">{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Price (€)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 350"
+                    value={newCaseData.price}
+                    onChange={e => setNewCaseData({...newCaseData, price: e.target.value})}
+                    className="w-full bg-white/5 border-2 border-white/5 rounded-3xl p-6 text-white outline-none focus:border-[#4169E1] hover:bg-white/[0.08] transition-all font-bold"
+                  />
                 </div>
               </div>
 
