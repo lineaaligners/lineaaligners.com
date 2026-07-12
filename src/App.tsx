@@ -37,7 +37,21 @@ const App: React.FC = () => {
   const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
-  const [language, setLanguage] = useState<'en' | 'sq'>('en');
+  // Language: remember the user's manual choice; otherwise auto-detect the
+  // browser language (Albanian browsers get SQ, everyone else EN).
+  const [language, setLanguageState] = useState<'en' | 'sq'>(() => {
+    try {
+      const saved = localStorage.getItem('linea-lang');
+      if (saved === 'en' || saved === 'sq') return saved;
+      const nav = (navigator.language || '').toLowerCase();
+      if (nav.startsWith('sq')) return 'sq';
+    } catch { /* SSR / privacy mode */ }
+    return 'en';
+  });
+  const setLanguage = (l: 'en' | 'sq') => {
+    setLanguageState(l);
+    try { localStorage.setItem('linea-lang', l); } catch { /* ignore */ }
+  };
   const [authInitialStep, setAuthInitialStep] = useState<'login' | 'register'>('login');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const content = TRANSLATIONS[language];
