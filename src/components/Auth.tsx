@@ -12,7 +12,7 @@ import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProgressBar } from './ProgressBar';
-import { Stethoscope, User, ArrowLeft, Loader2 } from 'lucide-react';
+import { UserPlus, User, ArrowLeft, Loader2, Building2 } from 'lucide-react';
 
 export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () => void }> = ({ initialStep = 'login', onBack }) => {
   const [step, setStep] = useState<'choice' | 'login' | 'register'>('login');
@@ -193,7 +193,7 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
                 className="group relative h-72 bg-white/10 backdrop-blur-2xl rounded-[40px] border-2 border-royal/20 overflow-hidden transition-all hover:border-royal/50 hover:bg-white/20 flex flex-col items-center justify-center gap-6 shadow-[0_0_50px_rgba(65,105,225,0.1)]"
               >
                 <div className="p-8 bg-royal/20 rounded-[32px] group-hover:scale-110 transition-transform">
-                  <Stethoscope className="w-12 h-12 text-royal" />
+                  <UserPlus className="w-12 h-12 text-royal" />
                 </div>
                 <div className="text-center space-y-1">
                   <p className="text-xl font-black uppercase italic">Create Account</p>
@@ -251,10 +251,10 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
             <div className="space-y-10">
               <div className="space-y-2">
                 <h2 className="text-4xl font-black tracking-tighter italic uppercase text-center">
-                  {step === 'login' ? 'Portal Access' : 'Create Account'}
+                  {step === 'login' ? 'Log in' : 'Create Account'}
                 </h2>
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/40 italic text-center">
-                  {step === 'login' ? 'Credential Verification' : 'Start your smile journey'}
+                  {step === 'login' ? 'Welcome back' : 'Start your smile journey'}
                 </p>
               </div>
 
@@ -310,7 +310,7 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
                   type="submit" disabled={loading}
                   className="w-full bg-royal text-white py-6 rounded-[24px] font-black uppercase tracking-widest text-xs shadow-2xl shadow-royal/20 transition-all hover:bg-royal/80 hover:scale-[1.02] active:scale-[0.98] mt-4 flex items-center justify-center gap-3"
                 >
-                  {loading ? <Loader2 className="animate-spin w-5 h-5" /> : (step === 'login' ? 'AUTHORIZE ACCESS' : 'CREATE PORTAL')}
+                  {loading ? <Loader2 className="animate-spin w-5 h-5" /> : (step === 'login' ? 'LOG IN' : 'CREATE ACCOUNT')}
                 </button>
               </form>
 
@@ -329,13 +329,20 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
                 </button>
 
                 <div className="text-center">
-                  <button 
+                  <button
                     onClick={() => setStep(step === 'login' ? 'register' : 'login')}
                     className="text-white/40 hover:text-white font-black uppercase tracking-widest text-[10px] transition-all"
                   >
-                    {step === 'login' ? "Don't have an account?" : "Already registered?"} <span className="text-royal">{step === 'login' ? 'Create Journey' : 'Connect Now'}</span>
+                    {step === 'login' ? "Don't have an account?" : "Already registered?"} <span className="text-royal">{step === 'login' ? 'Create Account' : 'Log in'}</span>
                   </button>
                 </div>
+
+                {step === 'login' && (
+                  <div className="flex items-center justify-center gap-2 text-white/30 text-[10px] font-bold uppercase tracking-widest pt-2">
+                    <Building2 className="w-3.5 h-3.5" />
+                    Clinic partner? Log in with the account Linea gave you.
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

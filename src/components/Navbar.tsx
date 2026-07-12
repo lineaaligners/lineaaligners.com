@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Globe, User, ShieldCheck } from 'lucide-react';
+import { Menu, X, Globe, User, ShieldCheck, Building2 } from 'lucide-react';
 
 export const Navbar: React.FC<{ 
   setView: (v: 'home' | 'planner' | 'portal' | 'admin') => void; 
@@ -134,11 +134,20 @@ export const Navbar: React.FC<{
                   </span>
                 </button>
                 <div className="w-px h-4 bg-white/10"></div>
-                <button 
+                <button
                   onClick={() => onPortalClick?.('register')}
                   className="px-4 py-2 text-[10px] font-black text-[#87CEEB] uppercase tracking-widest hover:text-white transition-colors"
                 >
                   {language === 'en' ? 'Join' : 'Bashkohu'}
+                </button>
+                <div className="w-px h-4 bg-white/10"></div>
+                <button
+                  onClick={() => onPortalClick?.('login')}
+                  className="flex items-center gap-2 px-4 py-2 text-[10px] font-black text-amber-300/80 uppercase tracking-widest hover:text-amber-200 transition-colors"
+                  title={language === 'en' ? 'Login for partner clinics' : 'Hyrje për klinikat partnere'}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  {language === 'en' ? 'Clinic Partner' : 'Klinikë Partnere'}
                 </button>
                 <div className="w-px h-4 bg-white/10"></div>
                 <div className="flex items-center gap-1">
@@ -224,8 +233,15 @@ export const Navbar: React.FC<{
                       {language === 'en' ? 'Admin Control' : 'Kontrolli Admin'}
                     </button>
                  )}
+                 <button
+                   onClick={() => { onPortalClick?.('login'); setIsOpen(false); }}
+                   className="w-full py-4 rounded-2xl border border-amber-400/20 bg-amber-400/5 text-amber-200 font-bold text-center uppercase tracking-widest text-[10px] flex items-center justify-center gap-2"
+                 >
+                   <Building2 className="w-4 h-4" />
+                   {language === 'en' ? 'Clinic Partner Login' : 'Hyrje për Klinika Partnere'}
+                 </button>
                  <div className="grid grid-cols-2 gap-4">
-                    <button 
+                    <button
                       onClick={() => { onPortalClick?.('login'); setIsOpen(false); }}
                       className="w-full py-4 rounded-2xl border border-white/10 text-white font-bold text-center hover:bg-white/5 uppercase tracking-widest text-[10px]"
                     >
