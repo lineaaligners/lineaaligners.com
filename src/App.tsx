@@ -38,6 +38,8 @@ const App: React.FC = () => {
   const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  // Lets the admin explicitly view the patient portal instead of auto-landing in admin
+  const [adminViewsPatient, setAdminViewsPatient] = useState(false);
   // Language: remember the user's manual choice; otherwise auto-detect the
   // browser language (Albanian browsers get SQ, everyone else EN).
   const [language, setLanguageState] = useState<'en' | 'sq'>(() => {
@@ -321,6 +323,11 @@ const App: React.FC = () => {
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
         ) : view === 'admin' ? (
            <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />
+        ) : isAdmin && !adminViewsPatient ? (
+          <AdminPortal
+            onLogout={handleLogout}
+            onSwitchToPatient={() => setAdminViewsPatient(true)}
+          />
         ) : userRole === 'doctor' ? (
           <DoctorPortal
             currentUser={currentUser}
@@ -330,7 +337,7 @@ const App: React.FC = () => {
         ) : (
           <UserPortal
             currentUser={currentUser}
-            onBack={() => setView('home')}
+            onBack={() => { setAdminViewsPatient(false); setView('home'); }}
             language={language}
           />
         )}
