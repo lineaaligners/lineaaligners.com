@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
   updateProfile,
   signInWithPopup,
-  GoogleAuthProvider
+  GoogleAuthProvider,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -27,6 +28,28 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setError('');
+    setResetSent(false);
+    if (!email.trim()) {
+      setError('Enter your email address above first, then click "Forgot password?"');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetSent(true);
+    } catch (err: any) {
+      // Firebase intentionally doesn't reveal whether the email exists;
+      // treat most outcomes as success to avoid leaking account info.
+      if (err.code === 'auth/invalid-email') {
+        setError('That email address looks invalid.');
+      } else {
+        setResetSent(true);
+      }
+    }
+  };
 
   const handleAuthProgress = (val: number) => {
     setLoading(true);
@@ -262,6 +285,24 @@ export const Auth: React.FC<{ initialStep?: 'login' | 'register'; onBack?: () =>
                     placeholder="••••••••"
                   />
                 </div>
+
+                {step === 'login' && (
+                  <div className="flex justify-end pr-1 -mt-2">
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#87CEEB] transition-colors focus:outline-none"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+
+                {resetSent && (
+                  <p className="text-[#87CEEB] text-[10px] font-black uppercase tracking-widest text-center bg-[#4169E1]/10 p-4 rounded-2xl border border-[#4169E1]/20">
+                    If an account exists for that email, a reset link has been sent. Check your inbox and spam folder.
+                  </p>
+                )}
 
                 {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest text-center bg-red-400/10 p-4 rounded-2xl border border-red-400/20">{error}</p>}
 
