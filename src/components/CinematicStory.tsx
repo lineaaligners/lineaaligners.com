@@ -1,4 +1,5 @@
 import React from 'react';
+import { LazyVideo } from './LazyVideo';
 
 interface CinematicStoryProps {
   language: 'en' | 'sq';
@@ -12,15 +13,9 @@ export const CinematicStory: React.FC<CinematicStoryProps> = ({ language, onPlay
     <section id="cinematic-story" className="py-32 bg-[#193D6D] overflow-hidden relative" aria-labelledby="story-heading">
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-r from-[#193D6D] via-[#193D6D]/80 to-transparent z-10"></div>
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
-          className="w-full h-full object-cover opacity-20 scale-110 blur-sm"
-        >
-          <source src={videoUrl} type="video/mp4" />
-        </video>
+        {/* Static-styled backdrop: the blurred duplicate video was decoding a 2nd
+            copy of the same MP4 behind a 20% opacity layer — huge cost, no visual gain. */}
+        <div className="w-full h-full bg-[radial-gradient(circle_at_70%_30%,rgba(65,105,225,0.25),transparent_60%)]"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
@@ -59,15 +54,10 @@ export const CinematicStory: React.FC<CinematicStoryProps> = ({ language, onPlay
 
           <div className="lg:w-7/12 w-full relative group">
             <div className="aspect-[16/9] bg-[#193D6D] rounded-[50px] overflow-hidden shadow-[0_40px_100px_rgba(65,105,225,0.3)] border-4 border-white/10 relative">
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
+              <LazyVideo
+                src={videoUrl}
                 className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-1000"
-              >
-                <source src={videoUrl} type="video/mp4" />
-              </video>
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#193D6D] via-transparent to-transparent"></div>
               
               <div className="absolute inset-0 flex items-center justify-center">
