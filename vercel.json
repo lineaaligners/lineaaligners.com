@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "portal.lineaaligners.com" }],
+      "destination": "/portal/$1"
+    }
+  ]
+}
