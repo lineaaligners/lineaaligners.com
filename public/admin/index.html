@@ -62,7 +62,7 @@ body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-t
 <script>
 window.addEventListener('error',e=>{const el=document.getElementById('err');if(el){el.style.display='block';el.textContent='Error: '+e.message+'\n'+e.filename+':'+e.lineno;}});
 (function(){
-const {useState,useRef,useEffect,useMemo}=React;
+const {useState,useRef}=React;
 const {createRoot}=ReactDOM;
 const h=(t,p,...c)=>React.createElement(t,p,...c);
 
@@ -171,16 +171,13 @@ function App(){
 
   if(!ok)return h(AuthGate,{onOk:()=>setOk(true)});
 
-  // ── FILTERED PATIENTS ──
-  const filtered=useMemo(()=>{
-    let list=patients;
-    if(filter==='active')list=list.filter(p=>p.status==='active');
-    if(filter==='finishing')list=list.filter(p=>p.status==='finishing');
-    if(filter==='emergency')list=list.filter(p=>p.emergencies>0);
-    if(filter==='today')list=list.filter(p=>p.nextChangeDays<=1||p.apptDaysAhead<=1);
-    if(search){const q=search.toLowerCase();list=list.filter(p=>(p.first+' '+p.last+' '+p.email+' '+p.city+' '+p.phone).toLowerCase().includes(q))}
-    return list;
-  },[patients,filter,search]);
+  // ── FILTERED PATIENTS (plain compute, no hook) ──
+  let filtered=patients;
+  if(filter==='active')filtered=filtered.filter(p=>p.status==='active');
+  else if(filter==='finishing')filtered=filtered.filter(p=>p.status==='finishing');
+  else if(filter==='emergency')filtered=filtered.filter(p=>p.emergencies>0);
+  else if(filter==='today')filtered=filtered.filter(p=>p.nextChangeDays<=1||p.apptDaysAhead<=1);
+  if(search){const q=search.toLowerCase();filtered=filtered.filter(p=>(p.first+' '+p.last+' '+p.email+' '+p.city+' '+p.phone).toLowerCase().includes(q))}
 
   // ── STATS ──
   const stats={
