@@ -381,8 +381,7 @@ function App(){
                 h('label',null,t.password),
                 h('input',{className:'input',type:'password',placeholder:'••••••••',value:signinPass,onChange:e=>{setSigninPass(e.target.value);setAuthErr('')},required:true})),
               h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-sign-in'}),t.signinCta),
-              h('button',{type:'button',onClick:()=>{setAuthMode('register');setAuthErr('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),
-              h('p',{style:{opacity:.4,fontSize:11,margin:0,textAlign:'center'}},t.signinDemo))
+              h('button',{type:'button',onClick:()=>{setAuthMode('register');setAuthErr('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),)
           :h(React.Fragment,null,
               h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
                 h('div',{className:'field'},h('label',null,t.firstName),h('input',{className:'input',type:'text',placeholder:'Arta',value:reg.first,onChange:e=>setReg(p=>({...p,first:e.target.value})),required:true})),
