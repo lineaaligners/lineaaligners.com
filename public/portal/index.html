@@ -333,16 +333,22 @@ function App(){
     sp.current=setTimeout(()=>setSplash(false),2200);
   };
   const signin=async e=>{e.preventDefault();
-    if(!signinPhone){setAuthErr('Enter your phone number.');return;}
-    if(!signinPass||signinPass.length<4){setAuthErr('Enter your password.');return;}
+    if(!signinPhone){setAuthErr('Enter your phone or email.');return;}
+    if(!signinPass){setAuthErr('Enter your password.');return;}
     setLoading(true);
-    // Look up patient by phone
-    const {data,error}=await SUPA.from('patients')
-      .select('*').eq('phone',signinPhone.replace(/\s/g,'')).single();
-    if(error||!data){setAuthErr('No account found with this phone number.');setLoading(false);return;}
-    // Check password (plain for now — upgrade to hash later)
-    if(data.password_hash&&data.password_hash!==signinPass){setAuthErr('Incorrect password.');setLoading(false);return;}
-    // Load patient data
+    // Try phone first, then email
+    const phoneClean=signinPhone.replace(/\s/g,'');
+    let q=SUPA.from('patients').select('*');
+    if(signinPhone.includes('@')) q=q.eq('email',signinPhone.trim());
+    else q=q.eq('phone',phoneClean);
+    const {data,error}=await q.single();
+    if(error||!data){
+      setAuthErr('not_registered');
+      setLoading(false);return;
+    }
+    if(data.password_hash&&data.password_hash!==signinPass){
+      setAuthErr('Incorrect password.');setLoading(false);return;
+    }
     setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
     setPatientId(data.id);
     setCur(data.current_aligner||1);
@@ -365,9 +371,9 @@ function App(){
   const hr=now.getHours();
   const greet=hr<12?t.greetings.morning:hr<18?t.greetings.afternoon:t.greetings.evening;
   const motiv=frac>=.85?t.motivateNear:frac>=.5?t.motivateHigh:frac>=.2?t.motivateMid:t.motivateLow;
-  const fname=reg.first||'Arta';
-  const fullName=(reg.first||reg.last)?[reg.first,reg.last].filter(Boolean).join(' '):'Arta Krasniqi';
-  const initials=((reg.first||'A')[0]+(reg.last?reg.last[0]:'')).toUpperCase();
+  const fname=reg.first||'';
+  const fullName=[reg.first,reg.last].filter(Boolean).join(' ')||'';
+  const initials=((reg.first||'?')[0]+(reg.last?reg.last[0]:'')).toUpperCase();
   const dayCells=Array.from({length:10},(_,i)=>{
     const d=new Date(nextDate);d.setDate(d.getDate()-(10-(i+1)));d.setHours(0,0,0,0);
     const past=d<today0,tod=d.getTime()===today0.getTime();
@@ -420,11 +426,15 @@ function App(){
         h('div',{style:{textAlign:'center'}},
           h('h1',{style:{fontSize:24,fontWeight:600,letterSpacing:'-.02em',margin:'0 0 4px'}},isSignin?t.signinTitle:t.loginTitle),
           h('p',{style:{opacity:.6,fontSize:14,margin:0}},isSignin?t.signinSubtitle:t.loginSubtitle)),
-        authErr&&h('p',{style:{color:'#fca5a5',fontSize:12,margin:'-8px 0 0',textAlign:'center'}},authErr),
+        authErr&&authErr==='not_registered'
+          ?h('div',{style:{textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:8,padding:'8px 0'}},
+              h('p',{style:{color:'#fca5a5',fontSize:13,margin:0}},t.notRegistered),
+              h('button',{type:'button',className:'btn btn-primary',style:{fontSize:13},onClick:()=>{setAuthMode('register');setAuthErr('');setSigninPhone('');setSigninPass('')}},h('i',{className:'ph ph-user-plus'}),t.goRegister))
+          :authErr&&h('p',{style:{color:'#fca5a5',fontSize:12,margin:'-8px 0 0',textAlign:'center'}},authErr),
         isSignin
           ?h(React.Fragment,null,
               h('div',{className:'field',style:{width:'100%'}},
-                h('label',null,t.phone),
+                h('label',null,t.signinPhoneOrEmail||t.phone),
                 h('div',{style:{position:'relative'}},
                   h('i',{className:'ph ph-phone',style:{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none'}}),
                   h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:signinPhone,onChange:e=>{setSigninPhone(e.target.value);setAuthErr('')},required:true,autoFocus:true,style:{paddingLeft:36}}))),
@@ -746,7 +756,7 @@ function App(){
     h('div',{className:'card',style:{padding:'var(--space-6)'}},
       h('h2',{style:{fontSize:17,display:'flex',alignItems:'center',gap:8,marginBottom:'var(--space-4)'}},h('i',{className:'ph ph-user',style:{color:'var(--color-accent-2-400)'}}),t.yourInfo),
       h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-4)'}},
-        [[t.name,fullName],[t.email,reg.email||'arta.krasniqi@example.com'],[t.profilePhone,reg.phone||'+383 49 772 307'],[t.profileCity,reg.city||'Peja, Kosovo'],[t.yourTimezone,typeof Intl!=='undefined'?Intl.DateTimeFormat().resolvedOptions().timeZone:'UTC']].map(([l,v])=>
+        [[t.name,fullName],[t.email,reg.email||'—'],[t.profilePhone,reg.phone||'—'],[t.profileCity,reg.city||'—'],[t.yourTimezone,typeof Intl!=='undefined'?Intl.DateTimeFormat().resolvedOptions().timeZone:'UTC']].map(([l,v])=>
           h('div',{key:l},h('p',{style:{opacity:.5,fontSize:12,fontWeight:600,margin:'0 0 2px'}},l),h('p',{style:{fontSize:16,fontWeight:600,margin:0}},v))),
         h('p',{style:{opacity:.5,fontSize:13,margin:0}},t.infoNote),
         h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{width:'fit-content'}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),t.contactClinic))),
