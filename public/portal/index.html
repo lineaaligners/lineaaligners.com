@@ -164,6 +164,11 @@ en:{
   exportReport:'Export progress report',reportTitle:'Treatment Progress Report',reportGeneratedOn:'Generated on',
   reportPrint:'Print / Save as PDF',reportPatient:'Patient',reportAligner:'Current aligner',reportProgress:'Progress',
   reportStreak:'Compliance streak',reportStart:'Treatment start',reportFinish:'Estimated finish',
+  signinTitle:'Welcome back',signinSubtitle:'Sign in to your account',
+  signinPhoneOrEmail:'Phone or email',signinCta:'Sign in',
+  signinNoAcc:'New patient? Create an account',
+  password:'Password',confirmPassword:'Confirm password',
+  notRegistered:'Not registered yet.',goRegister:'Create an account',
   backToSite:'Back to site',
 },
 sq:{
@@ -233,6 +238,11 @@ sq:{
   exportReport:'Eksporto raportin',reportTitle:'Raporti i Progresit të Trajtimit',reportGeneratedOn:'Krijuar më',
   reportPrint:'Printo / Ruaj si PDF',reportPatient:'Pacienti',reportAligner:'Aparati aktual',reportProgress:'Progresi',
   reportStreak:'Ditë rresht me përpikëri',reportStart:'Fillimi i trajtimit',reportFinish:'Përfundimi i parashikuar',
+  signinTitle:'Mirësevini përsëri',signinSubtitle:'Kyçohuni në llogarinë tuaj',
+  signinPhoneOrEmail:'Telefon ose email',signinCta:'Kyçu',
+  signinNoAcc:'Pacient i ri? Krijoni llogari',
+  password:'Fjalëkalimi',confirmPassword:'Konfirmo fjalëkalimin',
+  notRegistered:'Nuk jeni regjistruar akoma.',goRegister:'Krijoni llogari',
   backToSite:'Kthehu te faqja',
 }
 };
@@ -434,10 +444,10 @@ function App(){
         isSignin
           ?h(React.Fragment,null,
               h('div',{className:'field',style:{width:'100%'}},
-                h('label',null,t.signinPhoneOrEmail||t.phone),
+                h('label',null,t.signinPhoneOrEmail),
                 h('div',{style:{position:'relative'}},
                   h('i',{className:'ph ph-phone',style:{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none'}}),
-                  h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:signinPhone,onChange:e=>{setSigninPhone(e.target.value);setAuthErr('')},required:true,autoFocus:true,style:{paddingLeft:36}}))),
+                  h('input',{className:'input',type:'tel',placeholder:lang==="sq"?'Tel: +383 49... ose email':'Tel: +383 49... or email',value:signinPhone,onChange:e=>{setSigninPhone(e.target.value);setAuthErr('')},required:true,autoFocus:true,style:{paddingLeft:36}}))),
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.password),
                 h('div',{style:{position:'relative'}},
