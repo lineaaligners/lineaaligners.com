@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="robots" content="noindex, nofollow">
+<title>Linea Aligners — Admin Portal</title>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+:root{
+  --color-bg:#0b1220;--color-surface:#141d33;--color-text:#e9e9ed;
+  --color-divider:color-mix(in srgb,#e9e9ed 14%,transparent);
+  --color-neutral-800:#1e2740;--color-neutral-900:#111827;
+  --color-accent:#4169e1;
+  --color-accent-300:#aec2f7;--color-accent-500:#4169e1;--color-accent-600:#3355bd;
+  --color-accent-700:#284294;--color-accent-800:#1d2f6b;--color-accent-900:#141f47;
+  --color-gold:#FFD700;--color-gold-dim:rgba(255,215,0,.15);
+  --color-danger:#ef4444;--color-success:#22c55e;--color-warning:#f59e0b;
+  --font-body:'Inter',system-ui,sans-serif;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+  --shadow-md:0 4px 16px rgba(0,0,0,.35);--shadow-lg:0 8px 32px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-text);min-height:100vh;font-feature-settings:"tnum" 1,"cv11" 1}
+::-webkit-scrollbar{height:6px;width:6px}
+::-webkit-scrollbar-thumb{background:var(--color-neutral-800);border-radius:999px}
+.card{background:color-mix(in srgb,var(--color-surface) 60%,transparent);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid color-mix(in srgb,#fff 9%,transparent);border-radius:var(--radius-lg)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-md);border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--color-accent);color:#fff}.btn-primary:hover{background:var(--color-accent-600)}
+.btn-secondary{background:color-mix(in srgb,#fff 6%,transparent);color:var(--color-text);border:1px solid color-mix(in srgb,#fff 12%,transparent)}.btn-secondary:hover{background:color-mix(in srgb,#fff 10%,transparent)}
+.btn-gold{background:linear-gradient(135deg,var(--color-gold),#FF8C00);color:#0b1220;font-weight:700}
+.btn-danger{background:color-mix(in srgb,var(--color-danger) 20%,transparent);color:#fca5a5;border:1px solid color-mix(in srgb,var(--color-danger) 40%,transparent)}
+.btn-icon{padding:8px;width:36px;height:36px;justify-content:center}
+.input{background:color-mix(in srgb,#fff 5%,transparent);border:1px solid color-mix(in srgb,#fff 12%,transparent);border-radius:var(--radius-md);padding:9px 12px;color:var(--color-text);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s;width:100%}
+.input:focus{border-color:var(--color-accent)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.dialog-backdrop{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.dialog{background:color-mix(in srgb,var(--color-surface) 70%,transparent);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);border:1px solid color-mix(in srgb,#fff 14%,transparent);border-radius:var(--radius-lg);padding:24px;width:min(500px,calc(100vw - 32px));max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease both}
+.fade-up{animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both}
+.gold-glow{box-shadow:0 0 30px rgba(255,215,0,.15)}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);position:fixed !important;z-index:100}
+  .sidebar.open{transform:translateX(0)}
+  .main-shift{margin-left:0 !important}
+  .col2{grid-template-columns:1fr !important}
+  .stats-grid{grid-template-columns:repeat(2,1fr) !important}
+  .patient-table{font-size:12px}
+  .patient-table th:nth-child(3),.patient-table td:nth-child(3){display:none}
+  .patient-table th:nth-child(5),.patient-table td:nth-child(5){display:none}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="err" style="display:none;padding:20px;color:#ff8888;font-family:monospace;font-size:12px;white-space:pre-wrap"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPA=supabase.createClient(window.__SUPA_URL__||"https://edlkuctthlutcelyukoh.supabase.co",window.__SUPA_KEY__||"sb_publishable_k2rMFCJWaVU5aGLKKqI97w_UH0qFtxS");
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script>
+window.addEventListener('error',e=>{const el=document.getElementById('err');if(el){el.style.display='block';el.textContent='Error: '+e.message+'\n'+e.filename+':'+e.lineno;}});
+(function(){
+const {useState,useRef,useEffect}=React;
+const {createRoot}=ReactDOM;
+const h=(t,p,...c)=>React.createElement(t,p,...c);
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO DATA — in production, replace with backend calls
+// ═══════════════════════════════════════════════════════════════
+const DAY=86400000;
+const now=Date.now();
+const seed=[
+  {id:'p001',first:'Arta',last:'Krasniqi',phone:'+383 49 772 307',email:'arta.krasniqi@example.com',city:'Peja, Kosova',
+    startDaysAgo:65,currentAligner:7,totalAligners:20,nextChangeDays:4,streak:6,
+    apptDaysAhead:9,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:3,total:6},scans:2,notes:'Mild crowding, upper anterior rotation. Progressing well.',
+    emergencies:0,lastActivity:1},
+  {id:'p002',first:'Ardit',last:'Berisha',phone:'+383 44 555 122',email:'ardit.b@example.com',city:'Prishtinë, Kosova',
+    startDaysAgo:120,currentAligner:14,totalAligners:18,nextChangeDays:2,streak:14,
+    apptDaysAhead:3,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:5,total:6},scans:4,notes:'Deep bite. Refinement stage.',emergencies:0,lastActivity:0},
+  {id:'p003',first:'Elira',last:'Hoxha',phone:'+383 45 888 990',email:'elira.h@example.com',city:'Gjakovë, Kosova',
+    startDaysAgo:210,currentAligner:22,totalAligners:22,nextChangeDays:0,streak:28,
+    apptDaysAhead:1,doctor:'Dr. Fatbardha Mustafa',status:'finishing',
+    payment:{paid:6,total:6},scans:8,notes:'Final aligner. Ready for retention.',emergencies:0,lastActivity:0},
+  {id:'p004',first:'Blerim',last:'Krasniqi',phone:'+383 49 100 200',email:'blerim.k@example.com',city:'Pejë, Kosova',
+    startDaysAgo:35,currentAligner:3,totalAligners:24,nextChangeDays:7,streak:3,
+    apptDaysAhead:14,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:2,total:8},scans:1,notes:'Complex case. Class II div 1.',emergencies:1,lastActivity:2},
+  {id:'p005',first:'Rina',last:'Statovci',phone:'+377 44 321 654',email:'rina.s@example.com',city:'Prizren, Kosova',
+    startDaysAgo:15,currentAligner:1,totalAligners:16,nextChangeDays:5,streak:1,
+    apptDaysAhead:21,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:1,total:6},scans:1,notes:'Spacing only. Expected fast completion.',emergencies:0,lastActivity:3},
+  {id:'p006',first:'Genti',last:'Morina',phone:'+49 176 5432100',email:'genti.m@example.com',city:'München, Germany',
+    startDaysAgo:88,currentAligner:9,totalAligners:22,nextChangeDays:6,streak:0,
+    apptDaysAhead:45,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:4,total:6},scans:3,notes:'Diaspora patient. Remote monitoring.',emergencies:0,lastActivity:14},
+  {id:'p007',first:'Vjosa',last:'Krasniqi',phone:'+44 7712 998877',email:'vjosa.k@example.com',city:'London, UK',
+    startDaysAgo:180,currentAligner:19,totalAligners:20,nextChangeDays:3,streak:12,
+    apptDaysAhead:60,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:6,total:6},scans:6,notes:'UK diaspora. Near completion.',emergencies:0,lastActivity:2},
+  {id:'p008',first:'Driton',last:'Rexhepi',phone:'+383 44 777 333',email:'driton.r@example.com',city:'Ferizaj, Kosova',
+    startDaysAgo:50,currentAligner:5,totalAligners:20,nextChangeDays:1,streak:5,
+    apptDaysAhead:5,doctor:'Dr. Fatbardha Mustafa',status:'active',
+    payment:{paid:2,total:6},scans:2,notes:'',emergencies:0,lastActivity:0},
+];
+
+const emergencies=[
+  {id:'e1',patientId:'p004',type:'broken',daysAgo:2,status:'pending',note:'Upper aligner cracked on left side while eating.'},
+];
+
+const messages=[
+  {id:'m1',patientId:'p004',from:'patient',text:'My aligner cracked yesterday, sending photos.',hoursAgo:6},
+  {id:'m2',patientId:'p002',from:'patient',text:'Feels tight, is this normal for aligner 14?',hoursAgo:24},
+  {id:'m3',patientId:'p007',from:'patient',text:'Can we schedule my next check-in for late September?',hoursAgo:48},
+];
+
+// ═══════════════════════════════════════════════════════════════
+// UTIL
+// ═══════════════════════════════════════════════════════════════
+const fmtDate=(d)=>d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+const fmtDateTime=(d)=>d.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+const daysAgo=(n)=>n===0?'today':n===1?'yesterday':`${n}d ago`;
+const initials=(f,l)=>((f||'?')[0]+(l||'')[0]||'').toUpperCase();
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH GATE (simple PIN — for demo. Replace with real auth in prod)
+// ═══════════════════════════════════════════════════════════════
+const ADMIN_PIN='2025'; // Change this or replace with Firebase auth
+
+function AuthGate({onOk}){
+  const [pin,setPin]=useState('');
+  const [err,setErr]=useState(false);
+  const submit=e=>{e.preventDefault();if(pin===ADMIN_PIN){sessionStorage.setItem('lin_admin','1');onOk()}else{setErr(true);setPin('')}};
+  return h('div',{className:'fade-in',style:{position:'fixed',inset:0,background:'linear-gradient(160deg,#1d2f6b 0%,var(--color-bg) 50%,#0b1220 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}},
+    h('div',{style:{position:'absolute',width:400,height:400,top:-100,left:-100,borderRadius:'50%',background:'var(--color-gold)',filter:'blur(120px)',opacity:.15}}),
+    h('div',{style:{position:'absolute',width:360,height:360,bottom:-120,right:-100,borderRadius:'50%',background:'var(--color-accent)',filter:'blur(120px)',opacity:.25}}),
+    h('form',{onSubmit:submit,className:'card gold-glow fade-up',style:{position:'relative',width:'min(380px,100%)',padding:32,display:'flex',flexDirection:'column',gap:20,alignItems:'center',border:'1px solid rgba(255,215,0,.3)'}},
+      h('div',{style:{width:60,height:60,borderRadius:14,background:'color-mix(in srgb,var(--color-gold) 15%,transparent)',border:'1px solid rgba(255,215,0,.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h('i',{className:'ph ph-shield-check',style:{fontSize:28,color:'var(--color-gold)'}})),
+      h('div',{style:{textAlign:'center'}},
+        h('h1',{style:{fontSize:22,fontWeight:700,margin:'0 0 4px'}},'Admin Portal'),
+        h('p',{style:{opacity:.6,fontSize:13,margin:0}},'Enter admin PIN to continue')),
+      h('input',{className:'input',type:'password',placeholder:'PIN',value:pin,onChange:e=>{setPin(e.target.value);setErr(false)},style:{textAlign:'center',fontSize:20,letterSpacing:'.4em',padding:'12px 16px'},autoFocus:true}),
+      err&&h('p',{style:{color:'#fca5a5',fontSize:12,margin:0}},'Incorrect PIN'),
+      h('button',{type:'submit',className:'btn btn-gold',style:{width:'100%',justifyContent:'center',padding:'12px 20px',fontSize:14}},h('i',{className:'ph ph-arrow-right'}),'Sign in'),
+      h('a',{href:'/',style:{fontSize:12,opacity:.5,textDecoration:'none',color:'inherit'}},'← Back to site')));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════
+function App(){
+  const [ok,setOk]=useState(()=>sessionStorage.getItem('lin_admin')==='1');
+  const [tab,setTab]=useState('dashboard');
+  const [patients,setPatients]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [selected,setSelected]=useState(null);
+  const [search,setSearch]=useState('');
+  const [filter,setFilter]=useState('all');
+  const [sidebarOpen,setSidebar]=useState(false);
+  const [toasts,setToasts]=useState([]);
+  const [confirm,setConfirm]=useState(null);
+  const [emergs,setEmergs]=useState([]);
+  const [msgs,setMsgs]=useState([]);
+  const [addOpen,setAddOpen]=useState(false);
+
+  const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
+
+  useEffect(()=>{
+    if(!ok)return;
+    (async()=>{
+      setLoading(true);
+      const [pR,eR,mR]=await Promise.all([
+        SUPA.from('patients').select('*').order('created_at',{ascending:false}),
+        SUPA.from('emergencies').select('*').order('created_at',{ascending:false}),
+        SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
+      ]);
+      if(pR.data) setPatients(pR.data.map(p=>({
+        id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',
+        currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||20,
+        nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
+        streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
+        payment:{paid:p.payment_paid||0,total:p.payment_total||6},
+        emergencies:0,lastActivity:0,apptDaysAhead:7,
+        doctor:p.doctor||'Dr. Fatbardha Mustafa',scans:0
+      })));
+      if(eR.data) setEmergs(eR.data.map(e=>({
+        id:e.id,patientId:e.patient_id,type:e.type,status:e.status,note:e.note||'',
+        daysAgo:Math.round((new Date()-new Date(e.created_at))/(86400000))
+      })));
+      if(mR.data) setMsgs(mR.data.map(m=>({
+        id:m.id,patientId:m.patient_id,from:'patient',text:m.content,
+        hoursAgo:Math.round((new Date()-new Date(m.created_at))/(3600000))
+      })));
+      setLoading(false);
+    })();
+  },[ok]);
+
+  const signOut=()=>{sessionStorage.removeItem('lin_admin');setOk(false)};
+
+  if(!ok)return h(AuthGate,{onOk:()=>setOk(true)});
+
+  // ── FILTERED PATIENTS (plain compute, no hook) ──
+  let filtered=patients;
+  if(filter==='active')filtered=filtered.filter(p=>p.status==='active');
+  else if(filter==='finishing')filtered=filtered.filter(p=>p.status==='finishing');
+  else if(filter==='emergency')filtered=filtered.filter(p=>p.emergencies>0);
+  else if(filter==='today')filtered=filtered.filter(p=>p.nextChangeDays<=1||p.apptDaysAhead<=1);
+  if(search){const q=search.toLowerCase();filtered=filtered.filter(p=>(p.first+' '+p.last+' '+p.email+' '+p.city+' '+p.phone).toLowerCase().includes(q))}
+
+  // ── STATS ──
+  const stats={
+    total:patients.length,
+    active:patients.filter(p=>p.status==='active').length,
+    finishing:patients.filter(p=>p.status==='finishing').length,
+    emergencies:emergs.filter(e=>e.status==='pending').length,
+    apptsThisWeek:patients.filter(p=>p.apptDaysAhead<=7).length,
+    unreadMsgs:msgs.length,
+    avgProgress:Math.round(patients.reduce((s,p)=>s+p.currentAligner/p.totalAligners,0)/patients.length*100),
+  };
+
+  // ── ACTIONS ──
+  const advanceAligner=(id)=>{
+    const p=patients.find(x=>x.id===id);if(!p||p.currentAligner>=p.totalAligners)return;
+    setConfirm({text:"Advance "+p.first+" "+p.last+" to aligner "+(p.currentAligner+1)+"?",fn:async()=>{
+      const n=p.currentAligner+1;
+      const nd=new Date();nd.setDate(nd.getDate()+10);
+      await SUPA.from('patients').update({current_aligner:n,next_change_date:nd.toISOString().slice(0,10)}).eq('id',id);
+      setPatients(prev=>prev.map(x=>x.id===id?{...x,currentAligner:n,nextChangeDays:10}:x));
+      toast(p.first+" advanced to aligner "+n);
+    }});
+  };
+  const resolveEmerg=(id)=>{
+    const em=emergs.find(x=>x.id===id);if(!em)return;
+    const p=patients.find(x=>x.id===em.patientId);
+    setConfirm({text:"Mark "+(p&&p.first)+"s replacement as delivered?",fn:async()=>{
+      await SUPA.from('emergencies').update({status:'resolved',resolved_at:new Date().toISOString()}).eq('id',id);
+      setEmergs(prev=>prev.map(x=>x.id===id?{...x,status:'resolved'}:x));
+      toast("Emergency resolved for "+(p&&p.first));
+    }});
+  };
+  const delMsg=async(id)=>{await SUPA.from('messages').update({read_at:new Date().toISOString()}).eq('id',id);setMsgs(prev=>prev.filter(x=>x.id!==id));toast('Message archived')};
+  const addPatient=async(data)=>{
+    const nd=new Date();nd.setDate(nd.getDate()+10);
+    const {data:ins,error}=await SUPA.from('patients').insert({
+      first_name:data.first,last_name:data.last,phone:data.phone,email:data.email,
+      city:data.city,current_aligner:1,total_aligners:Number(data.totalAligners),
+      next_change_date:nd.toISOString().slice(0,10),status:'active',payment_paid:0,payment_total:6
+    }).select().single();
+    if(error){toast('Error: '+error.message);return;}
+    const p={id:ins.id,first:ins.first_name,last:ins.last_name,phone:ins.phone,email:ins.email,
+      city:ins.city||'',currentAligner:1,totalAligners:Number(data.totalAligners),
+      nextChangeDays:10,streak:0,apptDaysAhead:7,doctor:'Dr. Fatbardha Mustafa',
+      status:'active',payment:{paid:0,total:6},scans:0,notes:'',emergencies:0,lastActivity:0};
+    setPatients(prev=>[p,...prev]);setAddOpen(false);toast(data.first+' '+data.last+' added');
+  };
+
+  // ── NAVIGATION ──
+  const navItems=[
+    {id:'dashboard',icon:'ph-house',label:'Dashboard'},
+    {id:'patients',icon:'ph-users',label:'Patients',badge:patients.length},
+    {id:'appointments',icon:'ph-calendar',label:'Appointments',badge:stats.apptsThisWeek},
+    {id:'emergencies',icon:'ph-first-aid',label:'Emergencies',badge:stats.emergencies,urgent:stats.emergencies>0},
+    {id:'messages',icon:'ph-chat-circle',label:'Messages',badge:stats.unreadMsgs},
+    {id:'analytics',icon:'ph-chart-bar',label:'Analytics'},
+    {id:'settings',icon:'ph-gear',label:'Settings'},
+  ];
+
+  // ── SIDEBAR ──
+  const Sidebar=h('aside',{className:`sidebar ${sidebarOpen?'open':''}`,style:{width:240,height:'100vh',position:'sticky',top:0,left:0,padding:20,background:'color-mix(in srgb,var(--color-surface) 60%,transparent)',backdropFilter:'blur(24px) saturate(160%)',borderRight:'1px solid var(--color-divider)',display:'flex',flexDirection:'column',gap:8,transition:'transform .3s ease'}},
+    h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'0 8px 20px',borderBottom:'1px solid var(--color-divider)'}},
+      h('div',{style:{width:36,height:36,borderRadius:8,background:'rgba(255,215,0,.15)',border:'1px solid rgba(255,215,0,.35)',display:'flex',alignItems:'center',justifyContent:'center',padding:6}},
+        h('img',{src:'/linea-logo.svg',alt:'',style:{width:'100%',height:'100%',objectFit:'contain',filter:'brightness(0) saturate(100%) invert(75%) sepia(58%) saturate(631%) hue-rotate(6deg) brightness(102%) contrast(105%)'}})),
+      h('div',null,
+        h('p',{style:{fontSize:14,fontWeight:700,margin:0}},'Linea'),
+        h('p',{style:{fontSize:10,fontWeight:600,color:'var(--color-gold)',margin:0,letterSpacing:'.15em'}},'ADMIN'))),
+    h('div',{style:{display:'flex',flexDirection:'column',gap:4,paddingTop:12}},
+      navItems.map(n=>{
+        const active=tab===n.id;
+        return h('button',{key:n.id,onClick:()=>{setTab(n.id);setSidebar(false);setSelected(null)},style:{display:'flex',alignItems:'center',gap:12,padding:'10px 12px',borderRadius:8,background:active?'var(--color-accent-900)':'transparent',border:`1px solid ${active?'var(--color-accent-700)':'transparent'}`,color:active?'var(--color-accent-300)':'color-mix(in srgb,var(--color-text) 70%,transparent)',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:600,transition:'all .2s'}},
+          h('i',{className:`ph ${n.icon}`,style:{fontSize:18}}),
+          h('span',{style:{flex:1,textAlign:'left'}},n.label),
+          n.badge!==undefined&&n.badge>0&&h('span',{style:{fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:999,background:n.urgent?'var(--color-danger)':'var(--color-neutral-800)',color:n.urgent?'#fff':'var(--color-accent-300)'}},n.badge));
+      })),
+    h('div',{style:{marginTop:'auto',paddingTop:20,borderTop:'1px solid var(--color-divider)',display:'flex',flexDirection:'column',gap:8}},
+      h('a',{href:'/portal/',target:'_blank',className:'btn btn-secondary',style:{fontSize:12,justifyContent:'flex-start'}},h('i',{className:'ph ph-user'}),'View Patient Portal'),
+      h('a',{href:'/',className:'btn btn-secondary',style:{fontSize:12,justifyContent:'flex-start'}},h('i',{className:'ph ph-house'}),'Back to Site'),
+      h('button',{onClick:signOut,className:'btn btn-secondary',style:{fontSize:12,justifyContent:'flex-start'}},h('i',{className:'ph ph-sign-out'}),'Sign out')));
+
+  // ── STAT CARD ──
+  const StatCard=(icon,label,val,sub,accent)=>h('div',{className:'card fade-up',style:{padding:20}},
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+      h('div',{style:{width:38,height:38,borderRadius:10,background:accent?'color-mix(in srgb,'+accent+' 18%,transparent)':'var(--color-accent-900)',border:`1px solid ${accent||'var(--color-accent-700)'}`,display:'flex',alignItems:'center',justifyContent:'center'}},
+        h('i',{className:`ph ${icon}`,style:{fontSize:18,color:accent||'var(--color-accent-300)'}}))),
+    h('p',{style:{fontSize:32,fontWeight:700,margin:'16px 0 2px',letterSpacing:'-.02em'}},val),
+    h('p',{style:{opacity:.55,fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em',margin:0}},label),
+    sub&&h('p',{style:{opacity:.5,fontSize:12,margin:'6px 0 0'}},sub));
+
+  // ── DASHBOARD ──
+  const Dashboard=h('div',{style:{display:'flex',flexDirection:'column',gap:24}},
+    h('div',null,
+      h('h1',{style:{fontSize:28,fontWeight:700,letterSpacing:'-.02em',margin:0}},'Welcome back, Genis'),
+      h('p',{style:{opacity:.6,fontSize:15,margin:'4px 0 0'}},'Here is the state of your clinic today.')),
+    h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
+      StatCard('ph-users','Total patients',stats.total,`${stats.active} active`),
+      StatCard('ph-calendar-check','This week',stats.apptsThisWeek,'Appointments',null),
+      StatCard('ph-first-aid','Emergencies',stats.emergencies,stats.emergencies>0?'Needs attention':'All clear',stats.emergencies>0?'var(--color-danger)':'var(--color-success)'),
+      StatCard('ph-chart-line-up','Avg progress',stats.avgProgress+'%','Across all patients','var(--color-gold)')),
+    h('div',{className:'col2',style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}},
+      // Urgent items
+      h('div',{className:'card',style:{padding:20}},
+        h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:12,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-lightning',style:{color:'var(--color-gold)'}}),'Needs your attention'),
+        h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+          emergs.filter(e=>e.status==='pending').map(em=>{
+            const p=patients.find(x=>x.id===em.patientId);
+            return h('div',{key:em.id,style:{padding:12,borderRadius:10,background:'color-mix(in srgb,var(--color-danger) 12%,transparent)',border:'1px solid color-mix(in srgb,var(--color-danger) 35%,transparent)',display:'flex',alignItems:'center',gap:12}},
+              h('i',{className:'ph ph-warning',style:{color:'#fca5a5',fontSize:20}}),
+              h('div',{style:{flex:1}},
+                h('p',{style:{fontSize:13,fontWeight:600,margin:0}},`${p?.first} ${p?.last} — ${em.type} aligner`),
+                h('p',{style:{fontSize:11,opacity:.6,margin:'2px 0 0'}},daysAgo(em.daysAgo))),
+              h('button',{className:'btn btn-secondary',style:{fontSize:11,padding:'6px 10px'},onClick:()=>{setTab('patients');setSelected(p)}},'View'));
+          }),
+          patients.filter(p=>p.nextChangeDays<=1).slice(0,3).map(p=>
+            h('div',{key:'chg-'+p.id,style:{padding:12,borderRadius:10,background:'color-mix(in srgb,var(--color-warning) 12%,transparent)',border:'1px solid color-mix(in srgb,var(--color-warning) 30%,transparent)',display:'flex',alignItems:'center',gap:12}},
+              h('i',{className:'ph ph-swap',style:{color:'#fbbf24',fontSize:20}}),
+              h('div',{style:{flex:1}},
+                h('p',{style:{fontSize:13,fontWeight:600,margin:0}},`${p.first} ${p.last} — change aligner ${p.nextChangeDays===0?'today':'tomorrow'}`),
+                h('p',{style:{fontSize:11,opacity:.6,margin:'2px 0 0'}},`Aligner ${p.currentAligner} → ${p.currentAligner+1}`)),
+              h('button',{className:'btn btn-primary',style:{fontSize:11,padding:'6px 10px'},onClick:()=>advanceAligner(p.id)},'Advance'))),
+          emergs.filter(e=>e.status==='pending').length===0&&patients.filter(p=>p.nextChangeDays<=1).length===0&&
+            h('div',{style:{padding:20,textAlign:'center',opacity:.5,fontSize:13}},'Nothing urgent 👌'))),
+      // Recent messages
+      h('div',{className:'card',style:{padding:20}},
+        h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:12,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-chat-circle-dots',style:{color:'var(--color-accent-300)'}}),'Recent messages'),
+        h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+          msgs.slice(0,4).map(m=>{const p=patients.find(x=>x.id===m.patientId);
+            return h('div',{key:m.id,style:{padding:12,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',display:'flex',gap:12}},
+              h('div',{style:{width:32,height:32,borderRadius:'50%',background:'var(--color-accent-900)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'var(--color-accent-300)',flex:'none'}},initials(p?.first,p?.last)),
+              h('div',{style:{flex:1,minWidth:0}},
+                h('div',{style:{display:'flex',justifyContent:'space-between'}},
+                  h('p',{style:{fontSize:12,fontWeight:700,margin:0}},`${p?.first} ${p?.last}`),
+                  h('p',{style:{fontSize:10,opacity:.5,margin:0}},`${m.hoursAgo}h ago`)),
+                h('p',{style:{fontSize:12,opacity:.75,margin:'4px 0 0'}},m.text)));
+          }),
+          msgs.length===0&&h('div',{style:{padding:20,textAlign:'center',opacity:.5,fontSize:13}},'No messages')))));
+
+  // ── PATIENTS TABLE ──
+  const Patients=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}},
+      h('div',null,
+        h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Patients'),
+        h('p',{style:{opacity:.6,fontSize:14,margin:'2px 0 0'}},`${filtered.length} of ${patients.length}`)),
+      h('button',{className:'btn btn-primary',onClick:()=>setAddOpen(true)},h('i',{className:'ph ph-user-plus'}),'Add patient')),
+    // Filters
+    h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}},
+      h('div',{style:{position:'relative',flex:'1 1 240px',minWidth:200}},
+        h('i',{className:'ph ph-magnifying-glass',style:{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:.4,pointerEvents:'none'}}),
+        h('input',{className:'input',placeholder:'Search name, phone, city...',value:search,onChange:e=>setSearch(e.target.value),style:{paddingLeft:34}})),
+      ['all','active','finishing','emergency','today'].map(f=>
+        h('button',{key:f,onClick:()=>setFilter(f),style:{padding:'8px 14px',borderRadius:8,border:'1px solid '+(filter===f?'var(--color-accent-700)':'var(--color-divider)'),background:filter===f?'var(--color-accent-900)':'transparent',color:filter===f?'var(--color-accent-300)':'color-mix(in srgb,var(--color-text) 65%,transparent)',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textTransform:'capitalize'}},f))),
+    // Table
+    h('div',{className:'card',style:{padding:0,overflow:'hidden'}},
+      h('div',{style:{overflowX:'auto'}},
+        h('table',{className:'patient-table',style:{width:'100%',borderCollapse:'collapse',fontSize:13}},
+          h('thead',null,h('tr',{style:{borderBottom:'1px solid var(--color-divider)'}},
+            ['Patient','Progress','Next change','Streak','Appointment','Status',''].map(l=>h('th',{key:l,style:{textAlign:'left',padding:'12px 16px',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',opacity:.5}},l)))),
+          h('tbody',null,
+            filtered.map(p=>{
+              const pct=Math.round(p.currentAligner/p.totalAligners*100);
+              const statusColors={active:'var(--color-success)',finishing:'var(--color-gold)',paused:'var(--color-warning)'};
+              return h('tr',{key:p.id,onClick:()=>setSelected(p),style:{borderBottom:'1px solid var(--color-divider)',cursor:'pointer',transition:'background .15s'},onMouseEnter:e=>e.currentTarget.style.background='color-mix(in srgb,#fff 3%,transparent)',onMouseLeave:e=>e.currentTarget.style.background='transparent'},
+                h('td',{style:{padding:'14px 16px'}},h('div',{style:{display:'flex',alignItems:'center',gap:12}},
+                  h('div',{style:{width:36,height:36,borderRadius:'50%',background:'var(--color-accent-900)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'var(--color-accent-300)',flex:'none'}},initials(p.first,p.last)),
+                  h('div',{style:{minWidth:0}},
+                    h('p',{style:{fontWeight:600,margin:0}},`${p.first} ${p.last}`),
+                    h('p',{style:{fontSize:11,opacity:.55,margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},p.city)))),
+                h('td',{style:{padding:'14px 16px'}},h('div',{style:{minWidth:130}},
+                  h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:4}},h('span',null,`${p.currentAligner}/${p.totalAligners}`),h('span',{style:{opacity:.6}},pct+'%')),
+                  h('div',{style:{height:5,background:'var(--color-neutral-800)',borderRadius:999,overflow:'hidden'}},h('div',{style:{height:'100%',background:'var(--color-accent)',width:pct+'%'}})))),
+                h('td',{style:{padding:'14px 16px'}},h('span',{style:{color:p.nextChangeDays<=1?'#fbbf24':'inherit',fontWeight:p.nextChangeDays<=1?600:400}},p.nextChangeDays===0?'Today':p.nextChangeDays===1?'Tomorrow':`${p.nextChangeDays}d`)),
+                h('td',{style:{padding:'14px 16px'}},h('span',{style:{display:'inline-flex',alignItems:'center',gap:4}},h('i',{className:'ph ph-flame',style:{color:'#ff9d4d',fontSize:12}}),p.streak)),
+                h('td',{style:{padding:'14px 16px'}},`${p.apptDaysAhead}d`),
+                h('td',{style:{padding:'14px 16px'}},h('span',{className:'chip',style:{background:'color-mix(in srgb,'+statusColors[p.status]+' 18%,transparent)',color:statusColors[p.status]}},p.status)),
+                h('td',{style:{padding:'14px 16px',textAlign:'right'}},
+                  p.emergencies>0&&h('i',{className:'ph ph-warning-circle',style:{color:'var(--color-danger)',fontSize:18}}))
+              );
+            }),
+            filtered.length===0&&h('tr',null,h('td',{colSpan:7,style:{padding:40,textAlign:'center',opacity:.5}},'No patients match'))
+          )))));
+
+  // ── APPOINTMENTS ──
+  const sortedAppts=[...patients].sort((a,b)=>a.apptDaysAhead-b.apptDaysAhead);
+  const Appointments=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('div',null,h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Appointments'),h('p',{style:{opacity:.6,fontSize:14,margin:'2px 0 0'}},`Next ${sortedAppts.length}`)),
+    h('div',{className:'card',style:{padding:0}},
+      sortedAppts.map((p,i)=>{
+        const d=new Date(now+p.apptDaysAhead*DAY);
+        return h('div',{key:p.id,style:{padding:16,display:'flex',alignItems:'center',gap:16,borderBottom:i<sortedAppts.length-1?'1px solid var(--color-divider)':'none'}},
+          h('div',{style:{width:60,textAlign:'center'}},
+            h('p',{style:{fontSize:24,fontWeight:700,margin:0,color:p.apptDaysAhead<=1?'#fbbf24':'inherit'}},d.getDate()),
+            h('p',{style:{fontSize:10,fontWeight:600,margin:0,opacity:.6,textTransform:'uppercase'}},d.toLocaleDateString('en-GB',{month:'short'}))),
+          h('div',{style:{width:1,height:44,background:'var(--color-divider)'}}),
+          h('div',{style:{flex:1,minWidth:0}},
+            h('p',{style:{fontWeight:600,margin:0}},`${p.first} ${p.last}`),
+            h('p',{style:{fontSize:12,opacity:.6,margin:'2px 0 0'}},`${p.doctor} · Aligner ${p.currentAligner}/${p.totalAligners}`)),
+          h('span',{className:'chip',style:{background:p.apptDaysAhead<=1?'color-mix(in srgb,var(--color-warning) 20%,transparent)':'var(--color-accent-900)',color:p.apptDaysAhead<=1?'#fbbf24':'var(--color-accent-300)'}},p.apptDaysAhead===0?'Today':p.apptDaysAhead===1?'Tomorrow':`in ${p.apptDaysAhead}d`),
+          h('button',{className:'btn btn-secondary',style:{fontSize:12,padding:'6px 10px'},onClick:()=>setSelected(p)},'Open'));
+      })));
+
+  // ── EMERGENCIES ──
+  const Emergencies=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('div',null,h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Emergencies'),h('p',{style:{opacity:.6,fontSize:14,margin:'2px 0 0'}},`${emergs.filter(e=>e.status==='pending').length} pending`)),
+    h('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+      emergs.map(em=>{const p=patients.find(x=>x.id===em.patientId);
+        return h('div',{key:em.id,className:'card',style:{padding:20,borderColor:em.status==='pending'?'color-mix(in srgb,var(--color-danger) 40%,transparent)':'var(--color-divider)'}},
+          h('div',{style:{display:'flex',alignItems:'flex-start',gap:16}},
+            h('div',{style:{width:44,height:44,borderRadius:10,background:em.status==='pending'?'color-mix(in srgb,var(--color-danger) 20%,transparent)':'var(--color-neutral-900)',display:'flex',alignItems:'center',justifyContent:'center',flex:'none'}},
+              h('i',{className:'ph ph-first-aid',style:{color:em.status==='pending'?'#fca5a5':'var(--color-success)',fontSize:20}})),
+            h('div',{style:{flex:1}},
+              h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:8}},
+                h('div',null,
+                  h('p',{style:{fontWeight:700,fontSize:15,margin:0}},`${p?.first} ${p?.last} — ${em.type} aligner`),
+                  h('p',{style:{fontSize:12,opacity:.6,margin:'2px 0 0'}},`${daysAgo(em.daysAgo)} · ${p?.phone}`)),
+                h('span',{className:'chip',style:{background:em.status==='pending'?'color-mix(in srgb,var(--color-danger) 20%,transparent)':'color-mix(in srgb,var(--color-success) 20%,transparent)',color:em.status==='pending'?'#fca5a5':'#86efac'}},em.status)),
+              em.note&&h('p',{style:{fontSize:13,opacity:.8,margin:'12px 0 0',padding:12,borderRadius:8,background:'var(--color-neutral-900)'}},em.note),
+              h('div',{style:{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}},
+                h('a',{href:`https://wa.me/${p?.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
+                em.status==='pending'&&h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>resolveEmerg(em.id)},h('i',{className:'ph ph-check'}),'Mark resolved'),
+                h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setSelected(p)},'Open patient')))));
+      }),
+      emergs.length===0&&h('div',{className:'card',style:{padding:40,textAlign:'center',opacity:.5}},'No emergencies')));
+
+  // ── MESSAGES ──
+  const Messages=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('div',null,h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Messages'),h('p',{style:{opacity:.6,fontSize:14,margin:'2px 0 0'}},`${msgs.length} unread`)),
+    h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+      msgs.map(m=>{const p=patients.find(x=>x.id===m.patientId);
+        return h('div',{key:m.id,className:'card',style:{padding:16,display:'flex',gap:14,alignItems:'flex-start'}},
+          h('div',{style:{width:40,height:40,borderRadius:'50%',background:'var(--color-accent-900)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'var(--color-accent-300)',flex:'none'}},initials(p?.first,p?.last)),
+          h('div',{style:{flex:1}},
+            h('div',{style:{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:4}},
+              h('p',{style:{fontWeight:700,fontSize:13,margin:0}},`${p?.first} ${p?.last}`),
+              h('p',{style:{fontSize:11,opacity:.5,margin:0}},`${m.hoursAgo}h ago`)),
+            h('p',{style:{fontSize:14,margin:'6px 0 10px'}},m.text),
+            h('div',{style:{display:'flex',gap:8}},
+              h('a',{href:`https://wa.me/${p?.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'Reply'),
+              h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setSelected(p)},'Open'),
+              h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>delMsg(m.id)},'Archive'))));
+      }),
+      msgs.length===0&&h('div',{className:'card',style:{padding:40,textAlign:'center',opacity:.5}},'No unread messages')));
+
+  // ── ANALYTICS ──
+  const Analytics=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Analytics'),
+    h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
+      StatCard('ph-trophy','Completion rate','92%','Last 12 months','var(--color-gold)'),
+      StatCard('ph-clock','Avg treatment','6.5 months','Across finished cases',null),
+      StatCard('ph-currency-eur','Monthly revenue','€24,300','This month','var(--color-success)'),
+      StatCard('ph-hand-heart','Retention','98%','Referral rate','var(--color-accent-300)')),
+    h('div',{className:'card',style:{padding:24}},
+      h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:16}},'Patient distribution by location'),
+      (()=>{const byCity={};patients.forEach(p=>{const c=p.city.split(',')[0];byCity[c]=(byCity[c]||0)+1});
+        const max=Math.max(...Object.values(byCity));
+        return h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+          Object.entries(byCity).sort((a,b)=>b[1]-a[1]).map(([city,n])=>
+            h('div',{key:city,style:{display:'flex',alignItems:'center',gap:12}},
+              h('p',{style:{width:120,fontSize:13,margin:0}},city),
+              h('div',{style:{flex:1,height:24,background:'var(--color-neutral-900)',borderRadius:6,overflow:'hidden'}},
+                h('div',{style:{height:'100%',background:'linear-gradient(90deg,var(--color-accent),var(--color-accent-300))',width:(n/max*100)+'%',display:'flex',alignItems:'center',justifyContent:'flex-end',padding:'0 8px',fontSize:11,fontWeight:700,color:'#fff'}},n)))));
+      })()));
+
+  // ── SETTINGS ──
+  const Settings=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Settings'),
+    h('div',{className:'card',style:{padding:24}},
+      h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:16}},'Clinic'),
+      h('div',{style:{display:'grid',gridTemplateColumns:'auto 1fr',gap:'12px 24px',fontSize:14}},
+        ['Name','Linea Aligners'],['Location','Rr. Bajram Kelmendi, Pejë, Kosova'],['Phone','+383 49 772 307'],['Email','info@lineaaligners.com'],['Founder','Genis Nallbani'],['Clinical Lead','Dr. Fatbardha Mustafa'],['Partner Clinic','Medident Dental Clinic']
+          .map(([k,v])=>[h('p',{key:k+'k',style:{opacity:.55,fontSize:12,fontWeight:600,margin:0,textTransform:'uppercase',letterSpacing:'.08em'}},k),h('p',{key:k+'v',style:{fontWeight:600,margin:0}},v)]).flat())),
+    h('div',{className:'card',style:{padding:24}},
+      h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:8}},'Security'),
+      h('p',{style:{opacity:.6,fontSize:13,margin:'0 0 16px'}},'Admin PIN is stored in the page code. For production, replace with a real auth system (Firebase Auth, Auth0, or Supabase).'),
+      h('button',{className:'btn btn-secondary',onClick:signOut},h('i',{className:'ph ph-sign-out'}),'Sign out')));
+
+  // ── PATIENT DETAIL DRAWER ──
+  const Drawer=selected&&h('div',{className:'dialog-backdrop',onClick:e=>{if(e.target===e.currentTarget)setSelected(null)}},
+    h('div',{className:'dialog fade-up',style:{width:'min(720px,calc(100vw - 32px))',maxHeight:'92vh'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:14}},
+          h('div',{style:{width:52,height:52,borderRadius:'50%',background:'var(--color-accent-900)',border:'1px solid var(--color-accent-700)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:18,color:'var(--color-accent-300)'}},initials(selected.first,selected.last)),
+          h('div',null,
+            h('h2',{style:{fontSize:20,fontWeight:700,margin:0}},`${selected.first} ${selected.last}`),
+            h('p',{style:{fontSize:12,opacity:.6,margin:'2px 0 0'}},`${selected.city} · Started ${selected.startDaysAgo}d ago`))),
+        h('button',{className:'btn btn-icon btn-secondary',onClick:()=>setSelected(null)},h('i',{className:'ph ph-x'}))),
+      // Aligner progress
+      h('div',{style:{padding:20,borderRadius:12,background:'linear-gradient(135deg,var(--color-accent-900),var(--color-surface))',border:'1px solid var(--color-divider)',marginBottom:16}},
+        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
+          h('div',null,
+            h('p',{style:{fontSize:11,opacity:.6,fontWeight:600,margin:0,textTransform:'uppercase',letterSpacing:'.08em'}},'Current aligner'),
+            h('p',{style:{fontSize:40,fontWeight:700,margin:0,letterSpacing:'-.02em'}},selected.currentAligner,h('span',{style:{fontSize:18,opacity:.5,fontWeight:500}},` / ${selected.totalAligners}`))),
+          h('div',{style:{textAlign:'right'}},
+            h('p',{style:{fontSize:11,opacity:.6,fontWeight:600,margin:0,textTransform:'uppercase',letterSpacing:'.08em'}},'Next change'),
+            h('p',{style:{fontSize:20,fontWeight:700,margin:0,color:selected.nextChangeDays<=1?'#fbbf24':'inherit'}},selected.nextChangeDays===0?'Today':selected.nextChangeDays===1?'Tomorrow':`in ${selected.nextChangeDays}d`))),
+        h('div',{style:{height:6,background:'var(--color-neutral-800)',borderRadius:999,overflow:'hidden',marginBottom:12}},
+          h('div',{style:{height:'100%',background:'var(--color-accent)',width:(selected.currentAligner/selected.totalAligners*100)+'%'}})),
+        h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+          h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>advanceAligner(selected.id),disabled:selected.currentAligner>=selected.totalAligners},h('i',{className:'ph ph-arrow-right'}),'Advance aligner'),
+          h('a',{href:`https://wa.me/${selected.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
+          h('a',{href:`tel:${selected.phone}`,className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-phone'}),'Call'))),
+      // Info grid
+      h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}},
+        [['Streak',selected.streak+'d','ph-flame','#ff9d4d'],
+         ['Payment',`${selected.payment.paid}/${selected.payment.total}`,'ph-credit-card','var(--color-accent-300)'],
+         ['Scans sent',selected.scans,'ph-image','var(--color-accent-2-400)'],
+         ['Appt',selected.apptDaysAhead+'d','ph-calendar','var(--color-gold)']]
+        .map(([l,v,i,c])=>h('div',{key:l,style:{padding:12,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',textAlign:'center'}},
+          h('i',{className:`ph ${i}`,style:{color:c,fontSize:18}}),
+          h('p',{style:{fontSize:18,fontWeight:700,margin:'6px 0 2px'}},v),
+          h('p',{style:{fontSize:10,opacity:.55,margin:0,textTransform:'uppercase',letterSpacing:'.08em'}},l)))),
+      // Contact
+      h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
+        h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Contact'),
+        h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-phone',style:{opacity:.5,marginRight:8}}),selected.phone),
+        h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-envelope',style:{opacity:.5,marginRight:8}}),selected.email)),
+      // Notes
+      selected.notes&&h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)'}},
+        h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
+        h('p',{style:{fontSize:13,margin:0,lineHeight:1.5}},selected.notes))));
+
+  // ── ADD PATIENT DIALOG ──
+  const AddDlg=addOpen&&h(AddPatientDlg,{onCancel:()=>setAddOpen(false),onSave:addPatient});
+
+  // ── CONFIRM DLG ──
+  const ConfirmDlg=confirm&&h('div',{className:'dialog-backdrop'},
+    h('div',{className:'dialog',style:{width:'min(400px,calc(100vw - 32px))'}},
+      h('h3',{style:{fontSize:16,fontWeight:700,marginBottom:8}},'Please confirm'),
+      h('p',{style:{opacity:.7,fontSize:14,marginBottom:20}},confirm.text),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{className:'btn btn-secondary',onClick:()=>setConfirm(null)},'Cancel'),
+        h('button',{className:'btn btn-primary',onClick:()=>{const f=confirm.fn;setConfirm(null);f()}},'Confirm'))));
+
+  // ── TOASTS ──
+  const Toasts=toasts.length>0&&h('div',{style:{position:'fixed',bottom:24,left:'50%',transform:'translateX(-50%)',zIndex:250,display:'flex',flexDirection:'column',gap:8,alignItems:'center',pointerEvents:'none'}},
+    toasts.map(t=>h('div',{key:t.id,className:'fade-up',style:{pointerEvents:'auto',padding:'10px 18px',borderRadius:999,background:'color-mix(in srgb,var(--color-surface) 80%,transparent)',backdropFilter:'blur(20px)',border:'1px solid color-mix(in srgb,#fff 14%,transparent)',boxShadow:'var(--shadow-md)',fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:8}},
+      h('i',{className:'ph ph-check-circle',style:{color:'var(--color-success)'}}),t.msg)));
+
+  const Loader=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',flexDirection:'column',gap:16,opacity:.6}},h('i',{className:'ph ph-circle-notch',style:{fontSize:40,animation:'spin 1s linear infinite'}}),h('p',{style:{fontSize:14}},'Loading...'));
+  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,analytics:loading?Loader:Analytics,settings:Settings};
+
+  return h('div',{style:{display:'flex',minHeight:'100vh'}},
+    Sidebar,
+    // Mobile menu button
+    h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
+      h('i',{className:'ph ph-list',style:{fontSize:20}})),
+    h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
+    Drawer,AddDlg,ConfirmDlg,Toasts);
+}
+
+function AddPatientDlg({onCancel,onSave}){
+  const [f,setF]=useState({first:'',last:'',phone:'',email:'',city:'',totalAligners:20});
+  const submit=e=>{e.preventDefault();onSave(f)};
+  return h('div',{className:'dialog-backdrop'},
+    h('form',{onSubmit:submit,className:'dialog fade-up'},
+      h('h3',{style:{fontSize:18,fontWeight:700,marginBottom:16}},'Add patient'),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}},
+        h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'First name'),h('input',{className:'input',required:true,value:f.first,onChange:e=>setF({...f,first:e.target.value}),style:{marginTop:4}})),
+        h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Surname'),h('input',{className:'input',required:true,value:f.last,onChange:e=>setF({...f,last:e.target.value}),style:{marginTop:4}}))),
+      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Phone'),h('input',{className:'input',required:true,type:'tel',value:f.phone,onChange:e=>setF({...f,phone:e.target.value}),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Email'),h('input',{className:'input',required:true,type:'email',value:f.email,onChange:e=>setF({...f,email:e.target.value}),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'City'),h('input',{className:'input',required:true,value:f.city,onChange:e=>setF({...f,city:e.target.value}),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:20}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Total aligners planned'),h('input',{className:'input',required:true,type:'number',min:1,max:60,value:f.totalAligners,onChange:e=>setF({...f,totalAligners:Number(e.target.value)}),style:{marginTop:4}})),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
+        h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-plus'}),'Add patient'))));
+}
+
+try{createRoot(document.getElementById('root')).render(h(App))}catch(e){const el=document.getElementById('err');if(el){el.style.display='block';el.textContent='Error: '+e.message+'\n'+e.stack}}
+})();
+</script>
+</body>
+</html>
