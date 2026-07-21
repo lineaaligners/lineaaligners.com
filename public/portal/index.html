@@ -54,6 +54,7 @@ a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}
 .tag{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-size:12px;font-weight:600;padding:4px 12px}
 .tag-accent{background:color-mix(in srgb,var(--color-accent) 20%,transparent);color:var(--color-accent-300);border:1px solid var(--color-accent-700)}
 .elev-sm{box-shadow:var(--shadow-md)}
+@keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes logoIn{0%{opacity:0;transform:scale(.82)}100%{opacity:1;transform:scale(1)}}
@@ -77,6 +78,10 @@ a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}
 <body>
 <div id="root"></div>
 <div id="err" style="display:none;padding:20px;color:#ff8888;font-family:monospace;font-size:12px;white-space:pre-wrap"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPA=supabase.createClient("https://edlkuctthlutcelyukoh.supabase.co","sb_publishable_k2rMFCJWaVU5aGLKKqI97w_UH0qFtxS");
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
 <script>
@@ -85,7 +90,7 @@ window.addEventListener('error', e=>{
   if(err){err.style.display='block';err.textContent='JS Error: '+e.message+'\n'+e.filename+':'+e.lineno;}
 });
 (function(){
-const {useState,useRef}=React;
+const {useState,useRef,useEffect}=React;
 const {createRoot}=ReactDOM;
 
 const DAY=86400000;
@@ -242,6 +247,8 @@ function App(){
   const [splash,setSplash]=useState(false);
   const [reg,setReg]=useState({first:'',last:'',phone:'',email:'',city:''});
   const [authMode,setAuthMode]=useState('signin');
+  const [patientId,setPatientId]=useState(null);
+  const [loading,setLoading]=useState(false);
   const [signinPhone,setSigninPhone]=useState('');
   const [signinPass,setSigninPass]=useState('');
   const [regPass,setRegPass]=useState('');
@@ -271,7 +278,12 @@ function App(){
   const [rAppt,setRAppt]=useState(true);
   const [notif,setNotif]=useState(typeof Notification!=='undefined'?Notification.permission:'default');
   const [v3d,setV3d]=useState(false);
-  const [scans]=useState([{id:1,name:'Upper_Arch_Scan.jpg',size:'2.4 MB',ago:12},{id:2,name:'Progress_Check_Week6.jpg',size:'1.8 MB',ago:26}]);
+  const [scans,setScans]=useState([]);
+  useEffect(()=>{
+    if(!patientId)return;
+    SUPA.from('scans').select('*').eq('patient_id',patientId).order('created_at',{ascending:false})
+      .then(({data})=>{if(data)setScans(data.map(s=>({id:s.id,name:s.file_name,size:s.file_size||'',url:s.file_url,ago:Math.round((new Date()-new Date(s.created_at))/(86400000))})))});
+  },[patientId]);
   const sp=useRef();const ct=useRef();
 
   const t=T[lang];
@@ -289,17 +301,54 @@ function App(){
     setCur(n);setNextDays(10);
     if(cross){setCel(cross);clearTimeout(ct.current);ct.current=setTimeout(()=>setCel(null),4200)}
   };
-  const advance=()=>{const n=Math.min(cur+1,total);confirm(t.changedConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)})};
+  const advance=()=>{const n=Math.min(cur+1,total);confirm(t.changedConfirm.replace('{n}',n),async()=>{
+    doSetAligner(n);
+    if(patientId){
+      const nd=new Date();nd.setDate(nd.getDate()+10);
+      await SUPA.from('patients').update({current_aligner:n,next_change_date:nd.toISOString().slice(0,10)}).eq('id',patientId);
+    }
+    toast(t.toastAlignerChanged);
+  })};
   const pickAl=n=>confirm(t.updateConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)});
-  const login=e=>{e.preventDefault();
+  const login=async e=>{e.preventDefault();
     if(!regPass||regPass.length<6){setAuthErr('Password must be at least 6 characters.');return;}
     if(regPass!==regPass2){setAuthErr('Passwords do not match.');return;}
-    setAuthErr('');setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200);
+    setLoading(true);
+    const nd=new Date();nd.setDate(nd.getDate()+10);
+    const {data,error}=await SUPA.from('patients').insert({
+      first_name:reg.first,last_name:reg.last,
+      phone:reg.phone.replace(/\s/g,''),email:reg.email,city:reg.city,
+      password_hash:regPass,
+      current_aligner:1,total_aligners:20,
+      next_change_date:nd.toISOString().slice(0,10),
+      status:'active',payment_paid:0,payment_total:6
+    }).select().single();
+    if(error){
+      if(error.code==='23505')setAuthErr('An account with this phone or email already exists.');
+      else setAuthErr('Registration failed: '+error.message);
+      setLoading(false);return;
+    }
+    setPatientId(data.id);
+    setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
+    sp.current=setTimeout(()=>setSplash(false),2200);
   };
-  const signin=e=>{e.preventDefault();
-    if(!signinPass||signinPass.length<4){setAuthErr('Please enter your password.');return;}
-    if(signinPhone&&!reg.first)setReg({first:'Arta',last:'Krasniqi',phone:signinPhone,email:'arta.krasniqi@example.com',city:'Peja, Kosovo'});
-    setAuthErr('');setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200);
+  const signin=async e=>{e.preventDefault();
+    if(!signinPhone){setAuthErr('Enter your phone number.');return;}
+    if(!signinPass||signinPass.length<4){setAuthErr('Enter your password.');return;}
+    setLoading(true);
+    // Look up patient by phone
+    const {data,error}=await SUPA.from('patients')
+      .select('*').eq('phone',signinPhone.replace(/\s/g,'')).single();
+    if(error||!data){setAuthErr('No account found with this phone number.');setLoading(false);return;}
+    // Check password (plain for now — upgrade to hash later)
+    if(data.password_hash&&data.password_hash!==signinPass){setAuthErr('Incorrect password.');setLoading(false);return;}
+    // Load patient data
+    setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
+    setPatientId(data.id);
+    setCur(data.current_aligner||1);
+    setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
+    setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
+    sp.current=setTimeout(()=>setSplash(false),2200);
   };
   const saveDate=()=>{if(!dateVal)return;const d=new Date(dateVal+'T00:00:00');setNextDays(Math.round((d-today0)/DAY));setEditDate(false)};
   const subEmerg=()=>{const lab=emergType==='broken'?t.emergencyBrokenOpt:t.emergencyLostOpt;confirm(t.emergencyConfirm.replace('{type}',lab.toLowerCase()),()=>{setEmergDone(true);setEmerg(false);toast(t.toastEmergencySubmitted)})};
@@ -384,7 +433,7 @@ function App(){
                 h('div',{style:{position:'relative'}},
                   h('i',{className:'ph ph-lock',style:{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none'}}),
                   h('input',{className:'input',type:'password',placeholder:'••••••••',value:signinPass,onChange:e=>{setSigninPass(e.target.value);setAuthErr('')},required:true,style:{paddingLeft:36}}))),
-              h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-sign-in'}),t.signinCta),
+              h('button',{type:'submit',className:'btn btn-primary btn-block',disabled:loading,style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:loading?'ph ph-circle-notch':'ph ph-sign-in',style:{animation:loading?'spin 1s linear infinite':undefined}}),loading?'...' :t.signinCta),
               h('button',{type:'button',onClick:()=>{setAuthMode('register');setAuthErr('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),)
           :h(React.Fragment,null,
               h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
@@ -407,7 +456,7 @@ function App(){
                 h('div',{className:'field'},
                   h('label',null,t.confirmPassword),
                   h('input',{className:'input',type:'password',placeholder:'••••••••',value:regPass2,onChange:e=>{setRegPass2(e.target.value);setAuthErr('')},required:true}))),
-              h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-arrow-right'}),t.loginCta),
+              h('button',{type:'submit',className:'btn btn-primary btn-block',disabled:loading,style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:loading?'ph ph-circle-notch':'ph ph-arrow-right',style:{animation:loading?'spin 1s linear infinite':undefined}}),loading?'...':t.loginCta),
               h('p',{style:{opacity:.4,fontSize:12,margin:0,textAlign:'center'}},t.loginHint)),
         h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',style:{fontSize:12,opacity:.65,textAlign:'center'}},t.forgotPassword)));
   }
@@ -614,11 +663,21 @@ function App(){
   // ── UPLOAD ─────────────────────────────────────────────────────────────
   const Upload=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
     h('div',null,h('h1',{style:{fontSize:30}},t.uploadTitle),h('p',{style:{opacity:.6,fontSize:15,margin:0}},t.uploadHint)),
-    h('div',{style:{width:'100%',height:220,borderRadius:14,border:'2px dashed var(--color-accent-700)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,color:'color-mix(in srgb,var(--color-text) 55%,transparent)',cursor:'pointer',background:'color-mix(in srgb,var(--color-accent-900) 30%,transparent)',transition:'border-color .2s,background .2s'},
-      onDragOver:e=>{e.preventDefault()},
-      onDrop:e=>e.preventDefault()},
+    h('label',{style:{width:'100%',height:220,borderRadius:14,border:'2px dashed var(--color-accent-700)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,color:'color-mix(in srgb,var(--color-text) 55%,transparent)',cursor:'pointer',background:'color-mix(in srgb,var(--color-accent-900) 30%,transparent)',transition:'border-color .2s,background .2s'},
+      onChange:async e=>{
+        const file=e.target.files[0];if(!file)return;
+        if(!patientId){toast('Sign in first');return;}
+        const path=patientId+'/'+Date.now()+'_'+file.name;
+        const {data:up,error}=await SUPA.storage.from('scans').upload(path,file,{upsert:false});
+        if(error){toast('Upload failed: '+error.message);return;}
+        const {data:url}=SUPA.storage.from('scans').getPublicUrl(path);
+        await SUPA.from('scans').insert({patient_id:patientId,file_name:file.name,file_url:url.publicUrl,file_size:Math.round(file.size/1024)+'KB'});
+        toast('Photo uploaded!');
+      }},
       h('i',{className:'ph ph-upload-simple',style:{fontSize:32}}),
-      h('p',{style:{fontSize:14,margin:0}},t.dropHint)),
+      h('p',{style:{fontSize:14,margin:0}},t.dropHint),
+      h('p',{style:{fontSize:11,opacity:.45,margin:0}},'JPG, PNG up to 10MB'),
+      h('input',{type:'file',accept:'image/*',style:{display:'none'}})),
     h('div',null,
       h('h2',{style:{fontSize:19,marginBottom:'var(--space-4)'}},t.yourUploads),
       h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-3)'}},

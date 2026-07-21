@@ -247,6 +247,36 @@ function App(){
     }});
   };
   const delMsg=async(id)=>{await SUPA.from('messages').update({read_at:new Date().toISOString()}).eq('id',id);setMsgs(prev=>prev.filter(x=>x.id!==id));toast('Message archived')};
+
+  const deletePatient=(id)=>{
+    const p=patients.find(x=>x.id===id);
+    setConfirm({text:"Permanently delete "+p.first+" "+p.last+"? This cannot be undone.",fn:async()=>{
+      await SUPA.from('patients').delete().eq('id',id);
+      setPatients(prev=>prev.filter(x=>x.id!==id));
+      setSelected(null);toast(p.first+" deleted");
+    }});
+  };
+
+  const refreshData=async()=>{
+    setLoading(true);
+    const [pR,eR,mR]=await Promise.all([
+      SUPA.from('patients').select('*').order('created_at',{ascending:false}),
+      SUPA.from('emergencies').select('*').order('created_at',{ascending:false}),
+      SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
+    ]);
+    if(pR.data) setPatients(pR.data.map(p=>({
+      id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',
+      currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||20,
+      nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
+      streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
+      payment:{paid:p.payment_paid||0,total:p.payment_total||6},
+      emergencies:0,lastActivity:0,apptDaysAhead:7,
+      doctor:p.doctor||'Dr. Fatbardha Mustafa',scans:0
+    })));
+    if(eR.data) setEmergs(eR.data.map(e=>({id:e.id,patientId:e.patient_id,type:e.type,status:e.status,note:e.note||'',daysAgo:Math.round((new Date()-new Date(e.created_at))/(86400000))})));
+    if(mR.data) setMsgs(mR.data.map(m=>({id:m.id,patientId:m.patient_id,from:'patient',text:m.content,hoursAgo:Math.round((new Date()-new Date(m.created_at))/(3600000))})));
+    setLoading(false);toast('Refreshed');
+  };
   const addPatient=async(data)=>{
     const nd=new Date();nd.setDate(nd.getDate()+10);
     const {data:ins,error}=await SUPA.from('patients').insert({
@@ -307,7 +337,7 @@ function App(){
   const Dashboard=h('div',{style:{display:'flex',flexDirection:'column',gap:24}},
     h('div',null,
       h('h1',{style:{fontSize:28,fontWeight:700,letterSpacing:'-.02em',margin:0}},'Welcome back, Genis'),
-      h('p',{style:{opacity:.6,fontSize:15,margin:'4px 0 0'}},'Here is the state of your clinic today.')),
+      h('p',{style:{opacity:.6,fontSize:15,margin:'4px 0 0'}},patients.length+' patients in Supabase · '+new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))),
     h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
       StatCard('ph-users','Total patients',stats.total,`${stats.active} active`),
       StatCard('ph-calendar-check','This week',stats.apptsThisWeek,'Appointments',null),
