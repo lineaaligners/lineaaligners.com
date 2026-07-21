@@ -33,12 +33,7 @@ import {
 export { WHATSAPP_URL, GOOGLE_CALENDAR_URL };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'planner' | 'portal' | 'admin'>(() => {
-    const path = window.location.pathname;
-    if (path.startsWith('/portal')) return 'portal';
-    if (path.startsWith('/admin')) return 'admin';
-    return 'home';
-  });
+  const [view, setView] = useState<'home' | 'planner' | 'portal' | 'admin'>('home');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'doctor' | 'patient' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -150,18 +145,6 @@ const App: React.FC = () => {
     setIsAdmin(false);
     setView('home');
   };
-
-  // /portal/ → our custom Supabase portal (static HTML)
-  if (window.location.pathname.startsWith('/portal')) {
-    window.location.replace('/portal/index.html');
-    return null;
-  }
-
-  // /admin/ → our custom Supabase admin (static HTML)
-  if (window.location.pathname.startsWith('/admin')) {
-    window.location.replace('/admin/index.html');
-    return null;
-  }
 
   if (view === 'portal' && !currentUser) {
     return <Auth initialStep={authInitialStep} onBack={() => setView('home')} />;
