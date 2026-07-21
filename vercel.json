@@ -1,27 +1,20 @@
 {
-  "routes": [
+  "rewrites": [
     {
-      "src": "/portal/(.*)",
-      "dest": "/portal/index.html"
+      "source": "/portal",
+      "destination": "/portal/index.html"
     },
     {
-      "src": "/admin/(.*)",
-      "dest": "/admin/index.html"
+      "source": "/portal/:path*",
+      "destination": "/portal/index.html"
     },
     {
-      "src": "/portal",
-      "dest": "/portal/index.html"
+      "source": "/admin",
+      "destination": "/admin/index.html"
     },
     {
-      "src": "/admin",
-      "dest": "/admin/index.html"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/admin/:path*",
+      "destination": "/admin/index.html"
     }
   ]
 }
