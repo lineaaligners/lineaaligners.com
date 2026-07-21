@@ -241,8 +241,12 @@ function App(){
   const [authed,setAuthed]=useState(false);
   const [splash,setSplash]=useState(false);
   const [reg,setReg]=useState({first:'',last:'',phone:'',email:'',city:''});
-  const [authMode,setAuthMode]=useState('signin'); // 'signin' or 'register'
+  const [authMode,setAuthMode]=useState('signin');
   const [signinPhone,setSigninPhone]=useState('');
+  const [signinPass,setSigninPass]=useState('');
+  const [regPass,setRegPass]=useState('');
+  const [regPass2,setRegPass2]=useState('');
+  const [authErr,setAuthErr]=useState('');
   const [cur,setCur]=useState(7);
   const [total]=useState(20);
   const [nextDays,setNextDays]=useState(4);
@@ -287,11 +291,15 @@ function App(){
   };
   const advance=()=>{const n=Math.min(cur+1,total);confirm(t.changedConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)})};
   const pickAl=n=>confirm(t.updateConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)});
-  const login=e=>{e.preventDefault();setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200)};
+  const login=e=>{e.preventDefault();
+    if(!regPass||regPass.length<6){setAuthErr('Password must be at least 6 characters.');return;}
+    if(regPass!==regPass2){setAuthErr('Passwords do not match.');return;}
+    setAuthErr('');setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200);
+  };
   const signin=e=>{e.preventDefault();
-    // Demo: pre-fill with default patient data on signin
+    if(!signinPass||signinPass.length<4){setAuthErr('Please enter your password.');return;}
     if(signinPhone&&!reg.first)setReg({first:'Arta',last:'Krasniqi',phone:signinPhone,email:'arta.krasniqi@example.com',city:'Peja, Kosovo'});
-    setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200);
+    setAuthErr('');setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200);
   };
   const saveDate=()=>{if(!dateVal)return;const d=new Date(dateVal+'T00:00:00');setNextDays(Math.round((d-today0)/DAY));setEditDate(false)};
   const subEmerg=()=>{const lab=emergType==='broken'?t.emergencyBrokenOpt:t.emergencyLostOpt;confirm(t.emergencyConfirm.replace('{type}',lab.toLowerCase()),()=>{setEmergDone(true);setEmerg(false);toast(t.toastEmergencySubmitted)})};
@@ -363,22 +371,39 @@ function App(){
         h('div',{style:{textAlign:'center'}},
           h('h1',{style:{fontSize:24,fontWeight:600,letterSpacing:'-.02em',margin:'0 0 4px'}},isSignin?t.signinTitle:t.loginTitle),
           h('p',{style:{opacity:.6,fontSize:14,margin:0}},isSignin?t.signinSubtitle:t.loginSubtitle)),
+        authErr&&h('p',{style:{color:'#fca5a5',fontSize:12,margin:'-8px 0 0',textAlign:'center'}},authErr),
         isSignin
           ?h(React.Fragment,null,
-              h('div',{className:'field',style:{width:'100%'}},h('label',null,t.phone),h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:signinPhone,onChange:e=>setSigninPhone(e.target.value),required:true,autoFocus:true})),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.phone),
+                h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:signinPhone,onChange:e=>{setSigninPhone(e.target.value);setAuthErr('')},required:true,autoFocus:true})),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.password),
+                h('input',{className:'input',type:'password',placeholder:'••••••••',value:signinPass,onChange:e=>{setSigninPass(e.target.value);setAuthErr('')},required:true})),
               h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-sign-in'}),t.signinCta),
-              h('button',{type:'button',onClick:()=>setAuthMode('register'),style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),
+              h('button',{type:'button',onClick:()=>{setAuthMode('register');setAuthErr('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),
               h('p',{style:{opacity:.4,fontSize:11,margin:0,textAlign:'center'}},t.signinDemo))
           :h(React.Fragment,null,
               h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
                 h('div',{className:'field'},h('label',null,t.firstName),h('input',{className:'input',type:'text',placeholder:'Arta',value:reg.first,onChange:e=>setReg(p=>({...p,first:e.target.value})),required:true})),
                 h('div',{className:'field'},h('label',null,t.lastName),h('input',{className:'input',type:'text',placeholder:'Krasniqi',value:reg.last,onChange:e=>setReg(p=>({...p,last:e.target.value})),required:true}))),
-              h('div',{className:'field',style:{width:'100%'}},h('label',null,t.phone),h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:reg.phone,onChange:e=>setReg(p=>({...p,phone:e.target.value})),required:true})),
-              h('div',{className:'field',style:{width:'100%'}},h('label',null,t.email),h('input',{className:'input',type:'email',placeholder:'arta@example.com',value:reg.email,onChange:e=>setReg(p=>({...p,email:e.target.value})),required:true})),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.phone),
+                h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:reg.phone,onChange:e=>setReg(p=>({...p,phone:e.target.value})),required:true})),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.email),
+                h('input',{className:'input',type:'email',placeholder:'arta@example.com',value:reg.email,onChange:e=>setReg(p=>({...p,email:e.target.value})),required:true})),
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.placeOfLiving),
                 h('input',{className:'input',type:'text',placeholder:'Peja, Kosovo',value:reg.city,onChange:e=>setReg(p=>({...p,city:e.target.value})),required:true}),
                 h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},t.placeOfLivingHint)),
+              h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
+                h('div',{className:'field'},
+                  h('label',null,t.password),
+                  h('input',{className:'input',type:'password',placeholder:'••••••••',value:regPass,onChange:e=>{setRegPass(e.target.value);setAuthErr('')},required:true})),
+                h('div',{className:'field'},
+                  h('label',null,t.confirmPassword),
+                  h('input',{className:'input',type:'password',placeholder:'••••••••',value:regPass2,onChange:e=>{setRegPass2(e.target.value);setAuthErr('')},required:true}))),
               h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-arrow-right'}),t.loginCta),
               h('p',{style:{opacity:.4,fontSize:12,margin:0,textAlign:'center'}},t.loginHint)),
         h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',style:{fontSize:12,opacity:.65,textAlign:'center'}},t.forgotPassword)));
