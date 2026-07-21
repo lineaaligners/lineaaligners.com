@@ -241,6 +241,8 @@ function App(){
   const [authed,setAuthed]=useState(false);
   const [splash,setSplash]=useState(false);
   const [reg,setReg]=useState({first:'',last:'',phone:'',email:'',city:''});
+  const [authMode,setAuthMode]=useState('signin'); // 'signin' or 'register'
+  const [signinPhone,setSigninPhone]=useState('');
   const [cur,setCur]=useState(7);
   const [total]=useState(20);
   const [nextDays,setNextDays]=useState(4);
@@ -286,6 +288,11 @@ function App(){
   const advance=()=>{const n=Math.min(cur+1,total);confirm(t.changedConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)})};
   const pickAl=n=>confirm(t.updateConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)});
   const login=e=>{e.preventDefault();setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200)};
+  const signin=e=>{e.preventDefault();
+    // Demo: pre-fill with default patient data on signin
+    if(signinPhone&&!reg.first)setReg({first:'Arta',last:'Krasniqi',phone:signinPhone,email:'arta.krasniqi@example.com',city:'Peja, Kosovo'});
+    setAuthed(true);setSplash(true);sp.current=setTimeout(()=>setSplash(false),2200);
+  };
   const saveDate=()=>{if(!dateVal)return;const d=new Date(dateVal+'T00:00:00');setNextDays(Math.round((d-today0)/DAY));setEditDate(false)};
   const subEmerg=()=>{const lab=emergType==='broken'?t.emergencyBrokenOpt:t.emergencyLostOpt;confirm(t.emergencyConfirm.replace('{type}',lab.toLowerCase()),()=>{setEmergDone(true);setEmerg(false);toast(t.toastEmergencySubmitted)})};
   const bookSlot=(off,ds)=>confirm(t.slotConfirm.replace('{d}',ds),()=>{setApptDays(off);setSched(false);toast(t.toastAppointmentBooked)});
@@ -340,28 +347,42 @@ function App(){
   // GLOW ORBS helper
   const orb=(s)=>h('div',{style:{position:'absolute',...s,borderRadius:'50%',filter:'blur(120px)',animation:'glow 4s ease-in-out infinite'}});
 
-  // ── LOGIN ──────────────────────────────────────────────────────────────
-  if(!authed) return h('div',{className:'fade-in',style:{position:'fixed',inset:0,zIndex:300,background:'linear-gradient(160deg,var(--color-accent-900) 0%,var(--color-bg) 45%,var(--color-accent-2-900) 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:'var(--space-6)',overflow:'auto'}},
-    orb({width:420,height:420,top:-120,left:-100,background:'var(--color-accent)',opacity:.4}),
-    orb({width:360,height:360,bottom:-140,right:-100,background:'var(--color-accent-2)',opacity:.35,animationDelay:'1s'}),
-    h('form',{onSubmit:login,className:'fade-up',style:{position:'relative',width:'min(380px,100%)',padding:'var(--space-8) var(--space-7)',borderRadius:'var(--radius-lg)',background:'color-mix(in srgb,var(--color-surface) 42%,transparent)',border:'1px solid color-mix(in srgb,#fff 16%,transparent)',backdropFilter:'blur(28px) saturate(160%)',WebkitBackdropFilter:'blur(28px) saturate(160%)',boxShadow:'var(--shadow-lg)',display:'flex',flexDirection:'column',gap:'var(--space-5)',alignItems:'center'}},
-      h('div',{style:{width:56,height:56,borderRadius:'var(--radius-md)',background:'color-mix(in srgb,#fff 8%,transparent)',border:'1px solid color-mix(in srgb,#fff 20%,transparent)',display:'flex',alignItems:'center',justifyContent:'center',padding:10}},
-        h('img',{src:LOGO,alt:'Linea',style:{width:'100%',height:'100%',objectFit:'contain',filter:'brightness(0) invert(1)'}})),
-      h('div',{style:{textAlign:'center'}},
-        h('h1',{style:{fontSize:24,fontWeight:600,letterSpacing:'-.02em',margin:'0 0 4px'}},t.loginTitle),
-        h('p',{style:{opacity:.6,fontSize:14,margin:0}},t.loginSubtitle)),
-      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
-        h('div',{className:'field'},h('label',null,t.firstName),h('input',{className:'input',type:'text',placeholder:'Arta',value:reg.first,onChange:e=>setReg(p=>({...p,first:e.target.value})),required:true})),
-        h('div',{className:'field'},h('label',null,t.lastName),h('input',{className:'input',type:'text',placeholder:'Krasniqi',value:reg.last,onChange:e=>setReg(p=>({...p,last:e.target.value})),required:true}))),
-      h('div',{className:'field',style:{width:'100%'}},h('label',null,t.phone),h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:reg.phone,onChange:e=>setReg(p=>({...p,phone:e.target.value})),required:true})),
-      h('div',{className:'field',style:{width:'100%'}},h('label',null,t.email),h('input',{className:'input',type:'email',placeholder:'arta@example.com',value:reg.email,onChange:e=>setReg(p=>({...p,email:e.target.value})),required:true})),
-      h('div',{className:'field',style:{width:'100%'}},
-        h('label',null,t.placeOfLiving),
-        h('input',{className:'input',type:'text',placeholder:'Peja, Kosovo',value:reg.city,onChange:e=>setReg(p=>({...p,city:e.target.value})),required:true}),
-        h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},t.placeOfLivingHint)),
-      h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-arrow-right'}),t.loginCta),
-      h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',style:{fontSize:12,opacity:.65,textAlign:'center'}},t.forgotPassword),
-      h('p',{style:{opacity:.4,fontSize:12,margin:0,textAlign:'center'}},t.loginHint)));
+  // ── LOGIN / REGISTER ───────────────────────────────────────────────────
+  if(!authed){
+    const isSignin=authMode==='signin';
+    const tabBtn=(mode,label)=>h('button',{key:mode,type:'button',onClick:()=>setAuthMode(mode),style:{flex:1,padding:'10px 14px',background:authMode===mode?'var(--color-accent)':'transparent',color:authMode===mode?'#fff':'color-mix(in srgb,var(--color-text) 60%,transparent)',border:'none',borderRadius:'var(--radius-sm)',fontFamily:'var(--font-body)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .2s'}},label);
+    const tabs=h('div',{style:{display:'flex',gap:2,background:'color-mix(in srgb,#fff 5%,transparent)',padding:3,borderRadius:'var(--radius-md)',width:'100%'}},tabBtn('signin',t.authTabSignin),tabBtn('register',t.authTabRegister));
+
+    return h('div',{className:'fade-in',style:{position:'fixed',inset:0,zIndex:300,background:'linear-gradient(160deg,var(--color-accent-900) 0%,var(--color-bg) 45%,var(--color-accent-2-900) 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:'var(--space-6)',overflow:'auto'}},
+      orb({width:420,height:420,top:-120,left:-100,background:'var(--color-accent)',opacity:.4}),
+      orb({width:360,height:360,bottom:-140,right:-100,background:'var(--color-accent-2)',opacity:.35,animationDelay:'1s'}),
+      h('form',{onSubmit:isSignin?signin:login,className:'fade-up',style:{position:'relative',width:'min(380px,100%)',padding:'var(--space-8) var(--space-7)',borderRadius:'var(--radius-lg)',background:'color-mix(in srgb,var(--color-surface) 42%,transparent)',border:'1px solid color-mix(in srgb,#fff 16%,transparent)',backdropFilter:'blur(28px) saturate(160%)',WebkitBackdropFilter:'blur(28px) saturate(160%)',boxShadow:'var(--shadow-lg)',display:'flex',flexDirection:'column',gap:'var(--space-5)',alignItems:'center'}},
+        h('div',{style:{width:56,height:56,borderRadius:'var(--radius-md)',background:'color-mix(in srgb,#fff 8%,transparent)',border:'1px solid color-mix(in srgb,#fff 20%,transparent)',display:'flex',alignItems:'center',justifyContent:'center',padding:10}},
+          h('img',{src:LOGO,alt:'Linea',style:{width:'100%',height:'100%',objectFit:'contain',filter:'brightness(0) invert(1)'}})),
+        tabs,
+        h('div',{style:{textAlign:'center'}},
+          h('h1',{style:{fontSize:24,fontWeight:600,letterSpacing:'-.02em',margin:'0 0 4px'}},isSignin?t.signinTitle:t.loginTitle),
+          h('p',{style:{opacity:.6,fontSize:14,margin:0}},isSignin?t.signinSubtitle:t.loginSubtitle)),
+        isSignin
+          ?h(React.Fragment,null,
+              h('div',{className:'field',style:{width:'100%'}},h('label',null,t.phone),h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:signinPhone,onChange:e=>setSigninPhone(e.target.value),required:true,autoFocus:true})),
+              h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-sign-in'}),t.signinCta),
+              h('button',{type:'button',onClick:()=>setAuthMode('register'),style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),
+              h('p',{style:{opacity:.4,fontSize:11,margin:0,textAlign:'center'}},t.signinDemo))
+          :h(React.Fragment,null,
+              h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
+                h('div',{className:'field'},h('label',null,t.firstName),h('input',{className:'input',type:'text',placeholder:'Arta',value:reg.first,onChange:e=>setReg(p=>({...p,first:e.target.value})),required:true})),
+                h('div',{className:'field'},h('label',null,t.lastName),h('input',{className:'input',type:'text',placeholder:'Krasniqi',value:reg.last,onChange:e=>setReg(p=>({...p,last:e.target.value})),required:true}))),
+              h('div',{className:'field',style:{width:'100%'}},h('label',null,t.phone),h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:reg.phone,onChange:e=>setReg(p=>({...p,phone:e.target.value})),required:true})),
+              h('div',{className:'field',style:{width:'100%'}},h('label',null,t.email),h('input',{className:'input',type:'email',placeholder:'arta@example.com',value:reg.email,onChange:e=>setReg(p=>({...p,email:e.target.value})),required:true})),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.placeOfLiving),
+                h('input',{className:'input',type:'text',placeholder:'Peja, Kosovo',value:reg.city,onChange:e=>setReg(p=>({...p,city:e.target.value})),required:true}),
+                h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},t.placeOfLivingHint)),
+              h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:'ph ph-arrow-right'}),t.loginCta),
+              h('p',{style:{opacity:.4,fontSize:12,margin:0,textAlign:'center'}},t.loginHint)),
+        h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',style:{fontSize:12,opacity:.65,textAlign:'center'}},t.forgotPassword)));
+  }
 
   // ── SPLASH ─────────────────────────────────────────────────────────────
   const Splash=splash&&h('div',{onClick:()=>{clearTimeout(sp.current);setSplash(false)},className:'fade-in',style:{position:'fixed',inset:0,zIndex:200,background:'linear-gradient(160deg,var(--color-accent-900) 0%,var(--color-bg) 50%,var(--color-accent-2-900) 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'var(--space-6)',cursor:'pointer'}},
