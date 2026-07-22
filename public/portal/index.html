@@ -101,7 +101,7 @@ const T={
 en:{
   tapToEnter:'Tap to enter',
   loginTitle:'Create your account',loginSubtitle:'Tell us a bit about yourself to get started',loginCta:'Continue',
-  loginHint:'Demo registration — any details work.',
+  loginHint:'Your data is stored securely.',
   firstName:'First name',lastName:'Surname',phone:'Phone number',email:'Email',
   placeOfLiving:'Place of living',placeOfLivingHint:'City, country — used to set your time zone',
   forgotPassword:'Already registered? Message the clinic',
@@ -174,7 +174,7 @@ en:{
 sq:{
   tapToEnter:'Prekni për të hyrë',
   loginTitle:'Krijoni llogarinë',loginSubtitle:'Na tregoni pak për veten për të filluar',loginCta:'Vazhdo',
-  loginHint:'Regjistrim demo — çdo të dhënë funksionon.',
+  loginHint:'Të dhënat tuaja ruhen në mënyrë të sigurt.',
   firstName:'Emri',lastName:'Mbiemri',phone:'Numri i telefonit',email:'Email',
   placeOfLiving:'Vendbanimi',placeOfLivingHint:'Qyteti, shteti — përdoret për zonën tuaj kohore',
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
@@ -494,7 +494,7 @@ function App(){
   const Header=h('header',{style:{position:'sticky',top:0,zIndex:50,backdropFilter:'blur(24px) saturate(160%)',WebkitBackdropFilter:'blur(24px) saturate(160%)',background:'linear-gradient(120deg,color-mix(in srgb,var(--color-accent-900) 45%,transparent),color-mix(in srgb,var(--color-surface) 55%,transparent))',borderBottom:'1px solid color-mix(in srgb,#fff 10%,transparent)'}},
     h('div',{style:{maxWidth:1080,margin:'0 auto',padding:'var(--space-4) var(--space-6)'}},
       h('div',{style:{display:'flex',alignItems:'center',gap:'var(--space-4)'}},
-        h('button',{className:'btn btn-secondary',onClick:()=>window.alert('Demo — no marketing site.')},h('i',{className:'ph ph-arrow-left'})),
+        h('a',{className:'btn btn-secondary',href:'/',style:{textDecoration:'none'}},h('i',{className:'ph ph-arrow-left'})),
         h('div',{style:{display:'flex',alignItems:'center',gap:10,flex:'none'}},
           h('div',{style:{width:32,height:32,borderRadius:'var(--radius-sm)',border:'1px solid color-mix(in srgb,#fff 20%,transparent)',background:'color-mix(in srgb,#fff 6%,transparent)',display:'flex',alignItems:'center',justifyContent:'center',padding:5}},
             h('img',{src:LOGO,alt:'',style:{width:'100%',height:'100%',objectFit:'contain',filter:'brightness(0) invert(1)'}})),
