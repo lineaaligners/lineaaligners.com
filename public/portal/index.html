@@ -165,7 +165,8 @@ en:{
   reportPrint:'Print / Save as PDF',reportPatient:'Patient',reportAligner:'Current aligner',reportProgress:'Progress',
   reportStreak:'Compliance streak',reportStart:'Treatment start',reportFinish:'Estimated finish',
   signinTitle:'Welcome back',signinSubtitle:'Sign in to your account',
-  signinPhoneOrEmail:'Phone or email',signinCta:'Sign in',
+  signinPhoneOrEmail:'Phone or email',signinPhoneUserEmail:'Phone, username, or email',signinCta:'Sign in',
+  username:'Username',usernameHint:'Used to sign in. You can also sign in with your phone number.',
   signinNoAcc:'New patient? Create an account',
   password:'Password',confirmPassword:'Confirm password',
   notRegistered:'Not registered yet.',goRegister:'Create an account',
@@ -239,7 +240,8 @@ sq:{
   reportPrint:'Printo / Ruaj si PDF',reportPatient:'Pacienti',reportAligner:'Aparati aktual',reportProgress:'Progresi',
   reportStreak:'Ditë rresht me përpikëri',reportStart:'Fillimi i trajtimit',reportFinish:'Përfundimi i parashikuar',
   signinTitle:'Mirësevini përsëri',signinSubtitle:'Kyçohuni në llogarinë tuaj',
-  signinPhoneOrEmail:'Telefon ose email',signinCta:'Kyçu',
+  signinPhoneOrEmail:'Telefon ose email',signinPhoneUserEmail:'Telefon, username, ose email',signinCta:'Kyçu',
+  username:'Username',usernameHint:'Përdoret për t\'u kyçur. Mund të kyçeni edhe me numrin e telefonit.',
   signinNoAcc:'Pacient i ri? Krijoni llogari',
   password:'Fjalëkalimi',confirmPassword:'Konfirmo fjalëkalimin',
   notRegistered:'Nuk jeni regjistruar akoma.',goRegister:'Krijoni llogari',
@@ -281,6 +283,15 @@ function App(){
   const [signinPass,setSigninPass]=useState('');
   const [regPass,setRegPass]=useState('');
   const [regPass2,setRegPass2]=useState('');
+  const [username,setUsername]=useState('');
+  const [usernameEdited,setUsernameEdited]=useState(false);
+  const suggestUsername=(f,l)=>{
+    const clean=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    return clean(f)+clean(l);
+  };
+  useEffect(()=>{
+    if(!usernameEdited) setUsername(suggestUsername(reg.first,reg.last));
+  },[reg.first,reg.last,usernameEdited]);
   const [authErr,setAuthErr]=useState('');
   const [cur,setCur]=useState(7);
   const [total]=useState(20);
@@ -339,31 +350,47 @@ function App(){
   })};
   const pickAl=n=>confirm(t.updateConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)});
   const login=async e=>{e.preventDefault();
+    if(!username){setAuthErr('Choose a username.');return;}
     if(!regPass||regPass.length<6){setAuthErr('Password must be at least 6 characters.');return;}
     if(regPass!==regPass2){setAuthErr('Passwords do not match.');return;}
     setLoading(true);
-    const{data,error}=await SUPA.auth.signUp({email:reg.email,password:regPass});
+    const cleanUsername=username.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const authEmail=reg.email&&reg.email.trim()?reg.email.trim():(cleanUsername+'@patient.lineaaligners.local');
+    const{data,error}=await SUPA.auth.signUp({email:authEmail,password:regPass});
     if(error){
-      setAuthErr(error.message.toLowerCase().includes('already')?'An account with this email already exists.':error.message);
+      setAuthErr(error.message.toLowerCase().includes('already')?'This username or email is already taken.':error.message);
       setLoading(false);return;
     }
     const{data:pid,error:rpcErr}=await SUPA.rpc('claim_or_create_patient',{
-      p_phone:reg.phone.replace(/\s/g,''),p_first:reg.first,p_last:reg.last,p_email:reg.email,p_city:reg.city
+      p_phone:reg.phone.replace(/\s/g,''),p_first:reg.first,p_last:reg.last,
+      p_email:reg.email||'',p_city:reg.city,p_username:cleanUsername
     });
-    if(rpcErr){setAuthErr('Registration failed: '+rpcErr.message);setLoading(false);return;}
+    if(rpcErr){
+      setAuthErr(rpcErr.message.includes('username')?'This username is taken. Try another.':'Registration failed: '+rpcErr.message);
+      setLoading(false);return;
+    }
     setPatientId(pid);
     setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
     sp.current=setTimeout(()=>setSplash(false),2200);
   };
   const signin=async e=>{e.preventDefault();
-    if(!signinPhone){setAuthErr('Enter your phone or email.');return;}
+    if(!signinPhone){setAuthErr('Enter your phone, username or email.');return;}
     if(!signinPass){setAuthErr('Enter your password.');return;}
     setLoading(true);
     let email=signinPhone.trim();
     if(!email.includes('@')){
-      const{data:foundEmail}=await SUPA.rpc('get_email_by_phone',{p_phone:email.replace(/\s/g,'')});
-      if(!foundEmail){setAuthErr('not_registered');setLoading(false);return;}
-      email=foundEmail;
+      const isPhoneLike=/^[+\d\s()-]+$/.test(email);
+      let found=null;
+      if(isPhoneLike){
+        const{data}=await SUPA.rpc('get_email_by_phone',{p_phone:email.replace(/\s/g,'')});
+        found=data;
+      }
+      if(!found){
+        const{data}=await SUPA.rpc('get_email_by_username',{p_username:email.toLowerCase().replace(/\s/g,'')});
+        found=data;
+      }
+      if(!found){setAuthErr('not_registered');setLoading(false);return;}
+      email=found;
     }
     const{data,error}=await SUPA.auth.signInWithPassword({email,password:signinPass});
     if(error){
@@ -470,10 +497,10 @@ function App(){
         isSignin
           ?h(React.Fragment,null,
               h('div',{className:'field',style:{width:'100%'}},
-                h('label',null,t.signinPhoneOrEmail),
+                h('label',null,t.signinPhoneUserEmail),
                 h('div',{style:{position:'relative'}},
                   h('i',{className:'ph ph-phone',style:{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none'}}),
-                  h('input',{className:'input',type:'tel',placeholder:lang==="sq"?'Tel: +383 49... ose email':'Tel: +383 49... or email',value:signinPhone,onChange:e=>{setSigninPhone(e.target.value);setAuthErr('')},required:true,autoFocus:true,style:{paddingLeft:36}}))),
+                  h('input',{className:'input',type:'tel',placeholder:lang==='sq'?'Telefon, username, ose email':'Phone, username, or email',value:signinPhone,onChange:e=>{setSigninPhone(e.target.value);setAuthErr('')},required:true,autoFocus:true,style:{paddingLeft:36}}))),
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.password),
                 h('div',{style:{position:'relative'}},
@@ -488,6 +515,10 @@ function App(){
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.phone),
                 h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:reg.phone,onChange:e=>setReg(p=>({...p,phone:e.target.value})),required:true})),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.username),
+                h('input',{className:'input',type:'text',placeholder:'artakrasniqi',value:username,onChange:e=>{setUsername(e.target.value);setUsernameEdited(true)},required:true}),
+                h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},t.usernameHint)),
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.email),
                 h('input',{className:'input',type:'email',placeholder:'arta@example.com',value:reg.email,onChange:e=>setReg(p=>({...p,email:e.target.value})),required:true})),
