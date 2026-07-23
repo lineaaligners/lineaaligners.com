@@ -259,6 +259,24 @@ function App(){
   const [authMode,setAuthMode]=useState('signin');
   const [patientId,setPatientId]=useState(null);
   const [loading,setLoading]=useState(false);
+  const [checkingSession,setCheckingSession]=useState(true);
+
+  useEffect(()=>{
+    (async()=>{
+      const {data:{session}}=await SUPA.auth.getSession();
+      if(session){
+        const {data}=await SUPA.from('patients').select('*').eq('user_id',session.user.id).single();
+        if(data){
+          setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
+          setPatientId(data.id);
+          setCur(data.current_aligner||1);
+          setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
+          setAuthed(true);
+        }
+      }
+      setCheckingSession(false);
+    })();
+  },[]);
   const [signinPhone,setSigninPhone]=useState('');
   const [signinPass,setSigninPass]=useState('');
   const [regPass,setRegPass]=useState('');
@@ -324,21 +342,16 @@ function App(){
     if(!regPass||regPass.length<6){setAuthErr('Password must be at least 6 characters.');return;}
     if(regPass!==regPass2){setAuthErr('Passwords do not match.');return;}
     setLoading(true);
-    const nd=new Date();nd.setDate(nd.getDate()+10);
-    const {data,error}=await SUPA.from('patients').insert({
-      first_name:reg.first,last_name:reg.last,
-      phone:reg.phone.replace(/\s/g,''),email:reg.email,city:reg.city,
-      password_hash:regPass,
-      current_aligner:1,total_aligners:20,
-      next_change_date:nd.toISOString().slice(0,10),
-      status:'active',payment_paid:0,payment_total:6
-    }).select().single();
+    const{data,error}=await SUPA.auth.signUp({email:reg.email,password:regPass});
     if(error){
-      if(error.code==='23505')setAuthErr('An account with this phone or email already exists.');
-      else setAuthErr('Registration failed: '+error.message);
+      setAuthErr(error.message.toLowerCase().includes('already')?'An account with this email already exists.':error.message);
       setLoading(false);return;
     }
-    setPatientId(data.id);
+    const{data:pid,error:rpcErr}=await SUPA.rpc('claim_or_create_patient',{
+      p_phone:reg.phone.replace(/\s/g,''),p_first:reg.first,p_last:reg.last,p_email:reg.email,p_city:reg.city
+    });
+    if(rpcErr){setAuthErr('Registration failed: '+rpcErr.message);setLoading(false);return;}
+    setPatientId(pid);
     setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
     sp.current=setTimeout(()=>setSplash(false),2200);
   };
@@ -346,23 +359,24 @@ function App(){
     if(!signinPhone){setAuthErr('Enter your phone or email.');return;}
     if(!signinPass){setAuthErr('Enter your password.');return;}
     setLoading(true);
-    // Try phone first, then email
-    const phoneClean=signinPhone.replace(/\s/g,'');
-    let q=SUPA.from('patients').select('*');
-    if(signinPhone.includes('@')) q=q.eq('email',signinPhone.trim());
-    else q=q.eq('phone',phoneClean);
-    const {data,error}=await q.single();
-    if(error||!data){
-      setAuthErr('not_registered');
+    let email=signinPhone.trim();
+    if(!email.includes('@')){
+      const{data:foundEmail}=await SUPA.rpc('get_email_by_phone',{p_phone:email.replace(/\s/g,'')});
+      if(!foundEmail){setAuthErr('not_registered');setLoading(false);return;}
+      email=foundEmail;
+    }
+    const{data,error}=await SUPA.auth.signInWithPassword({email,password:signinPass});
+    if(error){
+      setAuthErr(error.message.toLowerCase().includes('invalid')?'Incorrect password.':'not_registered');
       setLoading(false);return;
     }
-    if(data.password_hash&&data.password_hash!==signinPass){
-      setAuthErr('Incorrect password.');setLoading(false);return;
+    const{data:p}=await SUPA.from('patients').select('*').eq('user_id',data.user.id).single();
+    if(p){
+      setReg({first:p.first_name,last:p.last_name,phone:p.phone,email:p.email||'',city:p.city||''});
+      setPatientId(p.id);
+      setCur(p.current_aligner||1);
+      setNextDays(p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5);
     }
-    setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
-    setPatientId(data.id);
-    setCur(data.current_aligner||1);
-    setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
     setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
     sp.current=setTimeout(()=>setSplash(false),2200);
   };
@@ -430,6 +444,9 @@ function App(){
   const orb=(s)=>h('div',{style:{position:'absolute',...s,borderRadius:'50%',filter:'blur(120px)',animation:'glow 4s ease-in-out infinite'}});
 
   // ── LOGIN / REGISTER ───────────────────────────────────────────────────
+  if(checkingSession) return h('div',{style:{position:'fixed',inset:0,background:'var(--color-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
+    h('i',{className:'ph ph-circle-notch',style:{fontSize:36,color:'var(--color-accent-300)',animation:'spin 1s linear infinite'}}));
+
   if(!authed){
     const isSignin=authMode==='signin';
     const tabBtn=(mode,label)=>h('button',{key:mode,type:'button',onClick:()=>setAuthMode(mode),style:{flex:1,padding:'10px 14px',background:authMode===mode?'var(--color-accent)':'transparent',color:authMode===mode?'#fff':'color-mix(in srgb,var(--color-text) 60%,transparent)',border:'none',borderRadius:'var(--radius-sm)',fontFamily:'var(--font-body)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .2s'}},label);
@@ -804,7 +821,7 @@ function App(){
         notifSt&&h('p',{style:{opacity:.6,fontSize:12,margin:0}},notifSt),
         h('p',{style:{opacity:.5,fontSize:12,margin:0}},t.installHint))),
     h('div',{style:{display:'flex',justifyContent:'center'}},
-      h('button',{className:'btn btn-secondary',onClick:()=>{setAuthed(false);toast(t.toastSignedOut)}},h('i',{className:'ph ph-sign-out'}),t.signOut)));
+      h('button',{className:'btn btn-secondary',onClick:async()=>{await SUPA.auth.signOut();setAuthed(false);setPatientId(null);toast(t.toastSignedOut)}},h('i',{className:'ph ph-sign-out'}),t.signOut)));
 
   const tabs={dashboard:Dashboard,progress:Progress,upload:Upload,appointment:Appointment,help:Help,settings:Settings};
 
