@@ -43,7 +43,7 @@ export const FAQSection: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =>
                 role="tabpanel"
                 aria-labelledby={`faq-trigger-${idx}`}
                 hidden={openIdx !== idx}
-                className={`px-8 pb-8 text-white/70 leading-relaxed font-medium ${openIdx === idx ? 'animate-fade-in' : ''}`}
+                className={`px-8 pb-8 text-white/65 leading-relaxed font-normal text-[15px] ${openIdx === idx ? 'animate-fade-in' : ''}`}
               >
                 {faq.answer}
               </div>

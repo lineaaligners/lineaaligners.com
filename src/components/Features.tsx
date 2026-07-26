@@ -54,7 +54,7 @@ export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
             </h3>
           </div>
           <div className="lg:border-l-4 lg:border-white/10 lg:pl-16">
-            <p className="text-2xl text-white/80 font-bold leading-relaxed max-w-xl">
+            <p className="text-xl text-white/70 font-normal leading-relaxed max-w-xl">
               {content.desc}
             </p>
           </div>
@@ -65,18 +65,18 @@ export const Features: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
             return (
               <div 
                 key={idx}
-                className="relative p-10 rounded-[60px] border-4 border-white/5 bg-[#142A4D] text-[#F5F7FA] transition-all duration-700 group overflow-hidden flex flex-col h-full shadow-2xl hover:shadow-blue-500/10 hover:border-[#4169E1]/30"
+                className="relative p-8 rounded-3xl border-4 border-white/5 bg-[#142A4D] text-[#F5F7FA] transition-all duration-700 group overflow-hidden flex flex-col h-full shadow-2xl hover:shadow-blue-500/10 hover:border-[#4169E1]/30"
               >
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className="w-20 h-20 rounded-[28px] bg-white/5 flex items-center justify-center mb-10 transform group-hover:rotate-12 transition-all duration-500 text-[#4169E1]">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8 transform group-hover:rotate-12 transition-all duration-500 text-[#4169E1]">
                     <FeatureIcon type={feature.icon} />
                   </div>
 
-                  <h4 className="text-3xl font-black mb-5 tracking-tight text-white">
+                  <h4 className="text-xl font-bold mb-3 tracking-tight text-white">
                     {feature.title}
                   </h4>
                   
-                  <p className="leading-relaxed font-bold text-base text-white/70">
+                  <p className="leading-relaxed font-normal text-[15px] text-white/65">
                     {feature.description}
                   </p>
 

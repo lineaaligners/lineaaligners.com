@@ -15,30 +15,30 @@ const BRAND_ASSET = "https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/
 const GET_STEP_DETAILS = (lang: 'en' | 'sq'): Record<string, StepDetail> => ({
   '01': {
     title: lang === 'en' ? 'Free 3D Scan' : 'Skanimi 3D Falas',
-    description: lang === 'en' ? 'Visit our clinic in Peja for a state-of-the-art digital scan.' : 'Vizitoni klinikën tonë në Pejë për një skanim digjital.',
-    longDesc: lang === 'en' 
-      ? 'Our iTero Element scanning technology captures 6,000 frames per second, creating a high-resolution 3D map of your teeth in under 5 minutes.' 
-      : 'Teknologjia jonë iTero Element kap 6,000 imazhe në sekondë, duke krijuar një hartë 3D me rezolucion të lartë të dhëmbëve tuaj brenda 5 minutave.',
+    description: lang === 'en' ? 'Come by our clinic in Peja for a quick digital scan.' : 'Ejani në klinikën tonë në Pejë për një skanim digjital të shpejtë.',
+    longDesc: lang === 'en'
+      ? "We take a detailed 3D scan of your teeth right in the chair — no gooey molds, no mess. It takes about 5 minutes, and you'll see the scan on screen right after."
+      : 'Bëjmë një skanim 3D të detajuar të dhëmbëve tuaj direkt në karrige — pa llum, pa siklet. Zgjat rreth 5 minuta, dhe e shihni skanimin në ekran menjëherë pas.',
     imageUrl: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=1200',
-    tag: lang === 'en' ? 'Clinical Phase' : 'Faza Klinike'
+    tag: lang === 'en' ? 'Clinical Visit' : 'Vizita Klinike'
   },
   '02': {
-    title: lang === 'en' ? 'Personalized Plan' : 'Plani i Personalizuar',
-    description: lang === 'en' ? 'Our expert orthodontists design your perfect smile.' : 'Ortodontët tanë expertë dizajnojnë buzëqeshjen tuaj të përsosur.',
+    title: lang === 'en' ? 'See Your New Smile First' : 'Shihni Buzëqeshjen e Re Para',
+    description: lang === 'en' ? 'We design your treatment plan and show you the simulation.' : 'Dizajnojmë planin tuaj të trajtimit dhe ju tregojmë simulimin.',
     longDesc: lang === 'en'
-      ? 'Using advanced AI-driven software, Dr. Fatbardha Mustafa and Genis Nallbani map out every tooth movement.'
-      : 'Duke përdorur softuer të avancuar të AI, Dr. Fatbardha Mustafa dhe Genis Nallbani planifikojnë çdo lëvizje të dhëmbit.',
-    imageUrl: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&get=80&w=1200',
-    tag: lang === 'en' ? 'Design Phase' : 'Faza e Dizajnit'
+      ? "Dr. Fatbardha Mustafa and Genis Nallbani map out exactly how your teeth will move, step by step. Before you decide on anything, you'll see a simulation of what your finished smile will look like."
+      : 'Dr. Fatbardha Mustafa dhe Genis Nallbani planifikojnë saktësisht se si do të lëvizin dhëmbët tuaj, hap pas hapi. Para se të vendosni për diçka, do ta shihni simulimin e buzëqeshjes suaj përfundimtare.',
+    imageUrl: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=1200',
+    tag: lang === 'en' ? 'Your Plan' : 'Plani Juaj'
   },
   '03': {
-    title: lang === 'en' ? 'Start Your Journey' : 'Filloni Rrugëtimin',
-    description: lang === 'en' ? 'Receive your custom aligners and start your transformation.' : 'Merrni aligner-at tuaj dhe filloni transformimin.',
+    title: lang === 'en' ? 'Get Your Aligners, Start Smiling' : 'Merrni Aligner-at, Filloni të Buzëqeshni',
+    description: lang === 'en' ? 'Receive your custom aligners and start your treatment.' : 'Merrni aligner-at tuaj të personalizuar dhe filloni trajtimin.',
     longDesc: lang === 'en'
-      ? 'Receive your series of custom-engineered clear aligners in our signature signature case. Wear each set for about 1-2 weeks.'
-      : 'Merrni serinë tuaj të aligner-ave të punuar me porosi në kutinë tonë karakteristike. Mbajeni çdo set për rreth 1-2 javë.',
+      ? "You'll get your full series of custom-made aligners in one box, each one numbered and ready to go. Wear each set for 1-2 weeks, and we're always a WhatsApp message away if you have questions."
+      : 'Merrni serinë tuaj të plotë të aligner-ave të personalizuar në një kuti, secili i numëruar dhe gati për t\'u vendosur. Mbajeni çdo set për 1-2 javë, dhe jemi gjithmonë një mesazh larg në WhatsApp nëse keni pyetje.',
     imageUrl: BRAND_ASSET,
-    tag: lang === 'en' ? 'Lifestyle Phase' : 'Faza e Stilit të Jetës'
+    tag: lang === 'en' ? 'Your Aligners' : 'Aligner-at Tuaj'
   }
 });
 
@@ -63,7 +63,7 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
             {content.title1} <br />
             <span className="text-white/40 italic">{content.title2}</span>
           </h3>
-          <p className="text-xl text-white/70 font-medium">
+          <p className="text-lg text-white/70 font-normal">
             {content.desc}
           </p>
         </div>
@@ -75,16 +75,16 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
             <button 
               key={idx} 
               onClick={() => setActiveStep(step.number)}
-              className="group relative z-10 text-center space-y-8 p-10 rounded-[50px] transition-all hover:bg-white/5 border border-transparent hover:border-white/10 outline-none"
+              className="group relative z-10 text-center space-y-8 p-10 rounded-3xl transition-all hover:bg-white/5 border border-transparent hover:border-white/10 outline-none"
             >
               <div className="w-20 h-20 bg-white text-[#193D6D] rounded-[30px] flex items-center justify-center text-3xl font-black mx-auto shadow-2xl ring-8 ring-white/5 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                 {step.number}
               </div>
               <div className="space-y-4">
-                <h4 className="text-2xl font-black tracking-tight group-hover:text-[#4169E1] transition-colors text-white">
+                <h4 className="text-xl font-bold tracking-tight group-hover:text-[#4169E1] transition-colors text-white">
                   {step.title}
                 </h4>
-                <p className="text-white/60 leading-relaxed font-medium text-sm group-hover:text-white transition-colors">
+                <p className="text-white/60 leading-relaxed font-normal text-sm group-hover:text-white/90 transition-colors">
                   {step.description}
                 </p>
               </div>
@@ -95,12 +95,12 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
         <div className="mt-32 flex flex-col items-center gap-16">
           <div className="w-px h-24 bg-gradient-to-b from-white/0 via-white/20 to-white/0"></div>
           
-          <div className="bg-[#142A4D] backdrop-blur-xl border border-white/10 p-12 md:p-16 rounded-[80px] max-w-4xl w-full text-center space-y-10 shadow-2xl relative overflow-hidden group">
+          <div className="bg-[#142A4D] backdrop-blur-xl border border-white/10 p-12 md:p-16 rounded-[2.5rem] max-w-4xl w-full text-center space-y-10 shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-[#4169E1]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
             
             <div className="relative z-10 space-y-6">
               <h4 className="text-3xl font-black text-white tracking-tight">{content.ctaTitle}</h4>
-              <p className="text-white/70 max-w-xl mx-auto font-medium leading-relaxed">
+              <p className="text-white/70 max-w-xl mx-auto font-normal leading-relaxed">
                 {content.ctaDesc}
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-6 pt-4">
@@ -126,7 +126,7 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
       {activeStep && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-fade-in">
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl" onClick={closeModal}></div>
-          <div className="relative bg-[#193D6D] w-full max-w-6xl rounded-[60px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row animate-scale-in border border-white/10">
+          <div className="relative bg-[#193D6D] w-full max-w-6xl rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row animate-scale-in border border-white/10">
             <div className="lg:w-1/2 relative min-h-[300px] lg:min-h-full overflow-hidden">
               <img src={stepDetails[activeStep].imageUrl} loading="lazy" className="absolute inset-0 w-full h-full object-cover" alt="" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#193D6D]/90 via-transparent to-transparent"></div>
@@ -143,9 +143,9 @@ export const Process: React.FC<{ onStartPlanner: () => void; onBookScan?: () => 
               </button>
               <div className="space-y-8">
                 <h4 className="text-5xl font-black text-white tracking-tighter leading-none">{stepDetails[activeStep].title}</h4>
-                <p className="text-xl text-white/80 font-medium leading-relaxed">{stepDetails[activeStep].description}</p>
+                <p className="text-lg text-white/80 font-normal leading-relaxed">{stepDetails[activeStep].description}</p>
                 <div className="w-16 h-1 bg-[#4169E1] rounded-full"></div>
-                <p className="text-white/60 leading-relaxed font-medium">{stepDetails[activeStep].longDesc}</p>
+                <p className="text-white/60 leading-relaxed font-normal text-[15px]">{stepDetails[activeStep].longDesc}</p>
               </div>
               <div className="mt-auto pt-16">
                 <button 

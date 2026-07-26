@@ -20,29 +20,29 @@ export const ProductSpotlight: React.FC<ProductSpotlightProps> = ({ language }) 
                 alt="Linea Aligner Iconic Design" 
                 loading="lazy"
                 referrerPolicy="no-referrer"
-                className="relative z-10 w-full max-w-lg mx-auto rounded-[80px] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-4 border-white/10 transform transition-transform duration-700 hover:scale-105"
+                className="relative z-10 w-full max-w-lg mx-auto rounded-[2.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-4 border-white/10 transform transition-transform duration-700 hover:scale-105"
               />
             </div>
           </div>
           <div className="lg:w-1/2 space-y-8">
-            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-[#4169E1] text-white font-black text-[11px] uppercase tracking-[0.3em]">
-              {isEn ? 'Premium Accessory' : 'Aksesor Premium'}
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-[#4169E1] text-white font-bold text-[11px] uppercase tracking-[0.3em]">
+              {isEn ? 'Comes With Every Set' : 'Vjen me Çdo Set'}
             </div>
-            <h2 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tighter">
-              {isEn ? 'Iconic Design.' : 'Dizajn Ikonik.'}<br />
-              <span className="text-[#87CEEB]">{isEn ? 'Unmistakable.' : 'I pagabueshëm.'}</span>
+            <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tighter">
+              {isEn ? 'A case that' : 'Një kuti që'}<br />
+              <span className="text-[#87CEEB]">{isEn ? "actually protects them." : 'i mbron vërtet.'}</span>
             </h2>
-            <p className="text-2xl text-white leading-relaxed font-bold opacity-90">
+            <p className="text-lg text-white/70 leading-relaxed font-normal max-w-md">
               {isEn 
-                ? "Your journey to a perfect smile comes packaged in excellence. Our signature design is crafted to be as bold and beautiful as your new confidence."
-                : "Rrugëtimi juaj drejt një buzëqeshjeje të përsosur vjen i paketuar në përsosmëri. Dizajni ynë karakteristik është i punuar të jetë po aq i guximshëm dhe i bukur sa vetëbesimi juaj i ri."}
+                ? "Every set of Linea Aligners comes in a sturdy, good-looking case — so you always have somewhere safe to put them when you take them out to eat."
+                : "Çdo set i Linea Aligners vjen në një kuti solide dhe të bukur — kështu gjithmonë keni ku t'i vendosni kur i hiqni për të ngrënë."}
             </p>
             <div className="pt-4">
-              <div className="flex items-center gap-5 text-white font-black text-lg">
+              <div className="flex items-center gap-5 text-white font-bold text-base">
                 <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-[#87CEEB] shadow-xl">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <span>{isEn ? 'Shock-resistant Protection' : 'Mbrojtje kundër goditjeve'}</span>
+                <span>{isEn ? 'Shock-resistant' : 'Rezistente ndaj goditjeve'}</span>
               </div>
             </div>
           </div>

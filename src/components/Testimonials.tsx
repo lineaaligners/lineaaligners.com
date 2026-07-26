@@ -13,7 +13,7 @@ export const Testimonials: React.FC<{ language: 'en' | 'sq' }> = ({ language }) 
           <h3 className="text-4xl font-black text-white tracking-tight">
             {language === 'en' ? 'What our patients say' : 'Çfarë thonë pacientët tanë'}
           </h3>
-          <p className="text-lg text-white/70 font-medium">
+          <p className="text-lg text-white/70 font-normal">
             {language === 'en' 
               ? "Real transformations from real people in Kosovo who chose Linea Aligners."
               : "Transformime reale nga njerëz realë në Kosovë që zgjodhën Linea Aligners."}
