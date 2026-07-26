@@ -57,7 +57,7 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || '' });
       const chat = ai.chats.create({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         config: {
           systemInstruction: `You are a friendly AI for Linea Aligners. Your goal is to help users understand our clear aligner treatment and ultimately book a free 3D scan at Medident Dental Clinic in Peja. 
           Help the user in ${isEn ? 'English' : 'Albanian'}. 
