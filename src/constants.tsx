@@ -18,87 +18,87 @@ export const TRANSLATIONS = {
       { label: 'Contact', href: '#footer' },
     ],
     hero: {
-      badge: "Kosovo's Digital Smile Lab",
-      founders: "Genis Nallbani & Dr. Fatbardha Mustafa",
-      title1: "Invisible",
-      title2: "Precision.",
-      title3: "Visible",
-      title4: "Smiles.",
-      description: "The future of orthodontics has arrived in Peja. Experience the perfect blend of digital 3D precision and clinical expertise.",
-      btnPrimary: "Book Free Scan",
-      btnSecondary: "AI Smile Check",
-      trust: "500+ Perfect Smiles Created"
+      badge: "Straighter teeth, no metal wires",
+      founders: "Made in Peja by Genis Nallbani & Dr. Fatbardha Mustafa",
+      title1: "Straighten",
+      title2: "your smile",
+      title3: "without anyone",
+      title4: "noticing.",
+      description: "Linea Aligners are clear, custom-made trays that fit snugly over your teeth — like a retainer, but one that gently guides your teeth into place over time. No metal, no wires, and barely visible in photos.",
+      btnPrimary: "Book a Free Scan",
+      btnSecondary: "See If It's Right For Me",
+      trust: "500+ smiles straightened so far"
     },
     features: {
-      tag: "The Linea Difference",
-      title: "Advanced Orthodontics for the Modern Life.",
-      desc: "We've redesigned the dental experience to be entirely digital, comfortable, and patient-focused. No messy molds, just clear clinical precision.",
+      tag: "Why people choose Linea",
+      title: "Everything braces do — without the metal.",
+      desc: "Clear aligners are custom trays made just for your teeth. You switch to a new set every couple of weeks, and little by little your teeth shift into place. No brackets, no wires, no awkward photos.",
       items: [
         {
-          title: 'Virtually Invisible',
-          description: 'Our aligners are made from crystal clear medical-grade polymer, making them nearly invisible even at close distances.',
+          title: 'Nearly invisible',
+          description: 'Made from clear, medical-grade plastic. Most people won\'t even notice you\'re wearing them.',
           icon: 'invisible'
         },
         {
-          title: 'Fully Removable',
-          description: 'Eat your favorite foods and maintain perfect oral hygiene by simply removing your aligners during meals and cleaning.',
+          title: 'Take them out anytime',
+          description: 'Eating, drinking coffee, brushing your teeth — just pop them out, and put them back in when you\'re done.',
           icon: 'removable'
         },
         {
-          title: 'Customized Precision',
-          description: 'Every aligner is 3D printed specifically for your teeth based on a high-precision digital scan of your mouth.',
+          title: 'Made just for you',
+          description: 'We scan your mouth and design a set of aligners that fits your teeth exactly. No messy molds, no goo.',
           icon: 'precision'
         },
         {
-          title: 'Faster Results',
-          description: 'Our advanced tracking technology ensures your teeth move efficiently, often reducing treatment time significantly.',
+          title: 'Often faster than braces',
+          description: 'Many people finish treatment in a matter of months, not years — and you can watch your smile change along the way.',
           icon: 'results'
         }
       ]
     },
     process: {
-      tag: "Step by Step",
-      title1: "The Path to",
-      title2: "Perfection.",
-      desc: "Discover the seamless fusion of technology and clinical expertise at Linea Aligners.",
+      tag: "How it works",
+      title1: "Three simple",
+      title2: "steps.",
+      desc: "No confusing jargon, no long consultations. Here's exactly what happens.",
       items: [
         {
           number: '01',
-          title: 'Free 3D Scan',
-          description: 'Visit our clinic in Peja for a state-of-the-art digital scan at Medident Dental Clinic. No uncomfortable molds required.'
+          title: 'Free 3D scan',
+          description: 'Come by our clinic in Peja and we\'ll take a quick digital scan of your teeth. No gooey molds — just a few minutes in the chair.'
         },
         {
           number: '02',
-          title: 'Personalized Plan',
-          description: 'Our expert orthodontists design your perfect smile and show you a digital simulation of your results.'
+          title: 'See your new smile first',
+          description: 'Before you commit to anything, we show you a simulation of how your smile will look once treatment is done.'
         },
         {
           number: '03',
-          title: 'Start Your Journey',
-          description: 'Receive your custom aligners and start your transformation with 24/7 digital support.'
+          title: 'Get your aligners, start smiling',
+          description: 'We hand you your custom aligners and walk you through everything. We\'re just a WhatsApp message away the whole time.'
         }
       ],
-      ctaTitle: "Ready for your digital twin?",
-      ctaDesc: "Take the first step toward your new smile. Book a session via WhatsApp or start your AI assessment.",
-      ctaBtn1: "Book via WhatsApp",
-      ctaBtn2: "AI Digital Assessment"
+      ctaTitle: "Curious if this could work for you?",
+      ctaDesc: "It only takes one message. We'll tell you honestly whether aligners are a good fit for your teeth — no pressure, no sales pitch.",
+      ctaBtn1: "Message us on WhatsApp",
+      ctaBtn2: "Try our quick smile check"
     },
     pricing: {
-      tag: "Transparent Value",
-      title1: "Invest in",
-      title2: "your future self.",
-      desc: "At Medident, we believe world-class orthodontic care should be accessible. Our clear pricing model removes any financial anxiety.",
-      perks: ['In-Clinic Supervision', 'Digital Simulation', 'All Retainers', 'Flexible Payments'],
-      cardTag: "Financing",
+      tag: "No surprises",
+      title1: "Clear pricing,",
+      title2: "no hidden fees.",
+      desc: "We know cost is usually the first question on your mind. Here's what to expect, plainly.",
+      perks: ['Checked by a dentist at every step', 'See your results before you start', 'Retainers included after treatment', 'Pay in installments, interest-free'],
+      cardTag: "Payment plans",
       cardTitle: "Flexible Plans",
       cardBadge: "0% Interest",
       details: [
-        { label: 'Treatment Time', val: '4 - 9 Months' },
-        { label: 'Initial Deposit', val: 'Minimal' },
-        { label: 'Support', val: '24/7 Support' },
-        { label: 'Retainers', val: 'Included' }
+        { label: 'Treatment Time', val: '4 – 9 Months' },
+        { label: 'Initial Deposit', val: 'Small, from day one' },
+        { label: 'Support', val: 'We\'re here 24/7' },
+        { label: 'Retainers', val: 'Included, no extra cost' }
       ],
-      btn: "Book via WhatsApp"
+      btn: "Ask us on WhatsApp"
     }
   },
   sq: {
@@ -109,93 +109,97 @@ export const TRANSLATIONS = {
       { label: 'Kontakti', href: '#footer' },
     ],
     hero: {
-      badge: "Laboratori Digjital i Buzëqeshjes në Kosovë",
-      founders: "Genis Nallbani & Dr. Fatbardha Mustafa",
-      title1: "Saktësi e",
-      title2: "Padukshme.",
-      title3: "Buzëqeshje të",
-      title4: "Dukshme.",
-      description: "E ardhmja e ortodoncisë ka mbërritur në Pejë. Përjetoni kombinimin e përsosur të saktësisë digjitale 3D dhe ekspertizës klinike.",
+      badge: "Dhëmbë të drejtë, pa tela metalikë",
+      founders: "Krijuar në Pejë nga Genis Nallbani & Dr. Fatbardha Mustafa",
+      title1: "Drejtoni",
+      title2: "buzëqeshjen",
+      title3: "pa e vënë",
+      title4: "re askush.",
+      description: "Linea Aligners janë pjata transparente, të bëra posaçërisht për dhëmbët tuaj — si një retainer, por që i lëviz dhëmbët ngadalë drejt vendit të duhur. Pa tela, pa metal, dhe pothuajse të padukshme në foto.",
       btnPrimary: "Rezervo Skanimin Falas",
-      btnSecondary: "AI Smile Check",
-      trust: "500+ Buzëqeshje të Përsosura të Krijuara"
+      btnSecondary: "A më Përshtatet Mua?",
+      trust: "500+ buzëqeshje të drejtuara deri tani"
     },
     features: {
-      tag: "Diferenca Linea",
-      title: "Ortodonci e Avancuar për Jetën Moderne.",
-      desc: "Ne kemi ridizajnuar përvojën dentare për të qenë plotësisht digjitale, komode dhe e fokusuar te pacienti.",
+      tag: "Përse njerëzit zgjedhin Linea",
+      title: "Gjithçka bëjnë telat — pa metal.",
+      desc: "Aligner-at transparentë janë pjata të bëra vetëm për dhëmbët tuaj. Ndërroni një set të ri çdo dy javë, dhe dalëngadalë dhëmbët zhvendosen në vendin e tyre. Pa breketa, pa tela, pa foto të vështira.",
       items: [
         {
-          title: 'Pothuajse i Padukshëm',
-          description: 'Aligner-at tanë janë bërë nga polimer i pastër mjekësor, duke i bërë ata pothuajse të padukshëm.',
+          title: 'Pothuajse i padukshëm',
+          description: 'Bërë nga plastikë transparente e nivelit mjekësor. Shumica e njerëzve as s\'do ta vërejnë.',
           icon: 'invisible'
         },
         {
-          title: 'Plotësisht i Lëvizshëm',
-          description: 'Hani ushqimet tuaja të preferuara dhe mbani higjienë të përsosur duke i hequr aligner-at gjatë ngrënies.',
+          title: 'Hiqi kur të duash',
+          description: 'Po hëngre, po pive kafe, po lave dhëmbët — thjesht hiqi dhe rivishi kur të mbarosh.',
           icon: 'removable'
         },
         {
-          title: 'Saktësi e Personalizuar',
-          description: 'Çdo aligner printohet në 3D posaçërisht për dhëmbët tuaj bazuar në një skanim digjital me saktësi të lartë.',
+          title: 'Bërë vetëm për ty',
+          description: 'Skanojmë gojën tuaj dhe dizajnojmë aligner që i përshtaten saktësisht dhëmbëve tuaj. Pa llum, pa siluetë të pakëndshme.',
           icon: 'precision'
         },
         {
-          title: 'Rezultate më të Shpejta',
-          description: 'Teknologjia jonë e avancuar siguron që dhëmbët tuaj të lëvizin në mënyrë efikase.',
+          title: 'Shpesh më shpejt se telat',
+          description: 'Shumë njerëz e përfundojnë trajtimin brenda muajve, jo viteve — dhe e shohin ndryshimin gjatë rrugës.',
           icon: 'results'
         }
       ]
     },
     process: {
-      tag: "Hap pas Hapi",
-      title1: "Rruga drejt",
-      title2: "Përsosmërisë.",
-      desc: "Zbuloni bashkimin e teknologjisë dhe ekspertizës klinike në Linea Aligners.",
+      tag: "Si funksionon",
+      title1: "Tre hapa",
+      title2: "të thjeshtë.",
+      desc: "Pa fjalë të komplikuara, pa konsultime të gjata. Ja saktësisht çka ndodh.",
       items: [
         {
           number: '01',
-          title: 'Skanimi 3D Falas',
-          description: 'Vizitoni klinikën tonë në Pejë për një skanim digjital në Medident Dental Clinic.'
+          title: 'Skanimi 3D falas',
+          description: 'Ejani në klinikën tonë në Pejë dhe bëjmë një skanim digjital të shpejtë të dhëmbëve tuaj. Pa llum — vetëm pak minuta në karrige.'
         },
         {
           number: '02',
-          title: 'Plani i Personalizuar',
-          description: 'Ortodontët tanë ekspertë dizajnojnë buzëqeshjen tuaj të përsosur përmes simulimit digjital.'
+          title: 'Shihni buzëqeshjen e re para se të filloni',
+          description: 'Para se të vendosni për diçka, ju tregojmë një simulim se si do të duket buzëqeshja juaj pas trajtimit.'
         },
         {
           number: '03',
-          title: 'Filloni Rrugëtimin',
-          description: 'Merrni aligner-at tuaj të personalizuar dhe filloni transformimin me mbështetje digjitale 24/7.'
+          title: 'Merrni aligner-at, filloni të buzëqeshni',
+          description: 'Ju dorëzojmë aligner-at tuaj të personalizuar dhe ju shpjegojmë gjithçka. Jemi një mesazh larg në WhatsApp gjatë gjithë kohës.'
         }
       ],
-      ctaTitle: "Gati për binjakun tuaj digjital?",
-      ctaDesc: "Bëni hapin e parë drejt buzëqeshjes tuaj të re. Rezervoni një seancë përmes WhatsApp ose filloni vlerësimin me AI.",
-      ctaBtn1: "Rezervo në WhatsApp",
-      ctaBtn2: "Vlerësimi Digjital me AI"
+      ctaTitle: "Kurioz nëse kjo funksionon për ty?",
+      ctaDesc: "Duhet vetëm një mesazh. Do t'ju themi sinqerisht nëse aligner-at janë zgjedhja e duhur për dhëmbët tuaj — pa presion, pa shitje.",
+      ctaBtn1: "Na Shkruani në WhatsApp",
+      ctaBtn2: "Provoni Kontrollin e Shpejtë"
     },
     pricing: {
-      tag: "Vlerë Transparente",
-      title1: "Investoni në",
-      title2: "veten tuaj të ardhshme.",
-      desc: "Në Medident, ne besojmë se kujdesi ortodontik i klasit botëror duhet të jetë i aksesueshëm.",
-      perks: ['Mbikëqyrje në Klinikë', 'Simulim Digjital', 'Të gjithë Retainer-at', 'Pagesa Fleksibile'],
-      cardTag: "Financimi",
+      tag: "Pa surpriza",
+      title1: "Çmim i qartë,",
+      title2: "pa kosto të fshehura.",
+      desc: "E dimë që çmimi zakonisht është pyetja e parë. Ja çfarë të prisni — thjesht dhe qartë.",
+      perks: ['Kontrolluar nga dentisti në çdo hap', 'Shihni rezultatin para se të filloni', 'Retainer-at të përfshirë pas trajtimit', 'Pagesa me këste, pa interes'],
+      cardTag: "Planet e Pagesës",
       cardTitle: "Plane Fleksibile",
       cardBadge: "0% Interes",
       details: [
-        { label: 'Koha e Trajtimit', val: '4 - 9 Muaj' },
-        { label: 'Depozita Fillestare', val: 'Minimale' },
-        { label: 'Mbështetja', val: '24/7 Mbështetje' },
-        { label: 'Retainer-at', val: 'Të Përfshirë' }
+        { label: 'Koha e Trajtimit', val: '4 – 9 Muaj' },
+        { label: 'Depozita Fillestare', val: 'E vogël, që nga fillimi' },
+        { label: 'Mbështetja', val: 'Jemi këtu 24/7' },
+        { label: 'Retainer-at', val: 'Të përfshira, pa kosto shtesë' }
       ],
-      btn: "Rezervo në WhatsApp"
+      btn: "Na Pyet në WhatsApp"
     }
   }
 };
 
 export const FAQS_CONTENT = {
   en: [
+    {
+      question: 'What exactly are clear aligners?',
+      answer: "They're clear, custom-made plastic trays that fit snugly over your teeth. You wear a new set every 1-2 weeks, and each one gently nudges your teeth a little closer to where they should be. By the end, your teeth have moved into their new position — without a single metal bracket."
+    },
     {
       question: 'How long does the treatment take?',
       answer: 'Most cases are completed within 4 to 9 months, depending on the complexity of your dental alignment needs.'
@@ -214,6 +218,10 @@ export const FAQS_CONTENT = {
     }
   ],
   sq: [
+    {
+      question: 'Çka janë saktësisht aligner-at transparentë?',
+      answer: 'Janë pjata plastike transparente, të bëra posaçërisht për dhëmbët tuaj. Vishni një set të ri çdo 1-2 javë, dhe secili i afron pak dhëmbët drejt vendit të duhur. Në fund, dhëmbët tuaj kanë lëvizur në pozicionin e ri — pa asnjë breketë metalike.'
+    },
     {
       question: 'Sa kohë zgjat trajtimi?',
       answer: 'Shumica e rasteve përfundojnë brenda 4 deri në 9 muaj, varësisht nga kompleksiteti i rregullimit të dhëmbëve tuaj.'
