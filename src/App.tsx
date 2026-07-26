@@ -5,7 +5,6 @@ import { Features } from './components/Features';
 import { Process } from './components/Process';
 import { FAQSection } from './components/FAQ';
 import { Footer } from './components/Footer';
-import { Testimonials } from './components/Testimonials';
 import { TreatmentPlanner } from './components/TreatmentPlanner';
 import { ImageGenerator } from './components/ImageGenerator';
 import { AIAssistant } from './components/AIAssistant';
@@ -316,8 +315,6 @@ const App: React.FC = () => {
                 </div>
               </div>
             </section>
-
-            <Testimonials language={language} />
           </>
         ) : view === 'planner' ? (
           <TreatmentPlanner onBack={() => setView('home')} onBookScan={handleBookScan} language={language} />
