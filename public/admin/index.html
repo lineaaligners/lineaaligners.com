@@ -192,6 +192,7 @@ function App(){
   const [addOpen,setAddOpen]=useState(false);
   const [editAlignerFor,setEditAlignerFor]=useState(null);
   const [editPatientFor,setEditPatientFor]=useState(false);
+  const [letterFor,setLetterFor]=useState(null);
 
   const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
 
@@ -314,6 +315,13 @@ function App(){
       payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)},treatmentLink:data.treatmentLink||''}));
     setEditPatientFor(false);
     toast(data.first+"'s details updated");
+  };
+
+  const sendLetter=async(patientId,subject,content)=>{
+    const{error}=await SUPA.from('letters').insert({patient_id:patientId,subject:subject||null,content,sender:'Linea Aligners'});
+    if(error){toast('Error: '+error.message);return;}
+    setLetterFor(null);
+    toast('Letter sent');
   };
 
   const deletePatient=(id)=>{
@@ -616,6 +624,7 @@ function App(){
           h('a',{href:`tel:${selected.phone}`,className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-phone'}),'Call'),
           h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditPatientFor(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit details'),
           selected.treatmentLink&&h('a',{href:selected.treatmentLink,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-link'}),'View treatment plan'),
+          h('button',{className:'btn btn-gold',style:{fontSize:12},onClick:()=>setLetterFor(selected.id)},h('i',{className:'ph ph-envelope-simple'}),'Send letter'),
           h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>deletePatient(selected.id)},h('i',{className:'ph ph-trash'}),'Delete patient'))),
       // Info grid
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}},
@@ -642,6 +651,8 @@ function App(){
   const editingPatient=editAlignerFor&&patients.find(x=>x.id===editAlignerFor);
   const EditAlignerDialog=editingPatient&&h(EditAlignerDlg,{patient:editingPatient,onCancel:()=>setEditAlignerFor(null),onSave:n=>setAlignerTo(editingPatient.id,n)});
   const EditPatientDialog=editPatientFor&&selected&&h(EditPatientDlg,{patient:selected,onCancel:()=>setEditPatientFor(false),onSave:data=>updatePatient(selected.id,data)});
+  const letterPatient=letterFor&&patients.find(x=>x.id===letterFor);
+  const LetterDialog=letterPatient&&h(SendLetterDlg,{patient:letterPatient,onCancel:()=>setLetterFor(null),onSave:(subject,content)=>sendLetter(letterPatient.id,subject,content)});
 
   // ── CONFIRM DLG ──
   const ConfirmDlg=confirm&&h('div',{className:'dialog-backdrop'},
@@ -666,7 +677,30 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,ConfirmDlg,Toasts);
+    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,ConfirmDlg,Toasts);
+}
+
+function SendLetterDlg({patient,onCancel,onSave}){
+  const [subject,setSubject]=useState('');
+  const [content,setContent]=useState('');
+  const submit=e=>{e.preventDefault();if(!content.trim())return;onSave(subject,content)};
+  return h('div',{className:'dialog-backdrop'},
+    h('form',{onSubmit:submit,className:'dialog fade-up',style:{width:'min(500px,calc(100vw - 32px))'}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
+        h('div',{style:{width:36,height:36,borderRadius:8,background:'rgba(255,215,0,.15)',border:'1px solid rgba(255,215,0,.35)',display:'flex',alignItems:'center',justifyContent:'center'}},h('i',{className:'ph ph-envelope-simple',style:{color:'var(--color-gold)',fontSize:18}})),
+        h('div',null,
+          h('h3',{style:{fontSize:16,fontWeight:700,margin:0}},'Send a letter'),
+          h('p',{style:{opacity:.55,fontSize:12,margin:0}},'To '+patient.first+' '+patient.last))),
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Subject (optional)'),
+        h('input',{className:'input',placeholder:'e.g. Welcome to Linea!',value:subject,onChange:e=>setSubject(e.target.value),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:16}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Message'),
+        h('textarea',{className:'input',required:true,placeholder:'Write your letter here...',value:content,onChange:e=>setContent(e.target.value),rows:8,style:{marginTop:4,resize:'vertical',fontFamily:'inherit',lineHeight:1.6}})),
+      h('p',{style:{opacity:.45,fontSize:11,marginBottom:16}},'This appears in their portal as a sealed envelope. It is only sent when you click Send — nothing is automatic.'),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
+        h('button',{type:'submit',className:'btn btn-gold'},h('i',{className:'ph ph-paper-plane-tilt'}),'Send letter'))));
 }
 
 function EditPatientDlg({patient,onCancel,onSave}){

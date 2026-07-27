@@ -60,6 +60,10 @@ a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}
 @keyframes logoIn{0%{opacity:0;transform:scale(.82)}100%{opacity:1;transform:scale(1)}}
 @keyframes glow{0%,100%{opacity:.5}50%{opacity:.9}}
 @keyframes dot{0%,80%,100%{opacity:.25;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+@keyframes envBob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+@keyframes flapOpen{from{transform:rotateX(0deg)}to{transform:rotateX(180deg)}}
+@keyframes letterSlideUp{from{transform:translateY(30%);opacity:0}to{transform:translateY(-38%);opacity:1}}
+@keyframes badgePop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
 .fade-up{animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both}
 .fade-in{animation:fadeIn .6s ease both}
 .tab-row{display:flex}
@@ -264,6 +268,9 @@ function App(){
   const [patientId,setPatientId]=useState(null);
   const [treatmentLink,setTreatmentLink]=useState('');
   const [doctorName,setDoctorName]=useState('');
+  const [letters,setLetters]=useState([]);
+  const [openLetter,setOpenLetter]=useState(null);
+  const [envelopeState,setEnvelopeState]=useState('closed');
   const [loading,setLoading]=useState(false);
   const [checkingSession,setCheckingSession]=useState(true);
 
@@ -278,6 +285,8 @@ function App(){
           setDoctorName(data.doctor||'');
           setPaid(data.payment_paid??3);
           setTotalInst(data.payment_total??6);
+          const{data:ltrs}=await SUPA.from('letters').select('*').eq('patient_id',data.id).is('opened_at',null).order('created_at',{ascending:true});
+          if(ltrs&&ltrs.length)setLetters(ltrs);
           setPatientId(data.id);
           setCur(data.current_aligner||1);
           setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
@@ -293,6 +302,16 @@ function App(){
   const [regPass2,setRegPass2]=useState('');
   const [username,setUsername]=useState('');
   const [usernameEdited,setUsernameEdited]=useState(false);
+  const selectLetter=(letter)=>{setOpenLetter(letter);setEnvelopeState('closed')};
+  const tapEnvelope=async()=>{
+    if(!openLetter||envelopeState!=='closed')return;
+    setEnvelopeState('opening');
+    setTimeout(()=>setEnvelopeState('open'),550);
+    await SUPA.from('letters').update({opened_at:new Date().toISOString()}).eq('id',openLetter.id);
+    setLetters(prev=>prev.filter(l=>l.id!==openLetter.id));
+  };
+  const closeLetterModal=()=>{setOpenLetter(null);setEnvelopeState('closed')};
+
   const suggestUsername=(f,l)=>{
     const clean=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
     return clean(f)+clean(l);
@@ -419,6 +438,8 @@ function App(){
       setDoctorName(p.doctor||'');
       setPaid(p.payment_paid??3);
       setTotalInst(p.payment_total??6);
+      const{data:ltrs}=await SUPA.from('letters').select('*').eq('patient_id',p.id).is('opened_at',null).order('created_at',{ascending:true});
+      if(ltrs&&ltrs.length)setLetters(ltrs);
       setPatientId(p.id);
       setCur(p.current_aligner||1);
       setNextDays(p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5);
@@ -501,6 +522,9 @@ function App(){
         if(p.payment_total!=null)setTotalInst(p.payment_total);
         if(p.doctor!=null)setDoctorName(p.doctor);
         if(p.treatment_link!=null)setTreatmentLink(p.treatment_link);
+      })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'letters',filter:'patient_id=eq.'+patientId},payload=>{
+        setLetters(prev=>[...prev,payload.new]);
       })
       .subscribe();
     return ()=>{SUPA.removeChannel(channel)};
@@ -892,8 +916,33 @@ function App(){
 
   const tabs={dashboard:Dashboard,progress:Progress,upload:Upload,appointment:Appointment,help:Help,settings:Settings};
 
+  // ── LETTER FROM CLINIC ────────────────────────────────────────────────
+  const EnvelopeTrigger=letters.length>0&&!openLetter&&h('button',{onClick:()=>selectLetter(letters[0]),style:{position:'fixed',top:16,right:16,zIndex:90,width:52,height:52,borderRadius:'50%',background:'linear-gradient(135deg,var(--color-accent),var(--color-accent-2))',border:'2px solid color-mix(in srgb,#fff 30%,transparent)',boxShadow:'0 8px 24px color-mix(in srgb,var(--color-accent) 40%,transparent)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',animation:'envBob 2.4s ease-in-out infinite'}},
+    h('i',{className:'ph ph-envelope-simple-open',style:{fontSize:22,color:'#fff'}}),
+    h('span',{style:{position:'absolute',top:-4,right:-4,minWidth:20,height:20,padding:'0 5px',borderRadius:999,background:'var(--color-danger,#ef4444)',color:'#fff',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',animation:'badgePop .4s cubic-bezier(.34,1.56,.64,1) both'}},letters.length));
+
+  const LetterModal=openLetter&&h('div',{className:'dialog-backdrop fade-in',style:{zIndex:400},onClick:e=>{if(envelopeState==='open'&&e.target===e.currentTarget)closeLetterModal()}},
+    h('div',{style:{perspective:1200,width:'min(380px,92vw)'}},
+      envelopeState!=='open'
+        ? h('div',{onClick:tapEnvelope,style:{position:'relative',width:'100%',height:240,cursor:envelopeState==='closed'?'pointer':'default'}},
+            // envelope body
+            h('div',{style:{position:'absolute',inset:0,borderRadius:14,background:'linear-gradient(160deg,#fdfaf3,#f3ead9)',boxShadow:'0 20px 50px rgba(0,0,0,.4)',border:'1px solid rgba(0,0,0,.08)'}}),
+            // wax seal
+            h('div',{style:{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:52,height:52,borderRadius:'50%',background:'linear-gradient(135deg,var(--color-accent),var(--color-accent-2))',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(0,0,0,.35)',border:'2px solid rgba(255,255,255,.4)',zIndex:3}},
+              h('span',{style:{color:'#fff',fontWeight:800,fontSize:18,fontFamily:'Georgia,serif'}},'L')),
+            // flap
+            h('div',{style:{position:'absolute',top:0,left:0,right:0,height:120,background:'linear-gradient(160deg,#f6efe0,#e9dcc4)',clipPath:'polygon(0 0,50% 62%,100% 0)',transformOrigin:'top',transition:'transform .55s cubic-bezier(.4,0,.2,1)',transform:envelopeState==='opening'?'rotateX(180deg)':'rotateX(0deg)',boxShadow:'0 2px 6px rgba(0,0,0,.15)',zIndex:2}}))
+        : h('div',{className:'fade-up',style:{position:'relative',width:'100%',maxHeight:'80vh',overflowY:'auto',borderRadius:16,background:'linear-gradient(160deg,#fdfaf3,#f7f0e2)',boxShadow:'0 24px 60px rgba(0,0,0,.5)',padding:'32px 28px',color:'#2a2418'}},
+            h('button',{onClick:closeLetterModal,style:{position:'absolute',top:12,right:12,width:32,height:32,borderRadius:'50%',background:'rgba(0,0,0,.06)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#2a2418'}},h('i',{className:'ph ph-x'})),
+            h('div',{style:{textAlign:'center',marginBottom:20}},
+              h('div',{style:{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,var(--color-accent),var(--color-accent-2))',margin:'0 auto 10px',display:'flex',alignItems:'center',justifyContent:'center'}},h('span',{style:{color:'#fff',fontWeight:800,fontSize:16,fontFamily:'Georgia,serif'}},'L')),
+              openLetter.subject&&h('h2',{style:{fontSize:20,fontWeight:700,margin:0,fontFamily:'Georgia,serif'}},openLetter.subject),
+              h('p',{style:{fontSize:11,opacity:.5,margin:'4px 0 0',textTransform:'uppercase',letterSpacing:'.1em'}},openLetter.sender||'Linea Aligners')),
+            h('p',{style:{fontSize:15,lineHeight:1.8,whiteSpace:'pre-wrap',fontFamily:'Georgia,serif'}},openLetter.content),
+            letters.length>1&&h('p',{style:{textAlign:'center',fontSize:12,opacity:.5,marginTop:20}},'You have '+(letters.length-1)+' more letter'+(letters.length>2?'s':'')))));
+
   return h(React.Fragment,null,
-    Splash,Header,MobileNav,Toasts,ConfirmDlg,Celebrate,SchedDlg,EmergDlg,ReportDlg,D3Dlg,
+    Splash,Header,MobileNav,Toasts,ConfirmDlg,Celebrate,SchedDlg,EmergDlg,ReportDlg,D3Dlg,EnvelopeTrigger,LetterModal,
     h('main',{style:{maxWidth:1080,margin:'0 auto',padding:'var(--space-8) var(--space-6) 100px'}},tabs[tab]));
 }
 
