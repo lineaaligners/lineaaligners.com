@@ -302,6 +302,10 @@ function App(){
   const [regPass2,setRegPass2]=useState('');
   const [username,setUsername]=useState('');
   const [usernameEdited,setUsernameEdited]=useState(false);
+  useEffect(()=>{
+    if(letters.length>0&&!openLetter&&authed)selectLetter(letters[0]);
+  },[letters,authed]);
+
   const selectLetter=(letter)=>{setOpenLetter(letter);setEnvelopeState('closed')};
   const tapEnvelope=async()=>{
     if(!openLetter||envelopeState!=='closed')return;
