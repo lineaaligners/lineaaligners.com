@@ -299,17 +299,18 @@ function App(){
       first_name:data.first,last_name:data.last,phone:data.phone,email:data.email||null,
       city:data.city,current_aligner:Number(data.currentAligner),total_aligners:Number(data.totalAligners),
       status:data.status,doctor:data.doctor,notes:data.notes,
-      payment_paid:Number(data.paymentPaid),payment_total:Number(data.paymentTotal)
+      payment_paid:Number(data.paymentPaid),payment_total:Number(data.paymentTotal),
+      treatment_link:data.treatmentLink||null
     }).eq('id',id);
     if(error){toast('Error: '+error.message);return;}
     setPatients(prev=>prev.map(x=>x.id===id?{...x,first:data.first,last:data.last,phone:data.phone,email:data.email,
       city:data.city,currentAligner:Number(data.currentAligner),totalAligners:Number(data.totalAligners),
       status:data.status,doctor:data.doctor,notes:data.notes,
-      payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)}}:x));
+      payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)},treatmentLink:data.treatmentLink||''}:x));
     if(selected&&selected.id===id)setSelected(prev=>({...prev,first:data.first,last:data.last,phone:data.phone,email:data.email,
       city:data.city,currentAligner:Number(data.currentAligner),totalAligners:Number(data.totalAligners),
       status:data.status,doctor:data.doctor,notes:data.notes,
-      payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)}}));
+      payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)},treatmentLink:data.treatmentLink||''}));
     setEditPatientFor(false);
     toast(data.first+"'s details updated");
   };
@@ -613,6 +614,7 @@ function App(){
           h('a',{href:`https://wa.me/${selected.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
           h('a',{href:`tel:${selected.phone}`,className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-phone'}),'Call'),
           h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditPatientFor(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit details'),
+          selected.treatmentLink&&h('a',{href:selected.treatmentLink,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-link'}),'View treatment plan'),
           h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>deletePatient(selected.id)},h('i',{className:'ph ph-trash'}),'Delete patient'))),
       // Info grid
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}},
@@ -671,7 +673,8 @@ function EditPatientDlg({patient,onCancel,onSave}){
     first:patient.first,last:patient.last,phone:patient.phone,email:patient.email||'',
     city:patient.city||'',currentAligner:patient.currentAligner,totalAligners:patient.totalAligners,
     status:patient.status,doctor:patient.doctor||'Dr. Fatbardha Mustafa',notes:patient.notes||'',
-    paymentPaid:patient.payment.paid,paymentTotal:patient.payment.total
+    paymentPaid:patient.payment.paid,paymentTotal:patient.payment.total,
+    treatmentLink:patient.treatmentLink||''
   });
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   const submit=e=>{e.preventDefault();onSave(f)};
@@ -693,6 +696,10 @@ function EditPatientDlg({patient,onCancel,onSave}){
         h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Status'),
         h('select',{className:'input',value:f.status,onChange:e=>set('status',e.target.value),style:{marginTop:4}},
           ['active','finishing','paused','completed'].map(s=>h('option',{key:s,value:s},s)))),
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Treatment plan link'),
+        h('input',{className:'input',type:'url',placeholder:'https://...',value:f.treatmentLink,onChange:e=>set('treatmentLink',e.target.value),style:{marginTop:4}}),
+        h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},'Link to a 3D simulation, PDF plan, or any resource. The patient will see a button to open it.')),
       h('div',{style:{marginBottom:20}},
         h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
         h('textarea',{className:'input',value:f.notes,onChange:e=>set('notes',e.target.value),rows:3,style:{marginTop:4,resize:'vertical',fontFamily:'inherit'}})),

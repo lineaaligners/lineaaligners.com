@@ -170,6 +170,7 @@ en:{
   signinNoAcc:'New patient? Create an account',
   password:'Password',confirmPassword:'Confirm password',
   notRegistered:'Not registered yet.',goRegister:'Create an account',
+  myTreatmentPlan:'View My Treatment Plan',
   backToSite:'Back to site',
 },
 sq:{
@@ -245,6 +246,7 @@ sq:{
   signinNoAcc:'Pacient i ri? Krijoni llogari',
   password:'Fjalëkalimi',confirmPassword:'Konfirmo fjalëkalimin',
   notRegistered:'Nuk jeni regjistruar akoma.',goRegister:'Krijoni llogari',
+  myTreatmentPlan:'Shiko Planin Tim të Trajtimit',
   backToSite:'Kthehu te faqja',
 }
 };
@@ -260,6 +262,7 @@ function App(){
   const [reg,setReg]=useState({first:'',last:'',phone:'',email:'',city:''});
   const [authMode,setAuthMode]=useState('signin');
   const [patientId,setPatientId]=useState(null);
+  const [treatmentLink,setTreatmentLink]=useState('');
   const [loading,setLoading]=useState(false);
   const [checkingSession,setCheckingSession]=useState(true);
 
@@ -270,6 +273,7 @@ function App(){
         const {data}=await SUPA.from('patients').select('*').eq('user_id',session.user.id).single();
         if(data){
           setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
+          setTreatmentLink(data.treatment_link||'');
           setPatientId(data.id);
           setCur(data.current_aligner||1);
           setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
@@ -407,6 +411,7 @@ function App(){
     const{data:p}=await SUPA.from('patients').select('*').eq('user_id',data.user.id).single();
     if(p){
       setReg({first:p.first_name,last:p.last_name,phone:p.phone,email:p.email||'',city:p.city||''});
+      setTreatmentLink(p.treatment_link||'');
       setPatientId(p.id);
       setCur(p.current_aligner||1);
       setNextDays(p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5);
@@ -715,7 +720,8 @@ function App(){
       h('div',{className:'card',style:{padding:'var(--space-6)'}},
         h('h2',{style:{fontSize:19,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-eye',style:{color:'var(--color-accent-2-400)'}}),t.view3d),
         h('p',{style:{opacity:.6,fontSize:14,margin:'0 0 var(--space-4)'}},t.view3dHint),
-        h('button',{className:'btn btn-primary btn-block',onClick:()=>setV3d(true),style:{justifyContent:'center'}},h('i',{className:'ph ph-eye'}),t.view3d))));
+        h('button',{className:'btn btn-primary btn-block',onClick:()=>setV3d(true),style:{justifyContent:'center'}},h('i',{className:'ph ph-eye'}),t.view3d),
+        treatmentLink&&h('a',{href:treatmentLink,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary btn-block',style:{justifyContent:'center',marginTop:8}},h('i',{className:'ph ph-link'}),t.myTreatmentPlan))));
 
   // ── PROGRESS ───────────────────────────────────────────────────────────
   const Progress=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
