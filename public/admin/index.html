@@ -189,6 +189,7 @@ function App(){
   const [emergs,setEmergs]=useState([]);
   const [msgs,setMsgs]=useState([]);
   const [addOpen,setAddOpen]=useState(false);
+  const [editAlignerFor,setEditAlignerFor]=useState(null);
 
   const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
 
@@ -270,6 +271,16 @@ function App(){
       setPatients(prev=>prev.map(x=>x.id===id?{...x,currentAligner:n,nextChangeDays:10}:x));
       toast(p.first+" advanced to aligner "+n);
     }});
+  };
+
+  const setAlignerTo=async(id,n)=>{
+    const p=patients.find(x=>x.id===id);if(!p)return;
+    const nd=new Date();nd.setDate(nd.getDate()+10);
+    await SUPA.from('patients').update({current_aligner:n,next_change_date:nd.toISOString().slice(0,10)}).eq('id',id);
+    setPatients(prev=>prev.map(x=>x.id===id?{...x,currentAligner:n,nextChangeDays:10}:x));
+    if(selected&&selected.id===id)setSelected(prev=>({...prev,currentAligner:n,nextChangeDays:10}));
+    setEditAlignerFor(null);
+    toast(p.first+"'s aligner set to "+n);
   };
   const resolveEmerg=(id)=>{
     const em=emergs.find(x=>x.id===id);if(!em)return;
@@ -601,6 +612,8 @@ function App(){
 
   // ── ADD PATIENT DIALOG ──
   const AddDlg=addOpen&&h(AddPatientDlg,{onCancel:()=>setAddOpen(false),onSave:addPatient});
+  const editingPatient=editAlignerFor&&patients.find(x=>x.id===editAlignerFor);
+  const EditAlignerDialog=editingPatient&&h(EditAlignerDlg,{patient:editingPatient,onCancel:()=>setEditAlignerFor(null),onSave:n=>setAlignerTo(editingPatient.id,n)});
 
   // ── CONFIRM DLG ──
   const ConfirmDlg=confirm&&h('div',{className:'dialog-backdrop'},
@@ -625,7 +638,23 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,ConfirmDlg,Toasts);
+    Drawer,AddDlg,EditAlignerDialog,ConfirmDlg,Toasts);
+}
+
+function EditAlignerDlg({patient,onCancel,onSave}){
+  const [n,setN]=useState(patient.currentAligner);
+  const submit=e=>{e.preventDefault();const v=Math.max(1,Math.min(patient.totalAligners,Number(n)));onSave(v)};
+  return h('div',{className:'dialog-backdrop'},
+    h('form',{onSubmit:submit,className:'dialog fade-up',style:{width:'min(360px,calc(100vw - 32px))'}},
+      h('h3',{style:{fontSize:16,fontWeight:700,marginBottom:4}},'Set aligner number'),
+      h('p',{style:{opacity:.6,fontSize:13,marginBottom:16}},patient.first+' '+patient.last+' — use this to move forward or back to any aligner.'),
+      h('div',{style:{marginBottom:8}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Aligner #'),
+        h('input',{className:'input',type:'number',min:1,max:patient.totalAligners,value:n,onChange:e=>setN(e.target.value),autoFocus:true,style:{marginTop:4,fontSize:20,textAlign:'center'}})),
+      h('p',{style:{opacity:.45,fontSize:12,marginBottom:16,textAlign:'center'}},'of '+patient.totalAligners+' total'),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
+        h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-check'}),'Save'))));
 }
 
 function AddPatientDlg({onCancel,onSave}){

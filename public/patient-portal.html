@@ -348,7 +348,14 @@ function App(){
     }
     toast(t.toastAlignerChanged);
   })};
-  const pickAl=n=>confirm(t.updateConfirm.replace('{n}',n),()=>{doSetAligner(n);toast(t.toastAlignerChanged)});
+  const pickAl=n=>confirm(t.updateConfirm.replace('{n}',n),async()=>{
+    doSetAligner(n);
+    if(patientId){
+      const nd=new Date();nd.setDate(nd.getDate()+10);
+      await SUPA.from('patients').update({current_aligner:n,next_change_date:nd.toISOString().slice(0,10)}).eq('id',patientId);
+    }
+    toast(t.toastAlignerChanged);
+  });
   const login=async e=>{e.preventDefault();
     if(!username){setAuthErr('Choose a username.');return;}
     if(!regPass||regPass.length<6){setAuthErr('Password must be at least 6 characters.');return;}
