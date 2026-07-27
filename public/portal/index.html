@@ -276,6 +276,8 @@ function App(){
           setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
           setTreatmentLink(data.treatment_link||'');
           setDoctorName(data.doctor||'');
+          setPaid(data.payment_paid??3);
+          setTotalInst(data.payment_total??6);
           setPatientId(data.id);
           setCur(data.current_aligner||1);
           setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
@@ -309,7 +311,7 @@ function App(){
   const [streak]=useState(6);
   const [ba,setBa]=useState(50);
   const [paid,setPaid]=useState(3);
-  const [totalInst]=useState(6);
+  const [totalInst,setTotalInst]=useState(6);
   const [toasts,setToasts]=useState([]);
   const [dlg,setDlg]=useState(null);
   const [sched,setSched]=useState(false);
@@ -415,6 +417,8 @@ function App(){
       setReg({first:p.first_name,last:p.last_name,phone:p.phone,email:p.email||'',city:p.city||''});
       setTreatmentLink(p.treatment_link||'');
       setDoctorName(p.doctor||'');
+      setPaid(p.payment_paid??3);
+      setTotalInst(p.payment_total??6);
       setPatientId(p.id);
       setCur(p.current_aligner||1);
       setNextDays(p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5);
@@ -486,6 +490,22 @@ function App(){
   const orb=(s)=>h('div',{style:{position:'absolute',...s,borderRadius:'50%',filter:'blur(120px)',animation:'glow 4s ease-in-out infinite'}});
 
   // ── LOGIN / REGISTER ───────────────────────────────────────────────────
+  useEffect(()=>{
+    if(!patientId)return;
+    const channel=SUPA.channel('patient-live-'+patientId)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'patients',filter:'id=eq.'+patientId},payload=>{
+        const p=payload.new;
+        if(p.current_aligner!=null){setCur(p.current_aligner);}
+        if(p.next_change_date!=null){setNextDays(Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))));}
+        if(p.payment_paid!=null)setPaid(p.payment_paid);
+        if(p.payment_total!=null)setTotalInst(p.payment_total);
+        if(p.doctor!=null)setDoctorName(p.doctor);
+        if(p.treatment_link!=null)setTreatmentLink(p.treatment_link);
+      })
+      .subscribe();
+    return ()=>{SUPA.removeChannel(channel)};
+  },[patientId]);
+
   if(checkingSession) return h('div',{style:{position:'fixed',inset:0,background:'var(--color-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
     h('i',{className:'ph ph-circle-notch',style:{fontSize:36,color:'var(--color-accent-300)',animation:'spin 1s linear infinite'}}));
 
