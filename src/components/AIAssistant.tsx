@@ -1,26 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { WHATSAPP_URL } from '../constants';
 
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
-
-const scheduleAppointmentDeclaration: FunctionDeclaration = {
-  name: 'scheduleAppointment',
-  parameters: {
-    type: Type.OBJECT,
-    description: 'Directs the user to book a free 3D scan appointment at Medident Dental Clinic via WhatsApp. Call this tool when the user expresses interest in booking a scan, visiting the clinic, or starting their journey.',
-    properties: {
-      fullName: { type: Type.STRING, description: 'The full name of the patient.' },
-      email: { type: Type.STRING, description: 'The email address of the patient for confirmation.' },
-      preferredDay: { type: Type.STRING, description: 'Optionally, the day the user prefers.' }
-    },
-    required: ['fullName', 'email'],
-  },
-};
 
 export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,46 +34,30 @@ export const AIAssistant: React.FC<{ language: 'en' | 'sq' }> = ({ language }) =
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', text: input };
-    const updatedMessages = [...messages, userMessage];
+    const historyForApi = messages.map(m => ({ role: m.role, text: m.text }));
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || '' });
-      const chat = ai.chats.create({
-        model: "gemini-2.5-flash",
-        config: {
-          systemInstruction: `You are a friendly AI for Linea Aligners. Your goal is to help users understand our clear aligner treatment and ultimately book a free 3D scan at Medident Dental Clinic in Peja. 
-          Help the user in ${isEn ? 'English' : 'Albanian'}. 
-          If a user wants to book, visit, or start, ALWAYS use the 'scheduleAppointment' tool to guide them to WhatsApp. If they haven't provided their full name and email, ask for them politely first.
-          Direct WhatsApp link: ${WHATSAPP_URL}. 
-          Keep responses concise and premium. Do not use asterisks in output.`,
-          tools: [{ functionDeclarations: [scheduleAppointmentDeclaration] }],
-        },
-        history: messages.slice(0, -1).map(m => ({ 
-          role: m.role as 'user' | 'model', 
-          parts: [{ text: m.text }] 
-        })),
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage.text, history: historyForApi, language }),
       });
+      const data = await res.json();
 
-      const response = await chat.sendMessage({ message: userMessage.text });
-      const functionCalls = response.functionCalls;
-
-      if (functionCalls && functionCalls.length > 0) {
-        // Automatically open the WhatsApp link when the AI calls the function
+      if (data.openWhatsApp) {
         window.open(WHATSAPP_URL, '_blank');
-        
-        const fc = functionCalls[0];
-        const name = (fc.args as any).fullName;
-        
+        const name = data.name;
         const confirmation = isEn 
-          ? `Perfect, ${name}! I've initiated your booking process. I am opening WhatsApp for you right now so you can chat directly with our clinic to pick your exact time slot at Medident.`
-          : `Shkëlqyeshëm, ${name}! Kam nisur procesin e rezervimit tuaj. Po hap WhatsApp për ju tani që të flisni direkt me klinikën tonë për të zgjedhur orarin tuaj të saktë në Medident.`;
-        
+          ? `Perfect${name ? ', ' + name : ''}! I've initiated your booking process. I am opening WhatsApp for you right now so you can chat directly with our clinic to pick your exact time slot at Medident.`
+          : `Shkëlqyeshëm${name ? ', ' + name : ''}! Kam nisur procesin e rezervimit tuaj. Po hap WhatsApp për ju tani që të flisni direkt me klinikën tonë për të zgjedhur orarin tuaj të saktë në Medident.`;
         setMessages(prev => [...prev, { role: 'model', text: confirmation }]);
+      } else if (data.text) {
+        setMessages(prev => [...prev, { role: 'model', text: data.text }]);
       } else {
-        setMessages(prev => [...prev, { role: 'model', text: (response.text || "").replace(/\*/g, '') }]);
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (err) {
       setMessages(prev => [...prev, { role: 'model', text: isEn ? "I'm having a bit of trouble connecting. Please try again or visit our WhatsApp directly!" : "Kam pak vështirësi në lidhje. Ju lutem provoni përsëri ose na kontaktoni në WhatsApp direkt!" }]);

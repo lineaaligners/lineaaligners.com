@@ -273,8 +273,17 @@ function App(){
   const [envelopeState,setEnvelopeState]=useState('closed');
   const [loading,setLoading]=useState(false);
   const [checkingSession,setCheckingSession]=useState(true);
+  const [resetMode,setResetMode]=useState(false);
+  const [resetIdentifier,setResetIdentifier]=useState('');
+  const [resetMsg,setResetMsg]=useState('');
+  const [resetLoading,setResetLoading]=useState(false);
+  const [recoveryMode,setRecoveryMode]=useState(false);
+  const [newPass1,setNewPass1]=useState('');
+  const [newPass2,setNewPass2]=useState('');
+  const [recoveryMsg,setRecoveryMsg]=useState('');
 
   useEffect(()=>{
+    if(window.location.hash.includes('type=recovery')){setRecoveryMode(true);setCheckingSession(false);return;}
     (async()=>{
       const {data:{session}}=await SUPA.auth.getSession();
       if(session){
@@ -411,6 +420,34 @@ function App(){
     setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
     sp.current=setTimeout(()=>setSplash(false),2200);
   };
+  const requestReset=async e=>{
+    e.preventDefault();setResetLoading(true);setResetMsg('');
+    let email=resetIdentifier.trim();
+    if(!email.includes('@')){
+      const{data:foundEmail}=await SUPA.rpc('get_email_by_phone',{p_phone:email.replace(/\s/g,'')});
+      let found=foundEmail;
+      if(!found){const{data:byUser}=await SUPA.rpc('get_email_by_username',{p_username:email.toLowerCase().replace(/\s/g,'')});found=byUser;}
+      if(!found){setResetMsg('not_found');setResetLoading(false);return;}
+      email=found;
+    }
+    if(email.endsWith('@patient.lineaaligners.local')){
+      setResetMsg('no_real_email');setResetLoading(false);return;
+    }
+    const{error}=await SUPA.auth.resetPasswordForEmail(email,{redirectTo:'https://lineaaligners.com/portal/'});
+    if(error){setResetMsg('error:'+error.message);setResetLoading(false);return;}
+    setResetMsg('sent');setResetLoading(false);
+  };
+
+  const submitNewPassword=async e=>{
+    e.preventDefault();setRecoveryMsg('');
+    if(!newPass1||newPass1.length<6){setRecoveryMsg('Password must be at least 6 characters.');return;}
+    if(newPass1!==newPass2){setRecoveryMsg('Passwords do not match.');return;}
+    const{error}=await SUPA.auth.updateUser({password:newPass1});
+    if(error){setRecoveryMsg(error.message);return;}
+    setRecoveryMsg('done');
+    setTimeout(()=>{window.location.hash='';window.location.reload();},2000);
+  };
+
   const signin=async e=>{e.preventDefault();
     if(!signinPhone){setAuthErr('Enter your phone, username or email.');return;}
     if(!signinPass){setAuthErr('Enter your password.');return;}
@@ -537,6 +574,36 @@ function App(){
   if(checkingSession) return h('div',{style:{position:'fixed',inset:0,background:'var(--color-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
     h('i',{className:'ph ph-circle-notch',style:{fontSize:36,color:'var(--color-accent-300)',animation:'spin 1s linear infinite'}}));
 
+  if(recoveryMode){
+    if(recoveryMsg==='done')return h('div',{style:{position:'fixed',inset:0,background:'var(--color-bg)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}},
+      h('div',{className:'fade-up',style:{textAlign:'center'}},
+        h('i',{className:'ph ph-check-circle',style:{fontSize:48,color:'var(--color-success,#22c55e)'}}),
+        h('p',{style:{fontSize:16,fontWeight:600,marginTop:12}},'Password updated! Redirecting...')));
+    return h('div',{className:'fade-in',style:{position:'fixed',inset:0,zIndex:300,background:'linear-gradient(160deg,var(--color-accent-900) 0%,var(--color-bg) 45%,var(--color-accent-2-900) 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:'var(--space-6)'}},
+      h('form',{onSubmit:submitNewPassword,className:'fade-up',style:{width:'min(380px,100%)',padding:'var(--space-8) var(--space-7)',borderRadius:'var(--radius-lg)',background:'color-mix(in srgb,var(--color-surface) 42%,transparent)',border:'1px solid color-mix(in srgb,#fff 16%,transparent)',backdropFilter:'blur(28px) saturate(160%)',display:'flex',flexDirection:'column',gap:'var(--space-5)'}},
+        h('h1',{style:{fontSize:22,fontWeight:600,textAlign:'center'}},'Set a new password'),
+        h('div',{className:'field'},h('label',null,'New password'),h('input',{className:'input',type:'password',value:newPass1,onChange:e=>setNewPass1(e.target.value),required:true,autoFocus:true})),
+        h('div',{className:'field'},h('label',null,'Confirm password'),h('input',{className:'input',type:'password',value:newPass2,onChange:e=>setNewPass2(e.target.value),required:true})),
+        recoveryMsg&&recoveryMsg!=='done'&&h('p',{style:{color:'#fca5a5',fontSize:12,textAlign:'center'}},recoveryMsg),
+        h('button',{type:'submit',className:'btn btn-primary btn-block',style:{justifyContent:'center'}},'Update password')));
+  }
+
+  if(resetMode){
+    return h('div',{className:'fade-in',style:{position:'fixed',inset:0,zIndex:300,background:'linear-gradient(160deg,var(--color-accent-900) 0%,var(--color-bg) 45%,var(--color-accent-2-900) 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:'var(--space-6)'}},
+      h('form',{onSubmit:requestReset,className:'fade-up',style:{width:'min(380px,100%)',padding:'var(--space-8) var(--space-7)',borderRadius:'var(--radius-lg)',background:'color-mix(in srgb,var(--color-surface) 42%,transparent)',border:'1px solid color-mix(in srgb,#fff 16%,transparent)',backdropFilter:'blur(28px) saturate(160%)',display:'flex',flexDirection:'column',gap:'var(--space-5)'}},
+        h('h1',{style:{fontSize:22,fontWeight:600,textAlign:'center'}},'Reset your password'),
+        h('p',{style:{opacity:.6,fontSize:13,textAlign:'center',margin:0}},'Enter your phone, username, or email'),
+        h('div',{className:'field'},h('input',{className:'input',type:'text',value:resetIdentifier,onChange:e=>setResetIdentifier(e.target.value),required:true,autoFocus:true})),
+        resetMsg==='sent'&&h('p',{style:{color:'#86efac',fontSize:13,textAlign:'center'}},'Check your email for a reset link.'),
+        resetMsg==='not_found'&&h('p',{style:{color:'#fca5a5',fontSize:13,textAlign:'center'}},'No account found.'),
+        resetMsg==='no_real_email'&&h('div',{style:{textAlign:'center'}},
+          h('p',{style:{color:'#fca5a5',fontSize:13,margin:'0 0 8px'}},'You registered with a phone number only — no email on file.'),
+          h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',className:'btn btn-primary',style:{justifyContent:'center'}},'Message the clinic on WhatsApp')),
+        resetMsg&&resetMsg.startsWith('error:')&&h('p',{style:{color:'#fca5a5',fontSize:13,textAlign:'center'}},resetMsg.slice(6)),
+        resetMsg!=='sent'&&h('button',{type:'submit',disabled:resetLoading,className:'btn btn-primary btn-block',style:{justifyContent:'center'}},resetLoading?'...':'Send reset link'),
+        h('button',{type:'button',onClick:()=>{setResetMode(false);setResetMsg('')},style:{background:'none',border:'none',fontSize:12,opacity:.6,color:'inherit',cursor:'pointer'}},'← Back to sign in')));
+  }
+
   if(!authed){
     const isSignin=authMode==='signin';
     const tabBtn=(mode,label)=>h('button',{key:mode,type:'button',onClick:()=>setAuthMode(mode),style:{flex:1,padding:'10px 14px',background:authMode===mode?'var(--color-accent)':'transparent',color:authMode===mode?'#fff':'color-mix(in srgb,var(--color-text) 60%,transparent)',border:'none',borderRadius:'var(--radius-sm)',fontFamily:'var(--font-body)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .2s'}},label);
@@ -598,7 +665,7 @@ function App(){
                   h('input',{className:'input',type:'password',placeholder:'••••••••',value:regPass2,onChange:e=>{setRegPass2(e.target.value);setAuthErr('')},required:true}))),
               h('button',{type:'submit',className:'btn btn-primary btn-block',disabled:loading,style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:loading?'ph ph-circle-notch':'ph ph-arrow-right',style:{animation:loading?'spin 1s linear infinite':undefined}}),loading?'...':t.loginCta),
               h('p',{style:{opacity:.4,fontSize:12,margin:0,textAlign:'center'}},t.loginHint)),
-        h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',style:{fontSize:12,opacity:.65,textAlign:'center'}},t.forgotPassword)));
+        isSignin&&h('button',{type:'button',onClick:()=>{setResetMode(true);setResetIdentifier(signinPhone);setResetMsg('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'inherit',cursor:'pointer',fontFamily:'inherit'}},t.forgotPassword)));
   }
 
   // ── SPLASH ─────────────────────────────────────────────────────────────
