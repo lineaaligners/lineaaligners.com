@@ -263,6 +263,7 @@ function App(){
   const [authMode,setAuthMode]=useState('signin');
   const [patientId,setPatientId]=useState(null);
   const [treatmentLink,setTreatmentLink]=useState('');
+  const [doctorName,setDoctorName]=useState('');
   const [loading,setLoading]=useState(false);
   const [checkingSession,setCheckingSession]=useState(true);
 
@@ -274,6 +275,7 @@ function App(){
         if(data){
           setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
           setTreatmentLink(data.treatment_link||'');
+          setDoctorName(data.doctor||'');
           setPatientId(data.id);
           setCur(data.current_aligner||1);
           setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
@@ -412,6 +414,7 @@ function App(){
     if(p){
       setReg({first:p.first_name,last:p.last_name,phone:p.phone,email:p.email||'',city:p.city||''});
       setTreatmentLink(p.treatment_link||'');
+      setDoctorName(p.doctor||'');
       setPatientId(p.id);
       setCur(p.current_aligner||1);
       setNextDays(p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5);
@@ -712,7 +715,7 @@ function App(){
       h('div',{className:'card',style:{padding:'var(--space-6)'}},
         h('h2',{style:{fontSize:19,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-calendar-blank',style:{color:'var(--color-accent-2-400)'}}),t.nextAppointment),
         h('p',{style:{fontSize:20,fontWeight:600,margin:'4px 0 2px'}},fmtDate(apptDate,lang,true)),
-        h('p',{style:{opacity:.65,fontSize:14,margin:0}},`${t.withDoctor} Dr. Fatbardha Mustafa`),
+        h('p',{style:{opacity:.65,fontSize:14,margin:0}},`${t.withDoctor} ${doctorName||'—'}`),
         h('p',{style:{opacity:.5,fontSize:14,margin:'0 0 var(--space-4)'}},`${t.atClinic} Medident Dental Clinic`),
         h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
           h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{flex:1,justifyContent:'center',whiteSpace:'nowrap'}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),t.contactClinic),
@@ -790,7 +793,7 @@ function App(){
     h('div',{className:'card doctor-card',style:{padding:'var(--space-6)',flexDirection:'row',alignItems:'center',gap:'var(--space-5)'}},
       h('div',{style:{width:64,height:64,borderRadius:'50%',background:'var(--color-accent-900)',border:'1px solid var(--color-accent-700)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:600,fontSize:20,color:'var(--color-accent-300)',flex:'none'}},'FM'),
       h('div',{style:{flex:1,minWidth:0}},
-        h('p',{style:{fontWeight:600,fontSize:17,margin:0}},'Dr. Fatbardha Mustafa'),
+        h('p',{style:{fontWeight:600,fontSize:17,margin:0}},doctorName||'—'),
         h('p',{style:{opacity:.6,fontSize:13,margin:'2px 0 0'}},t.doctorCredentials),
         h('p',{style:{opacity:.75,fontSize:13,margin:'4px 0 0',display:'flex',alignItems:'center',gap:4}},h('i',{className:'ph ph-star-fill',style:{color:'#ffb545',fontSize:13}}),t.doctorRating),
         h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{marginTop:'var(--space-3)',whiteSpace:'nowrap'}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),t.messageDoctor))),
