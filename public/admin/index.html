@@ -190,6 +190,7 @@ function App(){
   const [msgs,setMsgs]=useState([]);
   const [addOpen,setAddOpen]=useState(false);
   const [editAlignerFor,setEditAlignerFor]=useState(null);
+  const [editPatientFor,setEditPatientFor]=useState(false);
 
   const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
 
@@ -292,6 +293,26 @@ function App(){
     }});
   };
   const delMsg=async(id)=>{await SUPA.from('messages').update({read_at:new Date().toISOString()}).eq('id',id);setMsgs(prev=>prev.filter(x=>x.id!==id));toast('Message archived')};
+
+  const updatePatient=async(id,data)=>{
+    const{error}=await SUPA.from('patients').update({
+      first_name:data.first,last_name:data.last,phone:data.phone,email:data.email||null,
+      city:data.city,current_aligner:Number(data.currentAligner),total_aligners:Number(data.totalAligners),
+      status:data.status,doctor:data.doctor,notes:data.notes,
+      payment_paid:Number(data.paymentPaid),payment_total:Number(data.paymentTotal)
+    }).eq('id',id);
+    if(error){toast('Error: '+error.message);return;}
+    setPatients(prev=>prev.map(x=>x.id===id?{...x,first:data.first,last:data.last,phone:data.phone,email:data.email,
+      city:data.city,currentAligner:Number(data.currentAligner),totalAligners:Number(data.totalAligners),
+      status:data.status,doctor:data.doctor,notes:data.notes,
+      payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)}}:x));
+    if(selected&&selected.id===id)setSelected(prev=>({...prev,first:data.first,last:data.last,phone:data.phone,email:data.email,
+      city:data.city,currentAligner:Number(data.currentAligner),totalAligners:Number(data.totalAligners),
+      status:data.status,doctor:data.doctor,notes:data.notes,
+      payment:{paid:Number(data.paymentPaid),total:Number(data.paymentTotal)}}));
+    setEditPatientFor(false);
+    toast(data.first+"'s details updated");
+  };
 
   const deletePatient=(id)=>{
     const p=patients.find(x=>x.id===id);
@@ -588,8 +609,11 @@ function App(){
           h('div',{style:{height:'100%',background:'var(--color-accent)',width:(selected.currentAligner/selected.totalAligners*100)+'%'}})),
         h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
           h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>advanceAligner(selected.id),disabled:selected.currentAligner>=selected.totalAligners},h('i',{className:'ph ph-arrow-right'}),'Advance aligner'),
+          h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditAlignerFor(selected.id)},h('i',{className:'ph ph-hash'}),'Set aligner #'),
           h('a',{href:`https://wa.me/${selected.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
-          h('a',{href:`tel:${selected.phone}`,className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-phone'}),'Call'))),
+          h('a',{href:`tel:${selected.phone}`,className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-phone'}),'Call'),
+          h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditPatientFor(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit details'),
+          h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>deletePatient(selected.id)},h('i',{className:'ph ph-trash'}),'Delete patient'))),
       // Info grid
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}},
         [['Streak',selected.streak+'d','ph-flame','#ff9d4d'],
@@ -614,6 +638,7 @@ function App(){
   const AddDlg=addOpen&&h(AddPatientDlg,{onCancel:()=>setAddOpen(false),onSave:addPatient});
   const editingPatient=editAlignerFor&&patients.find(x=>x.id===editAlignerFor);
   const EditAlignerDialog=editingPatient&&h(EditAlignerDlg,{patient:editingPatient,onCancel:()=>setEditAlignerFor(null),onSave:n=>setAlignerTo(editingPatient.id,n)});
+  const EditPatientDialog=editPatientFor&&selected&&h(EditPatientDlg,{patient:selected,onCancel:()=>setEditPatientFor(false),onSave:data=>updatePatient(selected.id,data)});
 
   // ── CONFIRM DLG ──
   const ConfirmDlg=confirm&&h('div',{className:'dialog-backdrop'},
@@ -638,7 +663,42 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,EditAlignerDialog,ConfirmDlg,Toasts);
+    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,ConfirmDlg,Toasts);
+}
+
+function EditPatientDlg({patient,onCancel,onSave}){
+  const [f,setF]=useState({
+    first:patient.first,last:patient.last,phone:patient.phone,email:patient.email||'',
+    city:patient.city||'',currentAligner:patient.currentAligner,totalAligners:patient.totalAligners,
+    status:patient.status,doctor:patient.doctor||'Dr. Fatbardha Mustafa',notes:patient.notes||'',
+    paymentPaid:patient.payment.paid,paymentTotal:patient.payment.total
+  });
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  const submit=e=>{e.preventDefault();onSave(f)};
+  const field=(label,key,type,extra)=>h('div',{style:{marginBottom:12}},
+    h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},label),
+    h('input',{className:'input',type:type||'text',value:f[key],onChange:e=>set(key,e.target.value),style:{marginTop:4},...extra}));
+  return h('div',{className:'dialog-backdrop'},
+    h('form',{onSubmit:submit,className:'dialog fade-up',style:{width:'min(560px,calc(100vw - 32px))',maxHeight:'90vh',overflowY:'auto'}},
+      h('h3',{style:{fontSize:18,fontWeight:700,marginBottom:16}},'Edit patient details'),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}},
+        field('First name','first'),field('Last name','last'),
+        field('Phone','phone','tel'),field('Email','email','email'),
+        field('City','city'),field('Doctor','doctor'),
+        field('Current aligner #','currentAligner','number',{min:1,max:f.totalAligners}),
+        field('Total aligners','totalAligners','number',{min:1}),
+        field('Payment paid','paymentPaid','number',{min:0}),
+        field('Payment total','paymentTotal','number',{min:0})),
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Status'),
+        h('select',{className:'input',value:f.status,onChange:e=>set('status',e.target.value),style:{marginTop:4}},
+          ['active','finishing','paused','completed'].map(s=>h('option',{key:s,value:s},s)))),
+      h('div',{style:{marginBottom:20}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
+        h('textarea',{className:'input',value:f.notes,onChange:e=>set('notes',e.target.value),rows:3,style:{marginTop:4,resize:'vertical',fontFamily:'inherit'}})),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
+        h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-check'}),'Save changes'))));
 }
 
 function EditAlignerDlg({patient,onCancel,onSave}){
