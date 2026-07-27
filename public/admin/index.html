@@ -222,6 +222,18 @@ function App(){
     })();
   },[ok]);
 
+  // ── LIVE SYNC: auto-refresh when portal makes changes ──
+  useEffect(()=>{
+    if(!ok)return;
+    const channel=SUPA.channel('admin-live-sync')
+      .on('postgres_changes',{event:'*',schema:'public',table:'patients'},()=>refreshData())
+      .on('postgres_changes',{event:'*',schema:'public',table:'emergencies'},()=>refreshData())
+      .on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>refreshData())
+      .on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>refreshData())
+      .subscribe();
+    return ()=>{SUPA.removeChannel(channel)};
+  },[ok]);
+
   const signOut=async()=>{await SUPA.auth.signOut();setOk(false)};
 
   if(checkingSession) return h('div',{style:{position:'fixed',inset:0,background:'var(--color-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
