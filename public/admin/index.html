@@ -260,7 +260,7 @@ function App(){
       ]);
       if(pR.data) setPatients(pR.data.map(p=>({
         id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',
-        currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||20,
+        currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
         nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
         streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
         payment:{paid:p.payment_paid||0,total:p.payment_total||6},
@@ -395,7 +395,7 @@ function App(){
     ]);
     if(pR.data) setPatients(pR.data.map(p=>({
       id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',
-      currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||20,
+      currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
       nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
       streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
       payment:{paid:p.payment_paid||0,total:p.payment_total||6},
