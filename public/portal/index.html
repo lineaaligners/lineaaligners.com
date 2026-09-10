@@ -298,6 +298,7 @@ function App(){
           if(ltrs&&ltrs.length)setLetters(ltrs);
           setPatientId(data.id);
           setCur(data.current_aligner||1);
+          setTotal(data.total_aligners||1);
           setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
           setAuthed(true);
         }
@@ -334,7 +335,7 @@ function App(){
   },[reg.first,reg.last,usernameEdited]);
   const [authErr,setAuthErr]=useState('');
   const [cur,setCur]=useState(7);
-  const [total]=useState(20);
+  const [total,setTotal]=useState(20);
   const [nextDays,setNextDays]=useState(4);
   const [apptDays,setApptDays]=useState(9);
   const [treatDays]=useState(-65);
