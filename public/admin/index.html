@@ -139,6 +139,51 @@ function AuthGate({onOk}){
   const [pass,setPass]=useState('');
   const [err,setErr]=useState('');
   const [loading,setLoading]=useState(false);
+  const [mode,setMode]=useState(window.location.hash.includes('type=recovery')?'reset':'login');
+  const [newPass1,setNewPass1]=useState('');
+  const [newPass2,setNewPass2]=useState('');
+  const [msg,setMsg]=useState('');
+  const bg={position:'fixed',inset:0,background:'linear-gradient(160deg,#1d2f6b 0%,var(--color-bg) 50%,#0b1220 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:24};
+  const sendReset=async e=>{
+    e.preventDefault();setLoading(true);setErr('');
+    const{error}=await SUPA.auth.resetPasswordForEmail(email,{redirectTo:'https://www.lineaaligners.com/admin/'});
+    if(error){setErr(error.message);}else{setMsg('Email u dërgua — kontrollo inbox-in.');}
+    setLoading(false);
+  };
+  const doReset=async e=>{
+    e.preventDefault();setLoading(true);setMsg('');
+    if(newPass1.length<6){setMsg('Minimum 6 karaktere.');setLoading(false);return;}
+    if(newPass1!==newPass2){setMsg('Fjalëkalimet nuk përputhen.');setLoading(false);return;}
+    const{error}=await SUPA.auth.updateUser({password:newPass1});
+    if(error){setMsg(error.message);}else{setMsg('done');window.location.hash='';}
+    setLoading(false);
+  };
+  if(mode==='reset'){
+    if(msg==='done')return h('div',{className:'fade-in',style:bg},
+      h('div',{className:'card gold-glow fade-up',style:{width:'min(380px,100%)',padding:32,display:'flex',flexDirection:'column',gap:14,alignItems:'center',textAlign:'center',border:'1px solid rgba(255,215,0,.3)'}},
+        h('p',{style:{fontSize:18}},'✅ Fjalëkalimi u ndryshua!'),
+        h('button',{className:'btn btn-gold',style:{width:'100%',justifyContent:'center'},onClick:()=>{setMode('login');setMsg('');}},'Kyçu tani')));
+    return h('div',{className:'fade-in',style:bg},
+      h('form',{onSubmit:doReset,className:'card gold-glow fade-up',style:{width:'min(380px,100%)',padding:32,display:'flex',flexDirection:'column',gap:14,border:'1px solid rgba(255,215,0,.3)'}},
+        h('h1',{style:{fontSize:20,fontWeight:700,textAlign:'center'}},'Ndrysho fjalëkalimin'),
+        h('input',{className:'input',type:'password',placeholder:'Fjalëkalimi i ri',value:newPass1,onChange:e=>setNewPass1(e.target.value),required:true,autoFocus:true}),
+        h('input',{className:'input',type:'password',placeholder:'Konfirmo fjalëkalimin',value:newPass2,onChange:e=>setNewPass2(e.target.value),required:true}),
+        msg&&h('p',{style:{color:'#fca5a5',fontSize:12,textAlign:'center'}},msg),
+        h('button',{type:'submit',disabled:loading,className:'btn btn-gold',style:{width:'100%',justifyContent:'center',padding:'12px 20px'}},loading?'Duke ndryshuar...':'Ndrysho fjalëkalimin')));
+  }
+  if(mode==='forgot'){
+    return h('div',{className:'fade-in',style:bg},
+      msg?h('div',{className:'card gold-glow fade-up',style:{width:'min(380px,100%)',padding:32,display:'flex',flexDirection:'column',gap:14,alignItems:'center',textAlign:'center',border:'1px solid rgba(255,215,0,.3)'}},
+        h('p',{style:{fontSize:15}},msg),
+        h('button',{className:'btn btn-gold',style:{width:'100%',justifyContent:'center'},onClick:()=>{setMode('login');setMsg('');}},'← Kthehu'))
+      :h('form',{onSubmit:sendReset,className:'card gold-glow fade-up',style:{width:'min(380px,100%)',padding:32,display:'flex',flexDirection:'column',gap:14,border:'1px solid rgba(255,215,0,.3)'}},
+        h('h1',{style:{fontSize:20,fontWeight:700,textAlign:'center'}},'Harruat fjalëkalimin?'),
+        h('p',{style:{opacity:.6,fontSize:13,textAlign:'center',margin:0}},'Shkruani email-in admin dhe ju dërgojmë link-un.'),
+        h('input',{className:'input',type:'email',placeholder:'Email admin',value:email,onChange:e=>{setEmail(e.target.value);setErr('');},required:true,autoFocus:true}),
+        err&&h('p',{style:{color:'#fca5a5',fontSize:12,textAlign:'center'}},err),
+        h('button',{type:'submit',disabled:loading,className:'btn btn-gold',style:{width:'100%',justifyContent:'center',padding:'12px 20px'}},loading?'Duke dërguar...':'Dërgo link-un'),
+        h('button',{type:'button',onClick:()=>setMode('login'),style:{background:'none',border:'none',color:'inherit',opacity:.5,cursor:'pointer',fontSize:13,padding:0}},'← Kthehu')));
+  }
   const submit=async e=>{
     e.preventDefault();setLoading(true);setErr('');
     const{data,error}=await SUPA.auth.signInWithPassword({email,password:pass});
@@ -147,7 +192,7 @@ function AuthGate({onOk}){
     if(!adm){setErr('This account is not an admin.');await SUPA.auth.signOut();setLoading(false);return;}
     setLoading(false);onOk();
   };
-  return h('div',{className:'fade-in',style:{position:'fixed',inset:0,background:'linear-gradient(160deg,#1d2f6b 0%,var(--color-bg) 50%,#0b1220 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}},
+  return h('div',{className:'fade-in',style:bg},
     h('div',{style:{position:'absolute',width:400,height:400,top:-100,left:-100,borderRadius:'50%',background:'var(--color-gold)',filter:'blur(120px)',opacity:.15}}),
     h('div',{style:{position:'absolute',width:360,height:360,bottom:-120,right:-100,borderRadius:'50%',background:'var(--color-accent)',filter:'blur(120px)',opacity:.25}}),
     h('form',{onSubmit:submit,className:'card gold-glow fade-up',style:{position:'relative',width:'min(380px,100%)',padding:32,display:'flex',flexDirection:'column',gap:14,alignItems:'center',border:'1px solid rgba(255,215,0,.3)'}},
@@ -159,6 +204,7 @@ function AuthGate({onOk}){
       h('input',{className:'input',type:'password',placeholder:'Password',value:pass,onChange:e=>{setPass(e.target.value);setErr('')},required:true}),
       err&&h('p',{style:{color:'#fca5a5',fontSize:12,margin:0,textAlign:'center'}},err),
       h('button',{type:'submit',disabled:loading,className:'btn btn-gold',style:{width:'100%',justifyContent:'center',padding:'12px 20px',fontSize:14}},h('i',{className:loading?'ph ph-circle-notch':'ph ph-arrow-right',style:{animation:loading?'spin 1s linear infinite':undefined}}),loading?'...':'Sign in'),
+      h('button',{type:'button',onClick:()=>setMode('forgot'),style:{background:'none',border:'none',color:'inherit',opacity:.5,cursor:'pointer',fontSize:12,padding:0}},'Forgot password?'),
       h('a',{href:'/',style:{fontSize:12,opacity:.5,textDecoration:'none',color:'inherit'}},'← Back to site')));
 }
 
