@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Linea">
 <meta name="theme-color" content="#0b1220">
 <title>Linea Aligners — Patient Portal</title>
+<link rel="manifest" href="/portal/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
 :root{
@@ -106,7 +108,7 @@ en:{
   tapToEnter:'Tap to enter',
   loginTitle:'Create your account',loginSubtitle:'Tell us a bit about yourself to get started',loginCta:'Continue',
   loginHint:'Your data is stored securely.',
-  firstName:'First name',lastName:'Surname',phone:'Phone number',email:'Email',
+  fullName:'Full name',firstName:'First name',lastName:'Surname',phone:'Phone number',email:'Email',
   placeOfLiving:'Place of living',placeOfLivingHint:'City, country — used to set your time zone',
   forgotPassword:'Already registered? Message the clinic',
   editDate:'Edit change date',yourTimezone:'Your time zone',profilePhone:'Phone',profileCity:'Place of living',
@@ -181,7 +183,7 @@ sq:{
   tapToEnter:'Prekni për të hyrë',
   loginTitle:'Krijoni llogarinë',loginSubtitle:'Na tregoni pak për veten për të filluar',loginCta:'Vazhdo',
   loginHint:'Të dhënat tuaja ruhen në mënyrë të sigurt.',
-  firstName:'Emri',lastName:'Mbiemri',phone:'Numri i telefonit',email:'Email',
+  fullName:'Emri e mbiemri',firstName:'Emri',lastName:'Mbiemri',phone:'Numri i telefonit',email:'Email',
   placeOfLiving:'Vendbanimi',placeOfLivingHint:'Qyteti, shteti — përdoret për zonën tuaj kohore',
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
   editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',profilePhone:'Telefoni',profileCity:'Vendbanimi',
@@ -298,6 +300,7 @@ function App(){
           if(ltrs&&ltrs.length)setLetters(ltrs);
           setPatientId(data.id);
           setCur(data.current_aligner||1);
+          setTotal(data.total_aligners||1);
           setNextDays(data.next_change_date?Math.max(0,Math.round((new Date(data.next_change_date)-new Date())/(86400000))):5);
           setAuthed(true);
         }
@@ -308,9 +311,8 @@ function App(){
   const [signinPhone,setSigninPhone]=useState('');
   const [signinPass,setSigninPass]=useState('');
   const [regPass,setRegPass]=useState('');
-  const [regPass2,setRegPass2]=useState('');
-  const [username,setUsername]=useState('');
-  const [usernameEdited,setUsernameEdited]=useState(false);
+  const [showPass,setShowPass]=useState(false);
+  const [regFullName,setRegFullName]=useState('');
   useEffect(()=>{
     if(letters.length>0&&!openLetter&&authed)selectLetter(letters[0]);
   },[letters,authed]);
@@ -325,16 +327,10 @@ function App(){
   };
   const closeLetterModal=()=>{setOpenLetter(null);setEnvelopeState('closed')};
 
-  const suggestUsername=(f,l)=>{
-    const clean=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
-    return clean(f)+clean(l);
-  };
-  useEffect(()=>{
-    if(!usernameEdited) setUsername(suggestUsername(reg.first,reg.last));
-  },[reg.first,reg.last,usernameEdited]);
+  const cleanUsernamePart=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
   const [authErr,setAuthErr]=useState('');
   const [cur,setCur]=useState(7);
-  const [total]=useState(20);
+  const [total,setTotal]=useState(20);
   const [nextDays,setNextDays]=useState(4);
   const [apptDays,setApptDays]=useState(9);
   const [treatDays]=useState(-65);
@@ -397,23 +393,33 @@ function App(){
     toast(t.toastAlignerChanged);
   });
   const login=async e=>{e.preventDefault();
-    if(!username){setAuthErr('Choose a username.');return;}
+    if(!regFullName.trim()){setAuthErr('Enter your name.');return;}
     if(!regPass||regPass.length<6){setAuthErr('Password must be at least 6 characters.');return;}
-    if(regPass!==regPass2){setAuthErr('Passwords do not match.');return;}
     setLoading(true);
-    const cleanUsername=username.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const parts=regFullName.trim().split(/\s+/);
+    const first=parts[0];
+    const last=parts.slice(1).join(' ')||'';
+    const baseUsername=cleanUsernamePart(first)+cleanUsernamePart(last);
+    let cleanUsername=baseUsername||('patient'+Math.floor(Math.random()*9000+1000));
     const authEmail=reg.email&&reg.email.trim()?reg.email.trim():(cleanUsername+'@patient.lineaaligners.local');
     const{data,error}=await SUPA.auth.signUp({email:authEmail,password:regPass});
     if(error){
-      setAuthErr(error.message.toLowerCase().includes('already')?'This username or email is already taken.':error.message);
+      setAuthErr(error.message.toLowerCase().includes('already')?'An account with this email already exists.':error.message);
       setLoading(false);return;
     }
-    const{data:pid,error:rpcErr}=await SUPA.rpc('claim_or_create_patient',{
-      p_phone:reg.phone.replace(/\s/g,''),p_first:reg.first,p_last:reg.last,
-      p_email:reg.email||'',p_city:reg.city,p_username:cleanUsername
-    });
+    let pid,rpcErr;
+    for(let attempt=0;attempt<3;attempt++){
+      const tryUsername=attempt===0?cleanUsername:cleanUsername+Math.floor(Math.random()*900+100);
+      const res=await SUPA.rpc('claim_or_create_patient',{
+        p_phone:reg.phone.replace(/\s/g,''),p_first:first,p_last:last,
+        p_email:reg.email||'',p_city:'',p_username:tryUsername
+      });
+      pid=res.data;rpcErr=res.error;
+      if(!rpcErr)break;
+      if(!rpcErr.message.includes('username'))break;
+    }
     if(rpcErr){
-      setAuthErr(rpcErr.message.includes('username')?'This username is taken. Try another.':'Registration failed: '+rpcErr.message);
+      setAuthErr('Registration failed: '+rpcErr.message);
       setLoading(false);return;
     }
     setPatientId(pid);
@@ -639,30 +645,20 @@ function App(){
               h('button',{type:'submit',className:'btn btn-primary btn-block',disabled:loading,style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:loading?'ph ph-circle-notch':'ph ph-sign-in',style:{animation:loading?'spin 1s linear infinite':undefined}}),loading?'...' :t.signinCta),
               h('button',{type:'button',onClick:()=>{setAuthMode('register');setAuthErr('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'var(--color-accent-300)',cursor:'pointer',fontFamily:'inherit'}},t.signinNoAcc),)
           :h(React.Fragment,null,
-              h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
-                h('div',{className:'field'},h('label',null,t.firstName),h('input',{className:'input',type:'text',placeholder:'Arta',value:reg.first,onChange:e=>setReg(p=>({...p,first:e.target.value})),required:true})),
-                h('div',{className:'field'},h('label',null,t.lastName),h('input',{className:'input',type:'text',placeholder:'Krasniqi',value:reg.last,onChange:e=>setReg(p=>({...p,last:e.target.value})),required:true}))),
+              h('div',{className:'field',style:{width:'100%'}},
+                h('label',null,t.fullName),
+                h('input',{className:'input',type:'text',placeholder:'Arta Krasniqi',value:regFullName,onChange:e=>setRegFullName(e.target.value),required:true,autoFocus:true})),
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.phone),
                 h('input',{className:'input',type:'tel',placeholder:'+383 49 772 307',value:reg.phone,onChange:e=>setReg(p=>({...p,phone:e.target.value})),required:true})),
               h('div',{className:'field',style:{width:'100%'}},
-                h('label',null,t.username),
-                h('input',{className:'input',type:'text',autoCapitalize:'none',autoCorrect:'off',placeholder:'artakrasniqi',value:username,onChange:e=>{setUsername(e.target.value);setUsernameEdited(true)},required:true}),
-                h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},t.usernameHint)),
+                h('label',null,t.password),
+                h('div',{style:{position:'relative'}},
+                  h('input',{className:'input',type:showPass?'text':'password',placeholder:'••••••••',value:regPass,onChange:e=>{setRegPass(e.target.value);setAuthErr('')},required:true,style:{paddingRight:42}}),
+                  h('button',{type:'button',onClick:()=>setShowPass(s=>!s),style:{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',opacity:.5,padding:4,display:'flex'}},h('i',{className:showPass?'ph ph-eye-slash':'ph ph-eye'})))),
               h('div',{className:'field',style:{width:'100%'}},
                 h('label',null,t.email+' ('+(lang==='sq'?'opsionale':'optional')+')'),
                 h('input',{className:'input',type:'email',placeholder:'arta@example.com',value:reg.email,onChange:e=>setReg(p=>({...p,email:e.target.value}))})),
-              h('div',{className:'field',style:{width:'100%'}},
-                h('label',null,t.placeOfLiving),
-                h('input',{className:'input',type:'text',placeholder:'Peja, Kosovo',value:reg.city,onChange:e=>setReg(p=>({...p,city:e.target.value})),required:true}),
-                h('p',{style:{opacity:.45,fontSize:11,margin:'4px 0 0'}},t.placeOfLivingHint)),
-              h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)',width:'100%'}},
-                h('div',{className:'field'},
-                  h('label',null,t.password),
-                  h('input',{className:'input',type:'password',placeholder:'••••••••',value:regPass,onChange:e=>{setRegPass(e.target.value);setAuthErr('')},required:true})),
-                h('div',{className:'field'},
-                  h('label',null,t.confirmPassword),
-                  h('input',{className:'input',type:'password',placeholder:'••••••••',value:regPass2,onChange:e=>{setRegPass2(e.target.value);setAuthErr('')},required:true}))),
               h('button',{type:'submit',className:'btn btn-primary btn-block',disabled:loading,style:{justifyContent:'center',marginTop:'var(--space-2)'}},h('i',{className:loading?'ph ph-circle-notch':'ph ph-arrow-right',style:{animation:loading?'spin 1s linear infinite':undefined}}),loading?'...':t.loginCta),
               h('p',{style:{opacity:.4,fontSize:12,margin:0,textAlign:'center'}},t.loginHint)),
         isSignin&&h('button',{type:'button',onClick:()=>{setResetMode(true);setResetIdentifier(signinPhone);setResetMsg('')},style:{background:'none',border:'none',fontSize:12,opacity:.65,color:'inherit',cursor:'pointer',fontFamily:'inherit'}},t.forgotPassword)));
