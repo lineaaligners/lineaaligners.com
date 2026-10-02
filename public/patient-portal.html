@@ -111,7 +111,7 @@ en:{
   fullName:'Full name',firstName:'First name',lastName:'Surname',phone:'Phone number',email:'Email',
   placeOfLiving:'Place of living',placeOfLivingHint:'City, country — used to set your time zone',
   forgotPassword:'Already registered? Message the clinic',
-  editDate:'Edit change date',yourTimezone:'Your time zone',profilePhone:'Phone',profileCity:'Place of living',
+  editDate:'Edit change date',yourTimezone:'Your time zone',yourUsername:'Username',profilePhone:'Phone',profileCity:'Place of living',
   reminderTitle:'Almost time!',reminderBody:'Your next aligner change is coming up soon.',
   streakLabel:'day compliance streak',
   beforeAfter:'Before & after',beforeAfterHint:'Drag to compare your starting scan with today.',
@@ -186,7 +186,7 @@ sq:{
   fullName:'Emri e mbiemri',firstName:'Emri',lastName:'Mbiemri',phone:'Numri i telefonit',email:'Email',
   placeOfLiving:'Vendbanimi',placeOfLivingHint:'Qyteti, shteti — përdoret për zonën tuaj kohore',
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
-  editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',profilePhone:'Telefoni',profileCity:'Vendbanimi',
+  editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',yourUsername:'Username',profilePhone:'Telefoni',profileCity:'Vendbanimi',
   reminderTitle:'Pothuajse gati!',reminderBody:'Ndërrimi i radhës së aparatit po vjen së shpejti.',
   streakLabel:'ditë rresht me përpikëri',
   beforeAfter:'Para & pas',beforeAfterHint:'Tërhiqni për të krahasuar skanimin fillestar me sot.',
@@ -270,6 +270,7 @@ function App(){
   const [patientId,setPatientId]=useState(null);
   const [treatmentLink,setTreatmentLink]=useState('');
   const [doctorName,setDoctorName]=useState('');
+  const [patientUsername,setPatientUsername]=useState('');
   const [letters,setLetters]=useState([]);
   const [openLetter,setOpenLetter]=useState(null);
   const [envelopeState,setEnvelopeState]=useState('closed');
@@ -294,6 +295,7 @@ function App(){
           setReg({first:data.first_name,last:data.last_name,phone:data.phone,email:data.email||'',city:data.city||''});
           setTreatmentLink(data.treatment_link||'');
           setDoctorName(data.doctor||'');
+          setPatientUsername(data.username||'');
           setPaid(data.payment_paid??3);
           setTotalInst(data.payment_total??6);
           const{data:ltrs}=await SUPA.from('letters').select('*').eq('patient_id',data.id).is('opened_at',null).order('created_at',{ascending:true});
@@ -483,6 +485,7 @@ function App(){
       setReg({first:p.first_name,last:p.last_name,phone:p.phone,email:p.email||'',city:p.city||''});
       setTreatmentLink(p.treatment_link||'');
       setDoctorName(p.doctor||'');
+      setPatientUsername(p.username||'');
       setPaid(p.payment_paid??3);
       setTotalInst(p.payment_total??6);
       const{data:ltrs}=await SUPA.from('letters').select('*').eq('patient_id',p.id).is('opened_at',null).order('created_at',{ascending:true});
@@ -950,7 +953,7 @@ function App(){
     h('div',{className:'card',style:{padding:'var(--space-6)'}},
       h('h2',{style:{fontSize:17,display:'flex',alignItems:'center',gap:8,marginBottom:'var(--space-4)'}},h('i',{className:'ph ph-user',style:{color:'var(--color-accent-2-400)'}}),t.yourInfo),
       h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-4)'}},
-        [[t.name,fullName],[t.email,reg.email||'—'],[t.profilePhone,reg.phone||'—'],[t.profileCity,reg.city||'—'],[t.yourTimezone,typeof Intl!=='undefined'?Intl.DateTimeFormat().resolvedOptions().timeZone:'UTC']].map(([l,v])=>
+        [[t.name,fullName],[t.yourUsername,patientUsername||'—'],[t.email,reg.email||'—'],[t.profilePhone,reg.phone||'—'],[t.profileCity,reg.city||'—'],[t.yourTimezone,typeof Intl!=='undefined'?Intl.DateTimeFormat().resolvedOptions().timeZone:'UTC']].map(([l,v])=>
           h('div',{key:l},h('p',{style:{opacity:.5,fontSize:12,fontWeight:600,margin:'0 0 2px'}},l),h('p',{style:{fontSize:16,fontWeight:600,margin:0}},v))),
         h('p',{style:{opacity:.5,fontSize:13,margin:0}},t.infoNote),
         h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{width:'fit-content'}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),t.contactClinic))),

@@ -259,7 +259,7 @@ function App(){
         SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
       ]);
       if(pR.data) setPatients(pR.data.map(p=>({
-        id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',
+        id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',
         currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
         nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
         streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
@@ -394,7 +394,7 @@ function App(){
       SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
     ]);
     if(pR.data) setPatients(pR.data.map(p=>({
-      id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',
+      id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',
       currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
       nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
       streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
@@ -693,7 +693,8 @@ function App(){
       h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Contact'),
         h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-phone',style:{opacity:.5,marginRight:8}}),selected.phone),
-        h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-envelope',style:{opacity:.5,marginRight:8}}),selected.email)),
+        h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-envelope',style:{opacity:.5,marginRight:8}}),selected.email||'—'),
+        selected.username&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-at',style:{opacity:.5,marginRight:8}}),selected.username)),
       // Notes
       selected.notes&&h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
@@ -841,8 +842,8 @@ function AddPatientDlg({onCancel,onSave}){
         h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'First name'),h('input',{className:'input',required:true,value:f.first,onChange:e=>setF({...f,first:e.target.value}),style:{marginTop:4}})),
         h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Surname'),h('input',{className:'input',required:true,value:f.last,onChange:e=>setF({...f,last:e.target.value}),style:{marginTop:4}}))),
       h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Phone'),h('input',{className:'input',required:true,type:'tel',value:f.phone,onChange:e=>setF({...f,phone:e.target.value}),style:{marginTop:4}})),
-      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Email'),h('input',{className:'input',required:true,type:'email',value:f.email,onChange:e=>setF({...f,email:e.target.value}),style:{marginTop:4}})),
-      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'City'),h('input',{className:'input',required:true,value:f.city,onChange:e=>setF({...f,city:e.target.value}),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Email (optional)'),h('input',{className:'input',type:'email',value:f.email,onChange:e=>setF({...f,email:e.target.value}),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'City (optional)'),h('input',{className:'input',value:f.city,onChange:e=>setF({...f,city:e.target.value}),style:{marginTop:4}})),
       h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Total aligners planned'),h('input',{className:'input',required:true,type:'number',min:1,max:60,value:f.totalAligners,onChange:e=>setF({...f,totalAligners:Number(e.target.value)}),style:{marginTop:4}})),
       h('div',{style:{marginBottom:20}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Doctor'),
         h('select',{className:'input',value:f.doctor,onChange:e=>setF({...f,doctor:e.target.value}),style:{marginTop:4}},
