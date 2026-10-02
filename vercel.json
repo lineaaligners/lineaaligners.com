@@ -16,5 +16,11 @@
       "source": "/admin/:path*",
       "destination": "/admin/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/send-reminders",
+      "schedule": "0 7 * * *"
+    }
   ]
 }

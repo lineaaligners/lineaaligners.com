@@ -113,7 +113,7 @@ en:{
   forgotPassword:'Already registered? Message the clinic',
   editDate:'Edit change date',yourTimezone:'Your time zone',yourUsername:'Username',profilePhone:'Phone',profileCity:'Place of living',
   reminderTitle:'Almost time!',reminderBody:'Your next aligner change is coming up soon.',
-  streakLabel:'day compliance streak',
+  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',
   beforeAfter:'Before & after',beforeAfterHint:'Drag to compare your starting scan with today.',
   beforeLabel:'Before',afterLabel:'Today',
   paymentPlan:'Payment plan',installmentsPaid:'installments paid',nextDue:'Next due',
@@ -188,7 +188,7 @@ sq:{
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
   editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',yourUsername:'Username',profilePhone:'Telefoni',profileCity:'Vendbanimi',
   reminderTitle:'Pothuajse gati!',reminderBody:'Ndërrimi i radhës së aparatit po vjen së shpejti.',
-  streakLabel:'ditë rresht me përpikëri',
+  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',
   beforeAfter:'Para & pas',beforeAfterHint:'Tërhiqni për të krahasuar skanimin fillestar me sot.',
   beforeLabel:'Para',afterLabel:'Sot',
   paymentPlan:'Plani i pagesës',installmentsPaid:'këste të paguara',nextDue:'Kësti tjetër',
@@ -286,6 +286,9 @@ function App(){
   const [recoveryMsg,setRecoveryMsg]=useState('');
 
   useEffect(()=>{
+    try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref)setRefParam(ref.toUpperCase());}catch(e){}
+  },[]);
+  useEffect(()=>{
     if(window.location.hash.includes('type=recovery')){setRecoveryMode(true);setCheckingSession(false);return;}
     (async()=>{
       const {data:{session}}=await SUPA.auth.getSession();
@@ -296,6 +299,9 @@ function App(){
           setTreatmentLink(data.treatment_link||'');
           setDoctorName(data.doctor||'');
           setPatientUsername(data.username||'');
+          setStreak(data.streak||0);
+          setLastCheckin(data.last_checkin_date||null);
+          setReferralCode(data.referral_code||'');
           setPaid(data.payment_paid??3);
           setTotalInst(data.payment_total??6);
           const{data:ltrs}=await SUPA.from('letters').select('*').eq('patient_id',data.id).is('opened_at',null).order('created_at',{ascending:true});
@@ -338,7 +344,10 @@ function App(){
   const [treatDays]=useState(-65);
   const [editDate,setEditDate]=useState(false);
   const [dateVal,setDateVal]=useState('');
-  const [streak]=useState(6);
+  const [streak,setStreak]=useState(0);
+  const [lastCheckin,setLastCheckin]=useState(null);
+  const [referralCode,setReferralCode]=useState('');
+  const [refParam,setRefParam]=useState('');
   const [ba,setBa]=useState(50);
   const [paid,setPaid]=useState(3);
   const [totalInst,setTotalInst]=useState(6);
@@ -356,6 +365,7 @@ function App(){
   const [notif,setNotif]=useState(typeof Notification!=='undefined'?Notification.permission:'default');
   const [v3d,setV3d]=useState(false);
   const [scans,setScans]=useState([]);
+  const [lightboxUrl,setLightboxUrl]=useState(null);
   useEffect(()=>{
     if(!patientId)return;
     SUPA.from('scans').select('*').eq('patient_id',patientId).order('created_at',{ascending:false})
@@ -424,6 +434,7 @@ function App(){
       setAuthErr('Registration failed: '+rpcErr.message);
       setLoading(false);return;
     }
+    if(refParam&&pid){await SUPA.from('patients').update({referred_by:refParam}).eq('id',pid);}
     setPatientId(pid);
     setLoading(false);setAuthErr('');setAuthed(true);setSplash(true);
     sp.current=setTimeout(()=>setSplash(false),2200);
@@ -486,6 +497,9 @@ function App(){
       setTreatmentLink(p.treatment_link||'');
       setDoctorName(p.doctor||'');
       setPatientUsername(p.username||'');
+      setStreak(p.streak||0);
+      setLastCheckin(p.last_checkin_date||null);
+      setReferralCode(p.referral_code||'');
       setPaid(p.payment_paid??3);
       setTotalInst(p.payment_total??6);
       const{data:ltrs}=await SUPA.from('letters').select('*').eq('patient_id',p.id).is('opened_at',null).order('created_at',{ascending:true});
@@ -509,7 +523,26 @@ function App(){
     }
     setApptDays(off);setSched(false);toast(t.toastAppointmentBooked);
   });
-  const reqNotif=()=>{if(typeof Notification==='undefined')return;Notification.requestPermission().then(p=>setNotif(p))};
+  const urlB64ToUint8=(b64)=>{const pad='='.repeat((4-b64.length%4)%4);const base64=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);const arr=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr};
+  const subscribeToPush=async(pid)=>{
+    try{
+      if(!('serviceWorker' in navigator)||!('PushManager' in window))return;
+      const reg=await navigator.serviceWorker.register('/sw.js');
+      let sub=await reg.pushManager.getSubscription();
+      if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8('BNQdVIcuh3B5AxhxIdbIKipEkBEzf0s2kbVIsnSW9Qn6ond4qBBrwR6yWputADak3ydkk43tHUbSeLepyRiz41s')});
+      const j=sub.toJSON();
+      await SUPA.from('push_subscriptions').upsert({patient_id:pid,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:'patient_id,endpoint'});
+    }catch(e){console.warn('Push subscribe failed',e)}
+  };
+  const reqNotif=async()=>{
+    if(typeof Notification==='undefined')return;
+    const p=await Notification.requestPermission();
+    setNotif(p);
+    if(p==='granted'&&patientId)await subscribeToPush(patientId);
+  };
+  useEffect(()=>{
+    if(patientId&&typeof Notification!=='undefined'&&Notification.permission==='granted')subscribeToPush(patientId);
+  },[patientId]);
 
   // computed
   const nextDate=new Date(now.getTime()+nextDays*DAY);
@@ -554,6 +587,15 @@ function App(){
   ];
   const tabDefs=[{id:'dashboard',icon:'ph-house'},{id:'progress',icon:'ph-chart-line'},{id:'upload',icon:'ph-upload-simple'},{id:'appointment',icon:'ph-calendar-blank'},{id:'help',icon:'ph-question'},{id:'settings',icon:'ph-gear'}];
   const notifSt=notif==='granted'?t.notifsEnabled:notif==='denied'?t.notifsBlocked:null;
+  const todayStr0=new Date().toISOString().slice(0,10);
+  const checkedInToday=lastCheckin===todayStr0;
+  const checkIn=async()=>{
+    if(!patientId||checkedInToday)return;
+    const yday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+    const newStreak=lastCheckin===yday?streak+1:1;
+    const{error}=await SUPA.from('patients').update({streak:newStreak,last_checkin_date:todayStr0}).eq('id',patientId);
+    if(!error){setStreak(newStreak);setLastCheckin(todayStr0);toast(lang==='sq'?'U shënua sot! 🔥':'Checked in for today! 🔥')}
+  };
   const payPct=Math.round((paid/totalInst)*100)+'%';
   const nextDue=new Date(now.getTime()+12*DAY).toLocaleDateString(loc,{day:'numeric',month:'long'});
 
@@ -778,9 +820,13 @@ function App(){
     nextDays<=1&&h('div',{className:'fade-up card',style:{flexDirection:'row',alignItems:'center',gap:'var(--space-3)',padding:'var(--space-4) var(--space-5)',background:'color-mix(in srgb,var(--color-accent-2-800) 55%,transparent)',border:'1px solid var(--color-accent-2-600)'}},
       h('i',{className:'ph ph-bell-ringing',style:{fontSize:22,color:'var(--color-accent-2-300)',flex:'none'}}),
       h('p',{style:{margin:0,fontSize:14,flex:1}},h('strong',null,t.reminderTitle),' — ',t.reminderBody)),
-    h('div',{className:'fade-up',style:{display:'flex',alignItems:'center',gap:10,padding:'var(--space-3) var(--space-4)',borderRadius:'var(--radius-md)',background:'color-mix(in srgb,var(--color-accent-900) 45%,transparent)',border:'1px solid var(--color-accent-700)',width:'fit-content'}},
-      h('i',{className:'ph ph-flame',style:{color:'#ff9d4d',fontSize:20}}),
-      h('span',{style:{fontSize:14,fontWeight:600}},`${streak} ${t.streakLabel}`)),
+    h('div',{className:'fade-up',style:{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'var(--space-3) var(--space-4)',borderRadius:'var(--radius-md)',background:'color-mix(in srgb,var(--color-accent-900) 45%,transparent)',border:'1px solid var(--color-accent-700)',width:'fit-content'}},
+        h('i',{className:'ph ph-flame',style:{color:'#ff9d4d',fontSize:20}}),
+        h('span',{style:{fontSize:14,fontWeight:600}},`${streak} ${t.streakLabel}`)),
+      h('button',{className:checkedInToday?'btn btn-secondary':'btn btn-primary',onClick:checkIn,disabled:checkedInToday,style:{padding:'10px 16px',fontSize:13}},
+        h('i',{className:checkedInToday?'ph ph-check-circle':'ph ph-circle'}),
+        checkedInToday?t.checkedInToday:t.checkInCta)),
     h('div',{className:'fade-up',style:{display:'flex',flexDirection:'column',gap:'var(--space-3)'}},
       h('p',{style:{opacity:.5,fontSize:13,fontWeight:600,margin:0}},t.badgesTitle),
       h('div',{style:{display:'flex',flexWrap:'wrap',gap:10}},
@@ -888,12 +934,17 @@ function App(){
     h('div',null,
       h('h2',{style:{fontSize:19,marginBottom:'var(--space-4)'}},t.yourUploads),
       h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-3)'}},
-        scans.map(s=>h('div',{key:s.id,className:'card',style:{flexDirection:'row',alignItems:'center',gap:'var(--space-4)',padding:'var(--space-4)'}},
-          h('div',{style:{width:44,height:44,borderRadius:'var(--radius-md)',background:'var(--color-accent-900)',display:'flex',alignItems:'center',justifyContent:'center',flex:'none'}},h('i',{className:'ph ph-image',style:{color:'var(--color-accent-300)'}})),
+        scans.length===0&&h('p',{style:{opacity:.45,fontSize:13}},lang==='sq'?'Nuk ke ngarkuar foto ende.':'No photos uploaded yet.'),
+        scans.map(s=>h('div',{key:s.id,className:'card',style:{flexDirection:'row',alignItems:'center',gap:'var(--space-4)',padding:'var(--space-4)',cursor:s.url?'pointer':'default'},onClick:()=>s.url&&setLightboxUrl(s.url)},
+          s.url
+            ?h('img',{src:s.url,style:{width:44,height:44,borderRadius:'var(--radius-md)',objectFit:'cover',flex:'none',border:'1px solid var(--color-divider)'}})
+            :h('div',{style:{width:44,height:44,borderRadius:'var(--radius-md)',background:'var(--color-accent-900)',display:'flex',alignItems:'center',justifyContent:'center',flex:'none'}},h('i',{className:'ph ph-image',style:{color:'var(--color-accent-300)'}})),
           h('div',{style:{flex:1,minWidth:0}},
             h('p',{style:{fontWeight:600,margin:0,fontSize:14,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},s.name),
             h('p',{style:{opacity:.5,fontSize:12,margin:0}},`${new Date(now-s.ago*DAY).toLocaleDateString(loc)} · ${s.size}`)),
-          h('i',{className:'ph ph-eye',style:{opacity:.5}}))))));
+          h('i',{className:'ph ph-eye',style:{opacity:.5}})))),
+    lightboxUrl&&h('div',{onClick:()=>setLightboxUrl(null),style:{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:'var(--space-6)',cursor:'zoom-out'}},
+      h('img',{src:lightboxUrl,style:{maxWidth:'100%',maxHeight:'100%',borderRadius:12,boxShadow:'0 20px 60px rgba(0,0,0,.5)'}}))));
 
   // ── APPOINTMENT ────────────────────────────────────────────────────────
   const Appointment=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
@@ -968,7 +1019,8 @@ function App(){
         h('i',{className:'ph ph-gift',style:{fontSize:28,color:'var(--color-accent-2-400)'}}),
         h('p',{style:{fontWeight:600,fontSize:15,margin:0}},t.referTitle),
         h('p',{style:{opacity:.6,fontSize:13,margin:0}},t.referBody),
-        h('div',{className:'tag tag-accent',style:{fontSize:14,padding:'8px 16px',letterSpacing:'.06em'}},'ARTA-K392'))),
+        h('div',{className:'tag tag-accent',style:{fontSize:14,padding:'8px 16px',letterSpacing:'.06em',cursor:'pointer'},onClick:()=>{navigator.clipboard?.writeText(referralCode);toast(lang==='sq'?'U kopjua!':'Copied!')}},referralCode||'—'),
+        h('a',{href:`https://wa.me/?text=${encodeURIComponent((lang==='sq'?'Përdor kodin tim ':'Use my code ')+referralCode+(lang==='sq'?' dhe regjistrohu te Linea Aligners: ':' to sign up at Linea Aligners: ')+'https://lineaaligners.com/portal/?ref='+referralCode)}`,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{fontSize:12,padding:'6px 14px'}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),lang==='sq'?'Nda':'Share'))),
     h('div',{className:'card',style:{padding:'var(--space-6)'}},
       h('h2',{style:{fontSize:17,display:'flex',alignItems:'center',gap:8,marginBottom:4}},h('i',{className:'ph ph-bell-ringing',style:{color:'var(--color-accent-2-400)'}}),t.remindersTitle),
       h('p',{style:{opacity:.55,fontSize:13,margin:'0 0 var(--space-4)'}},t.remindersHint),

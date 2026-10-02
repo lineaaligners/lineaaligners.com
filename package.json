@@ -26,7 +26,9 @@
     "react-dom": "18.3.1",
     "react-dropzone": "^15.0.0",
     "three": "0.170.0",
-    "three-stdlib": "^2.36.1"
+    "three-stdlib": "^2.36.1",
+    "@supabase/supabase-js": "^2.45.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.1",
