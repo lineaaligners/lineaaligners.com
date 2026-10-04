@@ -236,6 +236,8 @@ function App(){
   const [emergs,setEmergs]=useState([]);
   const [msgs,setMsgs]=useState([]);
   const [addOpen,setAddOpen]=useState(false);
+  const [convertLead,setConvertLead]=useState(null);
+  const [casePrice,setCasePrice]=useState(()=>{try{return Number(localStorage.getItem('linea_case_price'))||0}catch(e){return 0}});
   const [editAlignerFor,setEditAlignerFor]=useState(null);
   const [editPatientFor,setEditPatientFor]=useState(false);
   const [letterFor,setLetterFor]=useState(null);
@@ -267,7 +269,7 @@ function App(){
         id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
         currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
         nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
-        nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,
+        nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,createdAt:p.created_at||null,
         streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
         payment:{paid:p.payment_paid||0,total:p.payment_total||6},
         emergencies:0,lastActivity:0,apptDaysAhead:7,
@@ -417,7 +419,7 @@ function App(){
       id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
       currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
       nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
-        nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,
+        nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,createdAt:p.created_at||null,
       streak:p.streak||0,status:p.status||'active',notes:p.notes||'',
       payment:{paid:p.payment_paid||0,total:p.payment_total||6},
       emergencies:0,lastActivity:0,apptDaysAhead:7,
@@ -432,14 +434,19 @@ function App(){
     const {data:ins,error}=await SUPA.from('patients').insert({
       first_name:data.first,last_name:data.last,phone:data.phone,email:data.email,
       city:data.city,current_aligner:1,total_aligners:Number(data.totalAligners),
-      next_change_date:nd.toISOString().slice(0,10),status:'active',payment_paid:0,payment_total:6
+      next_change_date:nd.toISOString().slice(0,10),status:'active',payment_paid:0,payment_total:6,doctor:data.doctor||null
     }).select().single();
     if(error){toast('Error: '+error.message);return;}
     const p={id:ins.id,first:ins.first_name,last:ins.last_name,phone:ins.phone,email:ins.email,
       city:ins.city||'',currentAligner:1,totalAligners:Number(data.totalAligners),
       nextChangeDays:10,streak:0,apptDaysAhead:7,doctor:data.doctor||'',
-      status:'active',payment:{paid:0,total:6},scans:0,notes:'',emergencies:0,lastActivity:0};
+      status:'active',payment:{paid:0,total:6},scans:0,notes:'',emergencies:0,lastActivity:0,createdAt:ins.created_at||new Date().toISOString(),username:ins.username||'',referralCode:ins.referral_code||'',referredBy:''};
     setPatients(prev=>[p,...prev]);setAddOpen(false);toast(data.first+' '+data.last+' added');
+    if(convertLead){
+      await SUPA.from('leads').update({status:'converted',notes:'patient:'+ins.id}).eq('id',convertLead.id);
+      setLeads(ls=>ls.map(l=>l.id===convertLead.id?{...l,status:'converted',notes:'patient:'+ins.id}:l));
+      setConvertLead(null);toast('Lead converted to patient ✓');
+    }
   };
 
   // ── NAVIGATION ──
@@ -450,7 +457,7 @@ function App(){
     {id:'emergencies',icon:'ph-first-aid',label:'Emergencies',badge:stats.emergencies,urgent:stats.emergencies>0},
     {id:'leads',icon:'ph-user-plus',label:'Leads',badge:leads.filter(l=>l.status==='new').length,urgent:leads.some(l=>l.status==='new')},
     {id:'messages',icon:'ph-chat-circle',label:'Messages',badge:stats.unreadMsgs},
-    {id:'analytics',icon:'ph-chart-bar',label:'Analytics'},
+    {id:'analytics',icon:'ph-chart-bar',label:'Business'},
     {id:'settings',icon:'ph-gear',label:'Settings'},
   ];
 
@@ -672,26 +679,53 @@ function App(){
       msgs.length===0&&h('div',{className:'card',style:{padding:40,textAlign:'center',opacity:.5}},'No unread messages')));
 
   // ── ANALYTICS ──
+  const realP=patients.filter(p=>p.createdAt);
+  const nowD=new Date(),mStart=new Date(nowD.getFullYear(),nowD.getMonth(),1);
+  const activeN=realP.filter(p=>p.status==='active').length;
+  const startedMonth=realP.filter(p=>new Date(p.createdAt)>=mStart).length;
+  const instPaid=realP.reduce((s,p)=>s+(p.payment.paid||0),0),instTotal=realP.reduce((s,p)=>s+(p.payment.total||0),0);
+  const share=p=>p.payment.total?Math.min(1,(p.payment.paid||0)/p.payment.total):0;
+  const collected=realP.reduce((s,p)=>s+casePrice*share(p),0),outstanding=realP.reduce((s,p)=>s+casePrice*(1-share(p)),0);
+  const finishingN=realP.filter(p=>p.status==='active'&&p.totalAligners-p.currentAligner<=2).length;
+  const lc={new:0,contacted:0,converted:0,lost:0};leads.forEach(l=>{lc[l.status]=(lc[l.status]||0)+1});
+  const convRate=leads.length?Math.round(lc.converted/leads.length*100):0;
+  const leadsMonth=leads.filter(l=>new Date(l.created_at)>=mStart).length;
+  const eur=n=>'€'+Math.round(n).toLocaleString('de-DE');
+  const months=[5,4,3,2,1,0].map(k=>{const d=new Date(nowD.getFullYear(),nowD.getMonth()-k,1),e=new Date(d.getFullYear(),d.getMonth()+1,1);
+    return{label:d.toLocaleDateString('en-GB',{month:'short'}),cases:realP.filter(p=>{const c=new Date(p.createdAt);return c>=d&&c<e}).length,leads:leads.filter(l=>{const c=new Date(l.created_at);return c>=d&&c<e}).length}});
+  const mMax=Math.max(1,...months.map(m=>Math.max(m.cases,m.leads)));
+  const funnel=[['new','New','var(--color-accent-300)'],['contacted','Contacted','#f5b942'],['converted','Converted','#22c55e'],['lost','Lost','rgba(255,255,255,.4)']];
   const Analytics=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
-    h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Analytics'),
+    h('div',{style:{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:12,flexWrap:'wrap'}},
+      h('div',null,h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Business'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'Live from your patients and leads')),
+      h('label',{style:{display:'flex',alignItems:'center',gap:8,fontSize:12,opacity:.85}},'Avg case price (€)',
+        h('input',{className:'input',type:'number',min:0,step:10,value:casePrice||'',placeholder:'e.g. 1500',onChange:e=>{const v=Number(e.target.value)||0;setCasePrice(v);try{localStorage.setItem('linea_case_price',String(v))}catch(er){}},style:{width:110,padding:'8px 10px'}}))),
     h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
-      StatCard('ph-trophy','Completion rate','92%','Last 12 months','var(--color-gold)'),
-      StatCard('ph-clock','Avg treatment','6.5 months','Across finished cases',null),
-      StatCard('ph-currency-eur','Monthly revenue','€24,300','This month','var(--color-success)'),
-      StatCard('ph-hand-heart','Retention','98%','Referral rate','var(--color-accent-300)')),
-    h('div',{className:'card',style:{padding:24}},
-      h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:16}},'Patient distribution by location'),
-      (()=>{const byCity={};patients.forEach(p=>{const c=p.city.split(',')[0];byCity[c]=(byCity[c]||0)+1});
-        const max=Math.max(...Object.values(byCity));
-        return h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
-          Object.entries(byCity).sort((a,b)=>b[1]-a[1]).map(([city,n])=>
-            h('div',{key:city,style:{display:'flex',alignItems:'center',gap:12}},
-              h('p',{style:{width:120,fontSize:13,margin:0}},city),
-              h('div',{style:{flex:1,height:24,background:'var(--color-neutral-900)',borderRadius:6,overflow:'hidden'}},
-                h('div',{style:{height:'100%',background:'linear-gradient(90deg,var(--color-accent),var(--color-accent-300))',width:(n/max*100)+'%',display:'flex',alignItems:'center',justifyContent:'flex-end',padding:'0 8px',fontSize:11,fontWeight:700,color:'#fff'}},n)))));
-      })()));
-
-  // ── SETTINGS ──
+      StatCard('ph-users','Active patients',String(activeN),finishingN+' finishing soon','var(--color-accent-300)'),
+      StatCard('ph-plus-circle','Cases this month',String(startedMonth),nowD.toLocaleDateString('en-GB',{month:'long'}),null),
+      StatCard('ph-currency-eur','Collected (est.)',casePrice?eur(collected):'—',casePrice?instPaid+' / '+instTotal+' installments':'Set case price →','var(--color-success)'),
+      StatCard('ph-hourglass','Outstanding (est.)',casePrice?eur(outstanding):'—',(instTotal-instPaid)+' installments left','var(--color-gold)')),
+    h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
+      StatCard('ph-user-plus','Leads this month',String(leadsMonth),leads.length+' total',null),
+      StatCard('ph-arrows-clockwise','Lead conversion',convRate+'%',lc.converted+' of '+leads.length+' converted','var(--color-success)'),
+      StatCard('ph-chat-circle-dots','Waiting for contact',String(lc.new),'New leads not contacted',lc.new?'var(--color-danger)':null),
+      StatCard('ph-gift','Referred patients',String(realP.filter(p=>p.referredBy).length),'Came via a referral code','var(--color-gold)')),
+    h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:16}},
+      h('div',{className:'card',style:{padding:20}},
+        h('h2',{style:{fontSize:15,fontWeight:700,margin:'0 0 4px'}},'Last 6 months'),
+        h('p',{style:{fontSize:11,opacity:.55,margin:'0 0 14px'}},h('span',{style:{color:'var(--color-accent-300)'}},'■ '),'new cases   ',h('span',{style:{color:'#f5b942'}},'■ '),'leads'),
+        h('div',{style:{display:'flex',alignItems:'flex-end',gap:12,height:150}},
+          months.map(m=>h('div',{key:m.label,style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:6,height:'100%',justifyContent:'flex-end'}},
+            h('div',{style:{display:'flex',alignItems:'flex-end',gap:3,height:'100%'}},
+              [[m.cases,'var(--color-accent-300)'],[m.leads,'#f5b942']].map(([v,c],i)=>h('div',{key:i,title:String(v),style:{width:12,height:Math.max(3,v/mMax*120)+'px',background:c,borderRadius:4,position:'relative',transition:'height .6s'}},v>0&&h('span',{style:{position:'absolute',top:-16,left:'50%',transform:'translateX(-50%)',fontSize:10,opacity:.7}},v)))),
+            h('span',{style:{fontSize:11,opacity:.55}},m.label))))),
+      h('div',{className:'card',style:{padding:20}},
+        h('h2',{style:{fontSize:15,fontWeight:700,margin:'0 0 14px'}},'Lead funnel'),
+        h('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+          funnel.map(([k,lbl,c])=>h('div',{key:k},
+            h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}},h('span',{style:{opacity:.8}},lbl),h('span',{style:{fontWeight:700}},lc[k]||0)),
+            h('div',{style:{height:8,borderRadius:8,background:'var(--color-neutral-800)',overflow:'hidden'}},h('div',{style:{height:'100%',width:(leads.length?(lc[k]||0)/leads.length*100:0)+'%',background:c,borderRadius:8,transition:'width .6s'}}))))))),
+    h('p',{style:{fontSize:11,opacity:.45,margin:0}},'Money figures are estimates: case price × share of installments each patient has paid. Demo patients are excluded.'));
   const Settings=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
     h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Settings'),
     h('div',{className:'card',style:{padding:24}},
@@ -754,7 +788,11 @@ function App(){
         selected.username&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-at',style:{opacity:.5,marginRight:8}}),selected.username),
         selected.referralCode&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-gift',style:{opacity:.5,marginRight:8}}),selected.referralCode+' · '+patients.filter(x=>x.referredBy&&x.referredBy===selected.referralCode).length+' referred'),
         selected.referredBy&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-user-plus',style:{opacity:.5,marginRight:8}}),'Referred by '+((patients.find(x=>x.referralCode===selected.referredBy)||{}).first||selected.referredBy)),
-        wearStats[selected.id]&&h('p',{style:{fontSize:13,margin:'2px 0',color:wearStats[selected.id].avgH<20?'var(--color-danger)':undefined}},h('i',{className:'ph ph-clock',style:{opacity:.5,marginRight:8}}),'Avg wear '+wearStats[selected.id].avgH.toFixed(1)+' h/day · '+wearStats[selected.id].days+' days tracked')),
+        wearStats[selected.id]&&h('p',{style:{fontSize:13,margin:'2px 0',color:wearStats[selected.id].avgH<20?'var(--color-danger)':undefined}},h('i',{className:'ph ph-clock',style:{opacity:.5,marginRight:8}}),'Avg wear '+wearStats[selected.id].avgH.toFixed(1)+' h/day · '+wearStats[selected.id].days+' days tracked'),
+        (()=>{const ll=leads.find(l=>l.notes==='patient:'+selected.id);if(!ll||!(ll.photo_paths||[]).length)return null;const ph=leadPhotos[ll.id];
+          return h('div',{style:{marginTop:8}},
+            !ph&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>loadLeadPhotos(ll)},h('i',{className:'ph ph-images'}),'Assessment photos ('+ll.photo_paths.length+')'),
+            ph&&h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},ph.map((u,i)=>h('a',{key:i,href:u,target:'_blank',rel:'noopener noreferrer'},h('img',{src:u,style:{width:72,height:72,objectFit:'cover',borderRadius:8,border:'1px solid var(--color-divider)'}})))));})()),
       // Notes
       selected.notes&&h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
@@ -775,7 +813,7 @@ function App(){
       )));
 
   // ── ADD PATIENT DIALOG ──
-  const AddDlg=addOpen&&h(AddPatientDlg,{onCancel:()=>setAddOpen(false),onSave:addPatient});
+  const AddDlg=addOpen&&h(AddPatientDlg,{key:convertLead?convertLead.id:'new',initial:convertLead?(()=>{const ps=String(convertLead.name||'').trim().split(/\s+/);return{first:ps[0]||'',last:ps.slice(1).join(' '),phone:convertLead.phone||'',city:convertLead.city||''}})():null,onCancel:()=>{setAddOpen(false);setConvertLead(null)},onSave:addPatient});
   const editingPatient=editAlignerFor&&patients.find(x=>x.id===editAlignerFor);
   const EditAlignerDialog=editingPatient&&h(EditAlignerDlg,{patient:editingPatient,onCancel:()=>setEditAlignerFor(null),onSave:n=>setAlignerTo(editingPatient.id,n)});
   const EditPatientDialog=editPatientFor&&selected&&h(EditPatientDlg,{patient:selected,onCancel:()=>setEditPatientFor(false),onSave:data=>updatePatient(selected.id,data)});
@@ -828,6 +866,7 @@ function App(){
         h('select',{className:'input',value:l.status,onChange:e=>updateLead(l.id,{status:e.target.value}),style:{width:'auto',fontSize:12,padding:'6px 10px',color:leadStatusColor[l.status]||'inherit'}},['new','contacted','converted','lost'].map(s=>h('option',{key:s,value:s},s))),
         h('a',{className:'btn btn-secondary',style:{fontSize:12},href:'https://wa.me/'+waNum(l.phone),target:'_blank',rel:'noopener noreferrer'},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
         h('a',{className:'btn btn-secondary',style:{fontSize:12},href:'tel:'+l.phone},h('i',{className:'ph ph-phone'}),'Call'),
+        l.status!=='converted'&&h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>{setConvertLead(l);setAddOpen(true)}},h('i',{className:'ph ph-user-plus'}),'Convert to patient'),
         (l.photo_paths||[]).length>0&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>{if(openLead===l.id){setOpenLead(null)}else{setOpenLead(l.id);if(!leadPhotos[l.id])loadLeadPhotos(l)}}},h('i',{className:'ph ph-images'}),(openLead===l.id?'Hide':'Photos')+' ('+l.photo_paths.length+')')),
       l.message&&h('p',{style:{margin:0,fontSize:13,opacity:.8}},l.message),
       openLead===l.id&&h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
@@ -950,8 +989,8 @@ function EditAlignerDlg({patient,onCancel,onSave}){
         h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-check'}),'Save'))));
 }
 
-function AddPatientDlg({onCancel,onSave}){
-  const [f,setF]=useState({first:'',last:'',phone:'',email:'',city:'',totalAligners:20,doctor:''});
+function AddPatientDlg({onCancel,onSave,initial}){
+  const [f,setF]=useState(Object.assign({first:'',last:'',phone:'',email:'',city:'',totalAligners:20,doctor:''},initial||{}));
   const submit=e=>{e.preventDefault();onSave(f)};
   return h('div',{className:'dialog-backdrop'},
     h('form',{onSubmit:submit,className:'dialog fade-up'},
