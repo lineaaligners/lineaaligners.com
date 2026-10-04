@@ -239,6 +239,7 @@ function App(){
   const [editAlignerFor,setEditAlignerFor]=useState(null);
   const [editPatientFor,setEditPatientFor]=useState(false);
   const [letterFor,setLetterFor]=useState(null);
+  const [pushFor,setPushFor]=useState(null);
   const [patientLetters,setPatientLetters]=useState([]);
 
   const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
@@ -259,7 +260,7 @@ function App(){
         SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
       ]);
       if(pR.data) setPatients(pR.data.map(p=>({
-        id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',
+        id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
         currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
         nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
         nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,
@@ -395,7 +396,7 @@ function App(){
       SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
     ]);
     if(pR.data) setPatients(pR.data.map(p=>({
-      id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',
+      id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
       currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
       nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
         nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,
@@ -465,6 +466,14 @@ function App(){
     sub&&h('p',{style:{opacity:.5,fontSize:12,margin:'6px 0 0'}},sub));
 
   // ── DASHBOARD ──
+  const referrers=patients.map(p=>({p,n:patients.filter(x=>x.referredBy&&x.referredBy===p.referralCode).length})).filter(r=>r.n>0).sort((x,y)=>y.n-x.n);
+  const referralsCard=h('div',{className:'card',style:{padding:20}},
+    h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:12,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-gift',style:{color:'var(--color-gold)'}}),'Referrals',h('span',{style:{fontSize:11,fontWeight:500,opacity:.5,marginLeft:4}},'— who brought new patients')),
+    h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+      referrers.slice(0,6).map(r=>h('div',{key:'ref-'+r.p.id,style:{padding:12,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',display:'flex',alignItems:'center',gap:12,cursor:'pointer'},onClick:()=>{setTab('patients');setSelected(r.p)}},
+        h('p',{style:{flex:1,fontSize:12,fontWeight:700,margin:0}},r.p.first+' '+r.p.last),
+        h('span',{style:{fontSize:12,fontWeight:700,color:'var(--color-gold)'}},r.n+(r.n===1?' referral':' referrals')))),
+      referrers.length===0&&h('div',{style:{padding:20,textAlign:'center',opacity:.5,fontSize:13}},'No referrals yet')));
   const atRisk=patients.filter(p=>{
     const overdue=p.nextChangeDate&&new Date(p.nextChangeDate)<new Date(new Date().toDateString());
     const inactive=!p.lastActiveAt||((new Date()-new Date(p.lastActiveAt))/86400000)>14;
@@ -479,6 +488,7 @@ function App(){
     h('div',null,
       h('h1',{style:{fontSize:28,fontWeight:700,letterSpacing:'-.02em',margin:0}},'Welcome back, Genis'),
       h('p',{style:{opacity:.6,fontSize:15,margin:'4px 0 0'}},patients.length+' patients in Supabase · '+new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))),
+    h('div',{style:{display:'flex',gap:10,flexWrap:'wrap'}},h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPushFor({all:true})},h('i',{className:'ph ph-megaphone'}),'Notify all patients')),
     h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
       StatCard('ph-users','Total patients',stats.total,`${stats.active} active`),
       StatCard('ph-calendar-check','This week',stats.apptsThisWeek,'Appointments',null),
@@ -531,7 +541,8 @@ function App(){
               h('p',{style:{fontSize:12,fontWeight:700,margin:0}},`${p.first} ${p.last}`),
               h('p',{style:{fontSize:11,opacity:.6,margin:'2px 0 0'}},p.riskReason)),
             h('i',{className:'ph ph-caret-right',style:{opacity:.4}}))),
-        atRisk.length===0&&h('div',{style:{padding:20,textAlign:'center',opacity:.5,fontSize:13}},'No at-risk patients 🎉'))));
+        atRisk.length===0&&h('div',{style:{padding:20,textAlign:'center',opacity:.5,fontSize:13}},'No at-risk patients 🎉'))),
+    referralsCard);
 
   // ── PATIENTS TABLE ──
   const Patients=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
@@ -701,6 +712,8 @@ function App(){
           h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditPatientFor(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit details'),
           selected.treatmentLink&&h('a',{href:selected.treatmentLink,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-link'}),'View treatment plan'),
           h('button',{className:'btn btn-gold',style:{fontSize:12},onClick:()=>setLetterFor(selected.id)},h('i',{className:'ph ph-envelope-simple'}),'Send letter'),
+          h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPushFor({id:selected.id})},h('i',{className:'ph ph-bell-ringing'}),'Notify'),
+          h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>sendPush({patient_id:selected.id,title:'Linea Aligners',body:'How was your experience with Linea? We would love your feedback.'},'Review request sent')},h('i',{className:'ph ph-star'}),'Request review'),
           h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>deletePatient(selected.id)},h('i',{className:'ph ph-trash'}),'Delete patient'))),
       // Info grid
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}},
@@ -717,7 +730,9 @@ function App(){
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Contact'),
         h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-phone',style:{opacity:.5,marginRight:8}}),selected.phone),
         h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-envelope',style:{opacity:.5,marginRight:8}}),selected.email||'—'),
-        selected.username&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-at',style:{opacity:.5,marginRight:8}}),selected.username)),
+        selected.username&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-at',style:{opacity:.5,marginRight:8}}),selected.username),
+        selected.referralCode&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-gift',style:{opacity:.5,marginRight:8}}),selected.referralCode+' · '+patients.filter(x=>x.referredBy&&x.referredBy===selected.referralCode).length+' referred'),
+        selected.referredBy&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-user-plus',style:{opacity:.5,marginRight:8}}),'Referred by '+((patients.find(x=>x.referralCode===selected.referredBy)||{}).first||selected.referredBy))),
       // Notes
       selected.notes&&h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
@@ -742,6 +757,18 @@ function App(){
   const editingPatient=editAlignerFor&&patients.find(x=>x.id===editAlignerFor);
   const EditAlignerDialog=editingPatient&&h(EditAlignerDlg,{patient:editingPatient,onCancel:()=>setEditAlignerFor(null),onSave:n=>setAlignerTo(editingPatient.id,n)});
   const EditPatientDialog=editPatientFor&&selected&&h(EditPatientDlg,{patient:selected,onCancel:()=>setEditPatientFor(false),onSave:data=>updatePatient(selected.id,data)});
+  const sendPush=async(payload,okMsg)=>{
+    try{
+      const{data:{session}}=await SUPA.auth.getSession();
+      const r=await fetch('/api/send-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify(payload)});
+      const j=await r.json();
+      if(!r.ok)throw new Error(j.error||'Failed');
+      toast(j.sent>0?(okMsg||'Notification sent')+' ('+j.sent+' device'+(j.sent===1?'':'s')+')':'No device subscribed yet — they need to enable notifications first');
+    }catch(e){toast('Error: '+e.message)}
+    setPushFor(null);
+  };
+  const pushTarget=pushFor&&(pushFor.all?'All patients':((patients.find(x=>x.id===pushFor.id)||{}).first||'Patient'));
+  const PushDialog=pushFor&&h(PushDlg,{target:pushTarget,onCancel:()=>setPushFor(null),onSend:(title,body)=>sendPush(pushFor.all?{all:true,title,body}:{patient_id:pushFor.id,title,body})});
   const letterPatient=letterFor&&patients.find(x=>x.id===letterFor);
   const LetterDialog=letterPatient&&h(SendLetterDlg,{patient:letterPatient,onCancel:()=>setLetterFor(null),onSave:(subject,content)=>sendLetter(letterPatient.id,subject,content)});
 
@@ -768,7 +795,7 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,ConfirmDlg,Toasts);
+    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,ConfirmDlg,Toasts);
 }
 
 function SendLetterDlg({patient,onCancel,onSave}){
@@ -792,6 +819,29 @@ function SendLetterDlg({patient,onCancel,onSave}){
       h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
         h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
         h('button',{type:'submit',className:'btn btn-gold'},h('i',{className:'ph ph-paper-plane-tilt'}),'Send letter'))));
+}
+
+function PushDlg({target,onCancel,onSend}){
+  const [title,setTitle]=useState('Linea Aligners');
+  const [body,setBody]=useState('');
+  const submit=e=>{e.preventDefault();if(!body.trim())return;onSend(title.trim()||'Linea Aligners',body.trim())};
+  return h('div',{className:'dialog-backdrop'},
+    h('form',{onSubmit:submit,className:'dialog fade-up',style:{width:'min(460px,calc(100vw - 32px))'}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
+        h('div',{style:{width:36,height:36,borderRadius:8,background:'rgba(78,79,158,.2)',border:'1px solid rgba(78,79,158,.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h('i',{className:'ph ph-bell-ringing',style:{fontSize:18}})),
+        h('div',null,
+          h('h3',{style:{fontSize:16,fontWeight:700,margin:0}},'Send push notification'),
+          h('p',{style:{opacity:.55,fontSize:12,margin:0}},'To '+target))),
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Title'),
+        h('input',{className:'input',maxLength:80,value:title,onChange:e=>setTitle(e.target.value),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:16}},
+        h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Message'),
+        h('textarea',{className:'input',required:true,maxLength:300,placeholder:'e.g. The clinic is closed on Monday.',value:body,onChange:e=>setBody(e.target.value),rows:4,style:{marginTop:4,resize:'vertical',fontFamily:'inherit',lineHeight:1.5}})),
+      h('p',{style:{opacity:.45,fontSize:11,marginBottom:16}},'Reaches only patients who enabled notifications in their portal.'),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
+        h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-paper-plane-tilt'}),'Send'))));
 }
 
 function EditPatientDlg({patient,onCancel,onSave}){

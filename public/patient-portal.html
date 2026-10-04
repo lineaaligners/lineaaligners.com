@@ -113,7 +113,7 @@ en:{
   forgotPassword:'Already registered? Message the clinic',
   editDate:'Edit change date',yourTimezone:'Your time zone',yourUsername:'Username',profilePhone:'Phone',profileCity:'Place of living',
   reminderTitle:'Almost time!',reminderBody:'Your next aligner change is coming up soon.',
-  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',
+  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',a2hsTitle:'Get reminders on your phone',a2hsIos:'Tap Share, then "Add to Home Screen" — this lets us send you aligner reminders.',a2hsAndroid:'Install Linea on your phone to get aligner reminders.',a2hsInstall:'Install',reviewTitle:'You finished your treatment!',reviewBody:'Your honest feedback helps other patients decide. It takes one minute.',reviewCta:'Share your experience',
   beforeAfter:'Before & after',beforeAfterHint:'Drag to compare your starting scan with today.',
   beforeLabel:'Before',afterLabel:'Today',
   paymentPlan:'Payment plan',installmentsPaid:'installments paid',nextDue:'Next due',
@@ -188,7 +188,7 @@ sq:{
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
   editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',yourUsername:'Username',profilePhone:'Telefoni',profileCity:'Vendbanimi',
   reminderTitle:'Pothuajse gati!',reminderBody:'Ndërrimi i radhës së aparatit po vjen së shpejti.',
-  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',
+  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',a2hsTitle:'Merr njoftime në telefon',a2hsIos:'Shtyp Share, pastaj "Add to Home Screen" — kështu mund të të dërgojmë kujtesa për aligner-in.',a2hsAndroid:'Instalo Linea në telefon për të marrë kujtesa për aligner-in.',a2hsInstall:'Instalo',reviewTitle:'Përfundove trajtimin!',reviewBody:'Mendimi yt i sinqertë i ndihmon pacientët e tjerë. Merr vetëm një minutë.',reviewCta:'Ndaj përvojën tënde',
   beforeAfter:'Para & pas',beforeAfterHint:'Tërhiqni për të krahasuar skanimin fillestar me sot.',
   beforeLabel:'Para',afterLabel:'Sot',
   paymentPlan:'Plani i pagesës',installmentsPaid:'këste të paguara',nextDue:'Kësti tjetër',
@@ -348,6 +348,9 @@ function App(){
   const [lastCheckin,setLastCheckin]=useState(null);
   const [referralCode,setReferralCode]=useState('');
   const [refParam,setRefParam]=useState('');
+  const [installEvt,setInstallEvt]=useState(null);
+  const [a2hsHidden,setA2hsHidden]=useState(()=>{try{return localStorage.getItem('linea_a2hs')==='1'}catch(e){return false}});
+  useEffect(()=>{const f=e=>{e.preventDefault();setInstallEvt(e)};window.addEventListener('beforeinstallprompt',f);return()=>window.removeEventListener('beforeinstallprompt',f)},[]);
   const [ba,setBa]=useState(50);
   const [paid,setPaid]=useState(3);
   const [totalInst,setTotalInst]=useState(6);
@@ -535,6 +538,7 @@ function App(){
     }catch(e){console.warn('Push subscribe failed',e)}
   };
   const reqNotif=async()=>{
+    if(isIOS&&!isStandalone){toast(t.a2hsIos);return;}
     if(typeof Notification==='undefined')return;
     const p=await Notification.requestPermission();
     setNotif(p);
@@ -812,6 +816,25 @@ function App(){
         h('button',{className:'btn btn-primary'},h('i',{className:'ph ph-arrow-square-out'}),t.openFull))));
 
   // ── DASHBOARD ──────────────────────────────────────────────────────────
+  const isIOS=typeof navigator!=='undefined'&&/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone=typeof window!=='undefined'&&((window.navigator&&window.navigator.standalone)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches));
+  const dismissA2hs=()=>{setA2hsHidden(true);try{localStorage.setItem('linea_a2hs','1')}catch(e){}};
+  const doInstall=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice}catch(e){}setInstallEvt(null);dismissA2hs()};
+  const showA2hs=authed&&!isStandalone&&!a2hsHidden&&(isIOS||installEvt);
+  const a2hsBanner=showA2hs&&h('div',{className:'fade-up card',style:{flexDirection:'row',alignItems:'center',gap:'var(--space-3)',padding:'var(--space-4) var(--space-5)'}},
+    h('i',{className:'ph ph-device-mobile',style:{fontSize:24,color:'var(--color-accent-2-300)',flex:'none'}}),
+    h('div',{style:{flex:1,minWidth:0}},
+      h('p',{style:{margin:0,fontSize:14,fontWeight:600}},t.a2hsTitle),
+      h('p',{style:{margin:'2px 0 0',fontSize:12,opacity:.65}},isIOS?t.a2hsIos:t.a2hsAndroid)),
+    !isIOS&&installEvt&&h('button',{className:'btn btn-primary',onClick:doInstall,style:{padding:'8px 14px',fontSize:12}},t.a2hsInstall),
+    h('button',{onClick:dismissA2hs,'aria-label':'Dismiss',style:{background:'none',border:'none',color:'inherit',opacity:.5,cursor:'pointer',padding:4,display:'flex'}},h('i',{className:'ph ph-x'})));
+  const REVIEW_URL='';
+  const finished=total>0&&cur>=total;
+  const reviewHref=REVIEW_URL||('https://wa.me/38349772307?text='+encodeURIComponent(lang==='sq'?'Përshëndetje! Dua të ndaj përvojën time me Linea Aligners:':'Hi! I would like to share my Linea Aligners experience:'));
+  const reviewCard=finished&&h('div',{className:'fade-up card',style:{padding:'var(--space-5)',gap:'var(--space-3)',alignItems:'flex-start'}},
+    h('p',{style:{margin:0,fontSize:16,fontWeight:600}},'🎉 '+t.reviewTitle),
+    h('p',{style:{margin:0,fontSize:13,opacity:.65}},t.reviewBody),
+    h('a',{href:reviewHref,target:'_blank',rel:'noopener noreferrer',className:'btn btn-primary',style:{fontSize:13}},h('i',{className:'ph ph-star'}),t.reviewCta));
   const Dashboard=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
     h('div',{className:'fade-up'},
       h('h1',{style:{fontSize:36,fontWeight:600,letterSpacing:'-.02em'}},`${greet}, ${fname} 👋`),
@@ -827,6 +850,8 @@ function App(){
       h('button',{className:checkedInToday?'btn btn-secondary':'btn btn-primary',onClick:checkIn,disabled:checkedInToday,style:{padding:'10px 16px',fontSize:13}},
         h('i',{className:checkedInToday?'ph ph-check-circle':'ph ph-circle'}),
         checkedInToday?t.checkedInToday:t.checkInCta)),
+    a2hsBanner,
+    reviewCard,
     h('div',{className:'fade-up',style:{display:'flex',flexDirection:'column',gap:'var(--space-3)'}},
       h('p',{style:{opacity:.5,fontSize:13,fontWeight:600,margin:0}},t.badgesTitle),
       h('div',{style:{display:'flex',flexWrap:'wrap',gap:10}},
