@@ -79,6 +79,36 @@ a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}
   .doctor-card>div:last-child{width:100%}
   .doctor-card a{width:100%;justify-content:center}
 }
+@keyframes tabIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.tab-enter>div>*{animation:tabIn .6s cubic-bezier(.16,1,.3,1) both}
+.tab-enter>div>*:nth-child(2){animation-delay:0.06s}
+.tab-enter>div>*:nth-child(3){animation-delay:0.12s}
+.tab-enter>div>*:nth-child(4){animation-delay:0.18s}
+.tab-enter>div>*:nth-child(5){animation-delay:0.24s}
+.tab-enter>div>*:nth-child(6){animation-delay:0.30s}
+.tab-enter>div>*:nth-child(7){animation-delay:0.36s}
+.tab-enter>div>*:nth-child(8){animation-delay:0.42s}
+.tab-enter>div>*:nth-child(9){animation-delay:0.48s}
+.tab-enter>div>*:nth-child(10){animation-delay:0.54s}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,40px) scale(1.15)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-50px,-60px) scale(1.1)}}
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.ambient span{position:absolute;border-radius:50%;filter:blur(100px);opacity:.2;will-change:transform}
+.ambient .a1{width:420px;height:420px;background:var(--color-accent);top:-120px;left:-100px;animation:drift1 18s ease-in-out infinite}
+.ambient .a2{width:380px;height:380px;background:var(--color-accent-2);bottom:-140px;right:-120px;animation:drift2 22s ease-in-out infinite}
+main{position:relative;z-index:1}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+@keyframes shine{0%{transform:translateX(-120%) skewX(-20deg)}60%,100%{transform:translateX(320%) skewX(-20deg)}}
+@keyframes splashBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes drawSmile{from{stroke-dashoffset:120}to{stroke-dashoffset:0}}
+@keyframes flamePop{0%{transform:scale(1)}30%{transform:scale(1.7) rotate(-12deg)}60%{transform:scale(.9) rotate(8deg)}100%{transform:scale(1)}}
+@keyframes pillPulse{0%{box-shadow:0 0 0 0 rgba(255,157,77,.55)}100%{box-shadow:0 0 0 18px rgba(255,157,77,0)}}
+@keyframes spark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+.flame-pop{animation:flamePop .8s cubic-bezier(.34,1.56,.64,1)}
+.pill-pulse{animation:pillPulse .9s ease-out 2}
+.spark{position:absolute;left:22px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#ffb36b;pointer-events:none;animation:spark .8s ease-out forwards}
+.btn:active:not(:disabled){transform:scale(.96)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -260,6 +290,18 @@ sq:{
 const h=(tag,props,...ch)=>React.createElement(tag,props,...ch);
 const fmtDate=(d,lang,t)=>{const l=lang==='sq'?'sq-AL':'en-GB';return t?d.toLocaleString(l,{dateStyle:'full',timeStyle:'short'}):d.toLocaleDateString(l,{weekday:'long',day:'numeric',month:'long'})};
 
+function CountUp({v,dur=900}){
+  const [n,setN]=useState(0);
+  const prev=useRef(0);
+  useEffect(()=>{
+    const from=prev.current,to=Number(v)||0;prev.current=to;
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){setN(to);return;}
+    let raf,start;
+    const step=ts=>{if(!start)start=ts;const p=Math.min(1,(ts-start)/dur);const e=1-Math.pow(1-p,3);setN(Math.round(from+(to-from)*e));if(p<1)raf=requestAnimationFrame(step)};
+    raf=requestAnimationFrame(step);return()=>cancelAnimationFrame(raf);
+  },[v]);
+  return n;
+}
 function App(){
   const [lang,setLang]=useState('en');
   const [tab,setTab]=useState('dashboard');
@@ -346,6 +388,7 @@ function App(){
   const [dateVal,setDateVal]=useState('');
   const [streak,setStreak]=useState(0);
   const [lastCheckin,setLastCheckin]=useState(null);
+  const [burst,setBurst]=useState(0);
   const [referralCode,setReferralCode]=useState('');
   const [refParam,setRefParam]=useState('');
   const [installEvt,setInstallEvt]=useState(null);
@@ -598,7 +641,7 @@ function App(){
     const yday=new Date(Date.now()-86400000).toISOString().slice(0,10);
     const newStreak=lastCheckin===yday?streak+1:1;
     const{error}=await SUPA.from('patients').update({streak:newStreak,last_checkin_date:todayStr0}).eq('id',patientId);
-    if(!error){setStreak(newStreak);setLastCheckin(todayStr0);toast(lang==='sq'?'U shënua sot! 🔥':'Checked in for today! 🔥')}
+    if(!error){setBurst(b=>b+1);try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}setStreak(newStreak);setLastCheckin(todayStr0);toast(lang==='sq'?'U shënua sot! 🔥':'Checked in for today! 🔥')}
   };
   const payPct=Math.round((paid/totalInst)*100)+'%';
   const nextDue=new Date(now.getTime()+12*DAY).toLocaleDateString(loc,{day:'numeric',month:'long'});
@@ -716,10 +759,12 @@ function App(){
   // ── SPLASH ─────────────────────────────────────────────────────────────
   const Splash=splash&&h('div',{onClick:()=>{clearTimeout(sp.current);setSplash(false)},className:'fade-in',style:{position:'fixed',inset:0,zIndex:200,background:'linear-gradient(160deg,var(--color-accent-900) 0%,var(--color-bg) 50%,var(--color-accent-2-900) 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'var(--space-6)',cursor:'pointer'}},
     orb({width:320,height:320,background:'var(--color-accent)',opacity:.35,animationDelay:'0s'}),
+    h('div',{style:{position:'absolute',width:300,height:300,borderRadius:'50%',background:'conic-gradient(from 0deg,transparent,var(--color-accent-300),transparent 40%)',opacity:.4,animation:'ringSpin 6s linear infinite',WebkitMask:'radial-gradient(circle,transparent 62%,#000 63%)',mask:'radial-gradient(circle,transparent 62%,#000 63%)',pointerEvents:'none'}}),
     h('div',{style:{position:'relative',padding:'var(--space-8) 56px',borderRadius:'var(--radius-lg)',background:'color-mix(in srgb,var(--color-surface) 45%,transparent)',border:'1px solid color-mix(in srgb,#fff 14%,transparent)',backdropFilter:'blur(24px) saturate(140%)',WebkitBackdropFilter:'blur(24px) saturate(140%)',boxShadow:'var(--shadow-lg)',display:'flex',flexDirection:'column',alignItems:'center',gap:'var(--space-4)',animation:'logoIn .7s cubic-bezier(.16,1,.3,1) both'}},
+      h('div',{style:{position:'absolute',inset:0,borderRadius:'inherit',overflow:'hidden',pointerEvents:'none'}},h('div',{style:{position:'absolute',top:0,bottom:0,width:'40%',background:'linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent)',animation:'shine 2.6s .6s ease-in-out infinite'}})),
       h('img',{src:LOGO,alt:'Linea',style:{width:88,height:'auto',filter:'brightness(0) invert(1)',opacity:.96}}),
-      h('div',{style:{display:'flex',gap:6,marginTop:4}},
-        [0,.15,.3].map((d,i)=>h('span',{key:i,style:{width:6,height:6,borderRadius:'50%',background:'#fff',animation:'dot 1.2s ease-in-out infinite',animationDelay:`${d}s`}})))),
+      h('svg',{width:64,height:20,viewBox:'0 0 64 20',style:{overflow:'visible'}},h('path',{d:'M4 4 Q32 26 60 4',fill:'none',stroke:'#fff',strokeWidth:2.5,strokeLinecap:'round',strokeDasharray:120,style:{animation:'drawSmile 1.1s .35s cubic-bezier(.65,0,.35,1) both',opacity:.9}})),
+      h('div',{style:{width:96,height:3,borderRadius:3,background:'rgba(255,255,255,.15)',overflow:'hidden'}},h('div',{style:{height:'100%',background:'#fff',transformOrigin:'left',animation:'splashBar 2.2s cubic-bezier(.65,0,.35,1) both'}}))),
     h('p',{style:{opacity:.4,fontSize:12,letterSpacing:'.04em',position:'absolute',bottom:36}},t.tapToEnter));
 
   // ── HEADER ─────────────────────────────────────────────────────────────
@@ -844,9 +889,10 @@ function App(){
       h('i',{className:'ph ph-bell-ringing',style:{fontSize:22,color:'var(--color-accent-2-300)',flex:'none'}}),
       h('p',{style:{margin:0,fontSize:14,flex:1}},h('strong',null,t.reminderTitle),' — ',t.reminderBody)),
     h('div',{className:'fade-up',style:{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}},
-      h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'var(--space-3) var(--space-4)',borderRadius:'var(--radius-md)',background:'color-mix(in srgb,var(--color-accent-900) 45%,transparent)',border:'1px solid var(--color-accent-700)',width:'fit-content'}},
-        h('i',{className:'ph ph-flame',style:{color:'#ff9d4d',fontSize:20}}),
-        h('span',{style:{fontSize:14,fontWeight:600}},`${streak} ${t.streakLabel}`)),
+      h('div',{key:'pill'+burst,className:burst?'pill-pulse':undefined,style:{position:'relative',display:'flex',alignItems:'center',gap:10,padding:'var(--space-3) var(--space-4)',borderRadius:'var(--radius-md)',background:'color-mix(in srgb,var(--color-accent-900) 45%,transparent)',border:'1px solid var(--color-accent-700)',width:'fit-content'}},
+        h('i',{className:'ph ph-flame'+(burst?' flame-pop':''),style:{color:'#ff9d4d',fontSize:20,display:'inline-block'}}),
+        burst>0&&[0,1,2,3,4,5,6,7].map(i=>h('span',{key:i,className:'spark',style:{'--dx':Math.round(Math.cos(i*Math.PI/4)*34)+'px','--dy':Math.round(Math.sin(i*Math.PI/4)*34)+'px'}})),
+        h('span',{style:{fontSize:14,fontWeight:600}},h(CountUp,{v:streak,dur:700}),' '+t.streakLabel)),
       h('button',{className:checkedInToday?'btn btn-secondary':'btn btn-primary',onClick:checkIn,disabled:checkedInToday,style:{padding:'10px 16px',fontSize:13}},
         h('i',{className:checkedInToday?'ph ph-check-circle':'ph ph-circle'}),
         checkedInToday?t.checkedInToday:t.checkInCta)),
@@ -863,7 +909,7 @@ function App(){
       h('div',{style:{display:'flex',flexWrap:'wrap',justifyContent:'space-between',gap:'var(--space-6)',alignItems:'center'}},
         h('div',null,
           h('p',{style:{opacity:.7,margin:'0 0 4px',fontSize:14}},t.currentAligner),
-          h('p',{style:{fontFamily:'var(--font-heading)',fontSize:56,fontWeight:600,lineHeight:1,margin:0,letterSpacing:'-.03em',fontVariantNumeric:'tabular-nums'}},cur,' ',h('span',{style:{fontSize:20,opacity:.5,fontWeight:500,letterSpacing:0}},`${t.of} ${total}`)),
+          h('p',{style:{fontFamily:'var(--font-heading)',fontSize:56,fontWeight:600,lineHeight:1,margin:0,letterSpacing:'-.03em',fontVariantNumeric:'tabular-nums'}},h(CountUp,{v:cur}),' ',h('span',{style:{fontSize:20,opacity:.5,fontWeight:500,letterSpacing:0}},`${t.of} ${total}`)),
           editDate
             ?h('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,flexWrap:'wrap'}},
                 h('input',{className:'input',type:'date',value:dateVal,onChange:e=>setDateVal(e.target.value),min:today0.toISOString().slice(0,10),style:{width:'auto'}}),
@@ -1090,7 +1136,8 @@ function App(){
 
   return h(React.Fragment,null,
     Splash,Header,MobileNav,Toasts,ConfirmDlg,Celebrate,SchedDlg,EmergDlg,ReportDlg,D3Dlg,EnvelopeTrigger,LetterModal,
-    h('main',{style:{maxWidth:1080,margin:'0 auto',padding:'var(--space-8) var(--space-6) 100px'}},tabs[tab]));
+    h('div',{className:'ambient','aria-hidden':true},h('span',{className:'a1'}),h('span',{className:'a2'})),
+    h('main',{style:{maxWidth:1080,margin:'0 auto',padding:'var(--space-8) var(--space-6) 100px'}},h('div',{key:tab,className:'tab-enter'},tabs[tab])));
 }
 
 try{
