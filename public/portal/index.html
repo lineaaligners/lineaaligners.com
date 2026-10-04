@@ -143,7 +143,7 @@ en:{
   forgotPassword:'Already registered? Message the clinic',
   editDate:'Edit change date',yourTimezone:'Your time zone',yourUsername:'Username',profilePhone:'Phone',profileCity:'Place of living',
   reminderTitle:'Almost time!',reminderBody:'Your next aligner change is coming up soon.',
-  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',a2hsTitle:'Get reminders on your phone',a2hsIos:'Tap Share, then "Add to Home Screen" — this lets us send you aligner reminders.',a2hsAndroid:'Install Linea on your phone to get aligner reminders.',a2hsInstall:'Install',reviewTitle:'You finished your treatment!',reviewBody:'Your honest feedback helps other patients decide. It takes one minute.',reviewCta:'Share your experience',
+  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',a2hsTitle:'Get reminders on your phone',a2hsIos:'Tap Share, then "Add to Home Screen" — this lets us send you aligner reminders.',a2hsAndroid:'Install Linea on your phone to get aligner reminders.',a2hsInstall:'Install',reviewTitle:'You finished your treatment!',reviewBody:'Your honest feedback helps other patients decide. It takes one minute.',reviewCta:'Share your experience',wearTitle:'Aligner wear time',wearOut:'Taking them out',wearIn:'Put back in',wearOutFor:'Out for',wearInNow:'Aligners in — keep it up',wearToday:'Out today',wearBudget:'2h allowed',wearHint:'Tap when you remove them to eat or brush, and again when they go back in. Target: 22 hours a day.',wearWeek:'Hours worn — last 7 days',wearOver:'Over the daily limit — put them back in soon.',
   beforeAfter:'Before & after',beforeAfterHint:'Drag to compare your starting scan with today.',
   beforeLabel:'Before',afterLabel:'Today',
   paymentPlan:'Payment plan',installmentsPaid:'installments paid',nextDue:'Next due',
@@ -218,7 +218,7 @@ sq:{
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
   editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',yourUsername:'Username',profilePhone:'Telefoni',profileCity:'Vendbanimi',
   reminderTitle:'Pothuajse gati!',reminderBody:'Ndërrimi i radhës së aparatit po vjen së shpejti.',
-  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',a2hsTitle:'Merr njoftime në telefon',a2hsIos:'Shtyp Share, pastaj "Add to Home Screen" — kështu mund të të dërgojmë kujtesa për aligner-in.',a2hsAndroid:'Instalo Linea në telefon për të marrë kujtesa për aligner-in.',a2hsInstall:'Instalo',reviewTitle:'Përfundove trajtimin!',reviewBody:'Mendimi yt i sinqertë i ndihmon pacientët e tjerë. Merr vetëm një minutë.',reviewCta:'Ndaj përvojën tënde',
+  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',a2hsTitle:'Merr njoftime në telefon',a2hsIos:'Shtyp Share, pastaj "Add to Home Screen" — kështu mund të të dërgojmë kujtesa për aligner-in.',a2hsAndroid:'Instalo Linea në telefon për të marrë kujtesa për aligner-in.',a2hsInstall:'Instalo',reviewTitle:'Përfundove trajtimin!',reviewBody:'Mendimi yt i sinqertë i ndihmon pacientët e tjerë. Merr vetëm një minutë.',reviewCta:'Ndaj përvojën tënde',wearTitle:'Koha e mbajtjes së aligner-ave',wearOut:'Po i heq',wearIn:'I vendosa përsëri',wearOutFor:'Jashtë prej',wearInNow:'Aligner-at janë brenda — vazhdo kështu',wearToday:'Jashtë sot',wearBudget:'2 orë të lejuara',wearHint:'Shtyp kur i heq për të ngrënë ose larë dhëmbët, dhe përsëri kur i vendos. Qëllimi: 22 orë në ditë.',wearWeek:'Orët e mbajtjes — 7 ditët e fundit',wearOver:'Ke kaluar limitin ditor — vendosi sa më shpejt.',
   beforeAfter:'Para & pas',beforeAfterHint:'Tërhiqni për të krahasuar skanimin fillestar me sot.',
   beforeLabel:'Para',afterLabel:'Sot',
   paymentPlan:'Plani i pagesës',installmentsPaid:'këste të paguara',nextDue:'Kësti tjetër',
@@ -290,6 +290,7 @@ sq:{
 const h=(tag,props,...ch)=>React.createElement(tag,props,...ch);
 const fmtDate=(d,lang,t)=>{const l=lang==='sq'?'sq-AL':'en-GB';return t?d.toLocaleString(l,{dateStyle:'full',timeStyle:'short'}):d.toLocaleDateString(l,{weekday:'long',day:'numeric',month:'long'})};
 
+function localDay(d){const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
 function CountUp({v,dur=900}){
   const [n,setN]=useState(0);
   const prev=useRef(0);
@@ -412,6 +413,15 @@ function App(){
   const [v3d,setV3d]=useState(false);
   const [scans,setScans]=useState([]);
   const [lightboxUrl,setLightboxUrl]=useState(null);
+  const [outSince,setOutSince]=useState(null);
+  const [wearMap,setWearMap]=useState({});
+  const [nowTick,setNowTick]=useState(Date.now());
+  useEffect(()=>{if(!outSince)return;setNowTick(Date.now());const iv=setInterval(()=>setNowTick(Date.now()),1000);return()=>clearInterval(iv)},[outSince]);
+  useEffect(()=>{
+    if(!patientId)return;
+    SUPA.from('patients').select('aligner_out_since').eq('id',patientId).single().then(({data})=>{if(data&&data.aligner_out_since)setOutSince(new Date(data.aligner_out_since))});
+    SUPA.from('wear_days').select('day,minutes_out').eq('patient_id',patientId).gte('day',localDay(Date.now()-7*86400000)).then(({data})=>{if(data){const m={};data.forEach(r=>{m[r.day]=r.minutes_out});setWearMap(m)}});
+  },[patientId]);
   useEffect(()=>{
     if(!patientId)return;
     SUPA.from('scans').select('*').eq('patient_id',patientId).order('created_at',{ascending:false})
@@ -880,6 +890,59 @@ function App(){
     h('p',{style:{margin:0,fontSize:16,fontWeight:600}},'🎉 '+t.reviewTitle),
     h('p',{style:{margin:0,fontSize:13,opacity:.65}},t.reviewBody),
     h('a',{href:reviewHref,target:'_blank',rel:'noopener noreferrer',className:'btn btn-primary',style:{fontSize:13}},h('i',{className:'ph ph-star'}),t.reviewCta));
+  const alignerOut=async()=>{
+    if(!patientId||outSince)return;
+    const now=new Date();setOutSince(now);setNowTick(Date.now());
+    try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}
+    await SUPA.from('patients').update({aligner_out_since:now.toISOString()}).eq('id',patientId);
+  };
+  const alignerIn=async()=>{
+    if(!patientId||!outSince)return;
+    const end=new Date();let start=new Date(outSince);
+    if(end-start>12*3600000)start=new Date(end.getTime()-12*3600000);
+    const add={};let c=new Date(start);
+    while(c<end){const de=new Date(c);de.setHours(24,0,0,0);const se=de<end?de:end;const k=localDay(c);add[k]=(add[k]||0)+Math.round((se-c)/60000);c=se;}
+    setOutSince(null);
+    const nm={...wearMap};
+    for(const k of Object.keys(add)){nm[k]=(nm[k]||0)+add[k];await SUPA.from('wear_days').upsert({patient_id:patientId,day:k,minutes_out:nm[k],updated_at:new Date().toISOString()},{onConflict:'patient_id,day'});}
+    setWearMap(nm);
+    await SUPA.from('patients').update({aligner_out_since:null}).eq('id',patientId);
+    toast(lang==='sq'?'U regjistrua ✓':'Logged ✓');
+  };
+  const fmtHM=m=>{m=Math.max(0,Math.round(m));const hh=Math.floor(m/60),mm=m%60;return hh?`${hh}h ${String(mm).padStart(2,'0')}m`:`${mm} min`};
+  const startOfToday=new Date(new Date(nowTick).toDateString()).getTime();
+  const todayKey=localDay(nowTick);
+  const curSessionSec=outSince?Math.max(0,Math.floor((nowTick-outSince.getTime())/1000)):0;
+  const curOutTodayMin=outSince?Math.max(0,(nowTick-Math.max(outSince.getTime(),startOfToday))/60000):0;
+  const outToday=(wearMap[todayKey]||0)+curOutTodayMin;
+  const overBudget=outToday>120;
+  const week=[6,5,4,3,2,1,0].map(i=>{const d=new Date(nowTick-i*86400000);const k=localDay(d);const out=i===0?outToday:(wearMap[k]||0);const has=(k in wearMap)||(i===0&&outToday>0);return{k,label:d.toLocaleDateString(loc,{weekday:'narrow'}),has,worn:24-out/60}});
+  const sessTxt=`${Math.floor(curSessionSec/3600)?Math.floor(curSessionSec/3600)+':':''}${String(Math.floor(curSessionSec%3600/60)).padStart(2,'0')}:${String(curSessionSec%60).padStart(2,'0')}`;
+  const wearCard=h('div',{className:'card',style:{padding:'var(--space-5)',gap:'var(--space-4)'}},
+    h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:10}},
+        h('i',{className:'ph ph-timer',style:{fontSize:22,color:'var(--color-accent-300)'}}),
+        h('p',{style:{margin:0,fontWeight:600,fontSize:15}},t.wearTitle)),
+      outSince
+        ?h('button',{className:'btn btn-primary',onClick:alignerIn,style:{padding:'10px 16px',fontSize:13}},h('i',{className:'ph ph-arrow-circle-down'}),t.wearIn)
+        :h('button',{className:'btn btn-secondary',onClick:alignerOut,style:{padding:'10px 16px',fontSize:13}},h('i',{className:'ph ph-fork-knife'}),t.wearOut)),
+    outSince
+      ?h('div',{style:{display:'flex',alignItems:'baseline',gap:10}},
+          h('span',{style:{fontSize:13,opacity:.6}},t.wearOutFor),
+          h('span',{style:{fontFamily:'var(--font-heading)',fontSize:34,fontWeight:600,fontVariantNumeric:'tabular-nums',color:overBudget?'#f87171':'#f5b942'}},sessTxt))
+      :h('p',{style:{margin:0,fontSize:13,opacity:.7}},'✓ '+t.wearInNow),
+    h('div',null,
+      h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,opacity:.7,marginBottom:6}},h('span',null,t.wearToday+': '+fmtHM(outToday)),h('span',null,t.wearBudget)),
+      h('div',{style:{height:8,borderRadius:8,background:'color-mix(in srgb,#fff 10%,transparent)',overflow:'hidden'}},
+        h('div',{style:{height:'100%',width:Math.min(100,outToday/120*100)+'%',background:overBudget?'#f87171':'linear-gradient(90deg,var(--color-accent),var(--color-accent-2))',borderRadius:8,transition:'width .6s cubic-bezier(.16,1,.3,1)'}})),
+      overBudget&&h('p',{style:{margin:'6px 0 0',fontSize:12,color:'#f87171'}},t.wearOver)),
+    h('div',null,
+      h('p',{style:{margin:'0 0 8px',fontSize:12,opacity:.6}},t.wearWeek),
+      h('div',{style:{display:'flex',alignItems:'flex-end',gap:8,height:64}},
+        week.map(d=>h('div',{key:d.k,style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',gap:4,height:'100%'}},
+          h('div',{title:d.has?d.worn.toFixed(1)+'h':'',style:{width:'100%',maxWidth:28,height:d.has?Math.min(48,Math.max(4,(d.worn-14)/10*48)):4,borderRadius:6,background:!d.has?'color-mix(in srgb,#fff 10%,transparent)':d.worn>=22?'var(--color-success,#22c55e)':d.worn>=20?'#f5b942':'#f87171',transition:'height .6s'}}),
+          h('span',{style:{fontSize:10,opacity:.5}},d.label))))),
+    h('p',{style:{margin:0,fontSize:11,opacity:.45}},t.wearHint));
   const Dashboard=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
     h('div',{className:'fade-up'},
       h('h1',{style:{fontSize:36,fontWeight:600,letterSpacing:'-.02em'}},`${greet}, ${fname} 👋`),
@@ -898,6 +961,7 @@ function App(){
         checkedInToday?t.checkedInToday:t.checkInCta)),
     a2hsBanner,
     reviewCard,
+    wearCard,
     h('div',{className:'fade-up',style:{display:'flex',flexDirection:'column',gap:'var(--space-3)'}},
       h('p',{style:{opacity:.5,fontSize:13,fontWeight:600,margin:0}},t.badgesTitle),
       h('div',{style:{display:'flex',flexWrap:'wrap',gap:10}},

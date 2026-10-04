@@ -15,6 +15,14 @@
     {
       "source": "/admin/:path*",
       "destination": "/admin/index.html"
+    },
+    {
+      "source": "/assessment",
+      "destination": "/assessment/index.html"
+    },
+    {
+      "source": "/assessment/:path*",
+      "destination": "/assessment/index.html"
     }
   ],
   "crons": [

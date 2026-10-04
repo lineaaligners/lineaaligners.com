@@ -240,6 +240,10 @@ function App(){
   const [editPatientFor,setEditPatientFor]=useState(false);
   const [letterFor,setLetterFor]=useState(null);
   const [pushFor,setPushFor]=useState(null);
+  const [leads,setLeads]=useState([]);
+  const [leadPhotos,setLeadPhotos]=useState({});
+  const [openLead,setOpenLead]=useState(null);
+  const [wearStats,setWearStats]=useState({});
   const [patientLetters,setPatientLetters]=useState([]);
 
   const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
@@ -289,10 +293,24 @@ function App(){
       .on('postgres_changes',{event:'*',schema:'public',table:'emergencies'},()=>refreshData())
       .on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>refreshData())
       .on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>refreshData())
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'},(p)=>{loadLeads();const n=p&&p.new||{};toast('New smile assessment: '+(n.name||''));try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification('New smile assessment',{body:(n.name||'')+' · '+(n.phone||'')})}catch(e){}})
       .subscribe();
     return ()=>{SUPA.removeChannel(channel)};
   },[ok]);
 
+  const loadLeads=async()=>{const{data}=await SUPA.from('leads').select('*').order('created_at',{ascending:false}).limit(200);if(data)setLeads(data)};
+  useEffect(()=>{if(ok)loadLeads()},[ok]);
+  useEffect(()=>{
+    if(!ok)return;
+    const from=new Date(Date.now()-7*86400000).toISOString().slice(0,10),today=new Date().toISOString().slice(0,10);
+    SUPA.from('wear_days').select('patient_id,day,minutes_out').gte('day',from).lt('day',today).then(({data})=>{
+      const m={};(data||[]).forEach(r=>{const s=(m[r.patient_id]=m[r.patient_id]||{days:0,out:0});s.days++;s.out+=r.minutes_out});
+      Object.values(m).forEach(s=>{s.avgH=24-(s.out/s.days)/60});setWearStats(m);
+    });
+  },[ok,patients.length]);
+  const updateLead=async(id,patch)=>{setLeads(ls=>ls.map(l=>l.id===id?{...l,...patch}:l));await SUPA.from('leads').update(patch).eq('id',id)};
+  const loadLeadPhotos=async(l)=>{if(!l.photo_paths||!l.photo_paths.length)return;const{data}=await SUPA.storage.from('leads').createSignedUrls(l.photo_paths,3600);if(data)setLeadPhotos(p=>({...p,[l.id]:data.map(d=>d.signedUrl).filter(Boolean)}))};
+  const waNum=p=>{let d=String(p||'').replace(/[^0-9]/g,'');if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='383'+d.slice(1);return d};
   const signOut=async()=>{await SUPA.auth.signOut();setOk(false)};
 
   if(checkingSession) return h('div',{style:{position:'fixed',inset:0,background:'var(--color-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
@@ -430,6 +448,7 @@ function App(){
     {id:'patients',icon:'ph-users',label:'Patients',badge:patients.length},
     {id:'appointments',icon:'ph-calendar',label:'Appointments',badge:stats.apptsThisWeek},
     {id:'emergencies',icon:'ph-first-aid',label:'Emergencies',badge:stats.emergencies,urgent:stats.emergencies>0},
+    {id:'leads',icon:'ph-user-plus',label:'Leads',badge:leads.filter(l=>l.status==='new').length,urgent:leads.some(l=>l.status==='new')},
     {id:'messages',icon:'ph-chat-circle',label:'Messages',badge:stats.unreadMsgs},
     {id:'analytics',icon:'ph-chart-bar',label:'Analytics'},
     {id:'settings',icon:'ph-gear',label:'Settings'},
@@ -477,11 +496,13 @@ function App(){
   const atRisk=patients.filter(p=>{
     const overdue=p.nextChangeDate&&new Date(p.nextChangeDate)<new Date(new Date().toDateString());
     const inactive=!p.lastActiveAt||((new Date()-new Date(p.lastActiveAt))/86400000)>14;
-    return (overdue||inactive)&&p.status==='active';
+    const ws=wearStats[p.id];const lowWear=ws&&ws.days>=3&&ws.avgH<20;
+    return (overdue||inactive||lowWear)&&p.status==='active';
   }).map(p=>{
     const overdue=p.nextChangeDate&&new Date(p.nextChangeDate)<new Date(new Date().toDateString());
     const daysInactive=p.lastActiveAt?Math.round((new Date()-new Date(p.lastActiveAt))/86400000):null;
-    const riskReason=overdue?'Aligner change overdue':daysInactive?`Inactive ${daysInactive}d`:'Never opened the app';
+    const ws=wearStats[p.id];
+    const riskReason=overdue?'Aligner change overdue':(ws&&ws.days>=3&&ws.avgH<20)?`Low wear: ${ws.avgH.toFixed(1)}h/day`:daysInactive?`Inactive ${daysInactive}d`:'Never opened the app';
     return{...p,riskReason};
   });
   const Dashboard=h('div',{style:{display:'flex',flexDirection:'column',gap:24}},
@@ -532,7 +553,7 @@ function App(){
           }),
           msgs.length===0&&h('div',{style:{padding:20,textAlign:'center',opacity:.5,fontSize:13}},'No messages')))),
     h('div',{className:'card',style:{padding:20}},
-      h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:12,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-eye-slash',style:{color:'var(--color-danger)'}}),'At-risk patients',h('span',{style:{fontSize:11,fontWeight:500,opacity:.5,marginLeft:4}},'— overdue aligner change or inactive 14+ days')),
+      h('h2',{style:{fontSize:16,fontWeight:700,marginBottom:12,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-eye-slash',style:{color:'var(--color-danger)'}}),'At-risk patients',h('span',{style:{fontSize:11,fontWeight:500,opacity:.5,marginLeft:4}},'— overdue change, low wear, or inactive 14+ days')),
       h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
         atRisk.slice(0,6).map(p=>
           h('div',{key:'risk-'+p.id,style:{padding:12,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',display:'flex',alignItems:'center',gap:12,cursor:'pointer'},onClick:()=>{setTab('patients');setSelected(p)}},
@@ -732,7 +753,8 @@ function App(){
         h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-envelope',style:{opacity:.5,marginRight:8}}),selected.email||'—'),
         selected.username&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-at',style:{opacity:.5,marginRight:8}}),selected.username),
         selected.referralCode&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-gift',style:{opacity:.5,marginRight:8}}),selected.referralCode+' · '+patients.filter(x=>x.referredBy&&x.referredBy===selected.referralCode).length+' referred'),
-        selected.referredBy&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-user-plus',style:{opacity:.5,marginRight:8}}),'Referred by '+((patients.find(x=>x.referralCode===selected.referredBy)||{}).first||selected.referredBy))),
+        selected.referredBy&&h('p',{style:{fontSize:13,margin:'2px 0'}},h('i',{className:'ph ph-user-plus',style:{opacity:.5,marginRight:8}}),'Referred by '+((patients.find(x=>x.referralCode===selected.referredBy)||{}).first||selected.referredBy)),
+        wearStats[selected.id]&&h('p',{style:{fontSize:13,margin:'2px 0',color:wearStats[selected.id].avgH<20?'var(--color-danger)':undefined}},h('i',{className:'ph ph-clock',style:{opacity:.5,marginRight:8}}),'Avg wear '+wearStats[selected.id].avgH.toFixed(1)+' h/day · '+wearStats[selected.id].days+' days tracked')),
       // Notes
       selected.notes&&h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
@@ -787,7 +809,30 @@ function App(){
       h('i',{className:'ph ph-check-circle',style:{color:'var(--color-success)'}}),t.msg)));
 
   const Loader=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',flexDirection:'column',gap:16,opacity:.6}},h('i',{className:'ph ph-circle-notch',style:{fontSize:40,animation:'spin 1s linear infinite'}}),h('p',{style:{fontSize:14}},'Loading...'));
-  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,analytics:loading?Loader:Analytics,settings:Settings};
+  const leadStatusColor={new:'var(--color-accent-300)',contacted:'#f5b942',converted:'#22c55e',lost:'rgba(255,255,255,.45)'};
+  const Leads=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}},
+      h('div',null,
+        h('h1',{style:{fontSize:24,fontWeight:700,margin:0}},'Smile assessments'),
+        h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'From lineaaligners.com/assessment · '+leads.filter(l=>l.status==='new').length+' new')),
+      h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+        typeof Notification!=='undefined'&&Notification.permission!=='granted'&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>Notification.requestPermission()},h('i',{className:'ph ph-bell'}),'Desktop alerts'),
+        h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>{navigator.clipboard&&navigator.clipboard.writeText('https://lineaaligners.com/assessment/');toast('Link copied')}},h('i',{className:'ph ph-link'}),'Copy form link'))),
+    leads.length===0&&h('div',{className:'card',style:{padding:32,textAlign:'center',opacity:.6,fontSize:13}},'No assessments yet. Share lineaaligners.com/assessment in your bio and ads.'),
+    leads.map(l=>h('div',{key:l.id,className:'card',style:{padding:16,display:'flex',flexDirection:'column',gap:10}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}},
+        h('div',{style:{flex:1,minWidth:170}},
+          h('p',{style:{fontWeight:700,margin:0,fontSize:14}},l.name),
+          h('p',{style:{opacity:.6,margin:'2px 0 0',fontSize:12}},[l.phone,l.city,new Date(l.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})].filter(Boolean).join(' · '))),
+        l.concern&&h('span',{className:'tag',style:{fontSize:11}},l.concern),
+        h('select',{className:'input',value:l.status,onChange:e=>updateLead(l.id,{status:e.target.value}),style:{width:'auto',fontSize:12,padding:'6px 10px',color:leadStatusColor[l.status]||'inherit'}},['new','contacted','converted','lost'].map(s=>h('option',{key:s,value:s},s))),
+        h('a',{className:'btn btn-secondary',style:{fontSize:12},href:'https://wa.me/'+waNum(l.phone),target:'_blank',rel:'noopener noreferrer'},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
+        h('a',{className:'btn btn-secondary',style:{fontSize:12},href:'tel:'+l.phone},h('i',{className:'ph ph-phone'}),'Call'),
+        (l.photo_paths||[]).length>0&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>{if(openLead===l.id){setOpenLead(null)}else{setOpenLead(l.id);if(!leadPhotos[l.id])loadLeadPhotos(l)}}},h('i',{className:'ph ph-images'}),(openLead===l.id?'Hide':'Photos')+' ('+l.photo_paths.length+')')),
+      l.message&&h('p',{style:{margin:0,fontSize:13,opacity:.8}},l.message),
+      openLead===l.id&&h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+        (leadPhotos[l.id]||[]).map((u,i)=>h('a',{key:i,href:u,target:'_blank',rel:'noopener noreferrer'},h('img',{src:u,style:{width:140,height:140,objectFit:'cover',borderRadius:10,border:'1px solid var(--color-divider)'}})))))));
+  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,leads:Leads,analytics:loading?Loader:Analytics,settings:Settings};
 
   return h('div',{style:{display:'flex',minHeight:'100vh'}},
     Sidebar,

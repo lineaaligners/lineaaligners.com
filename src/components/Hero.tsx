@@ -88,7 +88,7 @@ export const Hero: React.FC<{
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
-              onClick={() => onStartPlanner?.()}
+              onClick={() => { window.location.href = '/assessment/' + (content.btnSecondary.startsWith('See') ? '?lang=en' : ''); }}
               className="w-full sm:w-auto bg-white/10 backdrop-blur-md border-2 border-white/20 text-white hover:bg-white/20 px-12 py-5 rounded-2xl font-black text-lg uppercase tracking-widest transition-all hover:shadow-[0_15px_35px_rgba(255,255,255,0.1)] hover:-translate-y-1 active:translate-y-0"
             >
               {content.btnSecondary}
