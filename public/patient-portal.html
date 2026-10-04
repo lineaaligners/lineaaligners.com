@@ -151,6 +151,7 @@ main{position:relative;z-index:1}
 .wave{display:inline-block;transform-origin:70% 70%;animation:wave 2.4s .9s ease-in-out 2}
 .btn-shine{position:relative;overflow:hidden}
 .btn-shine::after{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:translateX(-150%) skewX(-20deg);animation:btnShine 3.4s 1.4s ease-in-out infinite;pointer-events:none}
+@keyframes breathe{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -186,7 +187,7 @@ en:{
   forgotPassword:'Already registered? Message the clinic',
   editDate:'Edit change date',yourTimezone:'Your time zone',yourUsername:'Username',profilePhone:'Phone',profileCity:'Place of living',
   reminderTitle:'Almost time!',reminderBody:'Your next aligner change is coming up soon.',
-  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',a2hsTitle:'Get reminders on your phone',a2hsIos:'Tap Share, then "Add to Home Screen" — this lets us send you aligner reminders.',a2hsAndroid:'Install Linea on your phone to get aligner reminders.',a2hsInstall:'Install',reviewTitle:'You finished your treatment!',reviewBody:'Your honest feedback helps other patients decide. It takes one minute.',reviewCta:'Share your experience',wearTitle:'Aligner wear time',wearOut:'Taking them out',wearIn:'Put back in',wearOutFor:'Out for',wearInNow:'Aligners in — keep it up',wearToday:'Out today',wearBudget:'2h allowed',wearHint:'Tap when you remove them to eat or brush, and again when they go back in. Target: 22 hours a day.',wearWeek:'Hours worn — last 7 days',wearOver:'Over the daily limit — put them back in soon.',swapLabel:'Aligner',swapTitle:'New aligner, new progress!',swapBody:'{n} to go — keep it up.',swapLast:'That was the last one!',ms25:'A quarter of the way!',ms50:'Halfway there!',ms75:'Three quarters done!',ms100:'Treatment complete!',msShare:'Share to my story',msStorySub:'My smile journey with Linea',googleCta:'Continue with Google',orPhone:'or',cpTitle:'One last step',cpSub:'Add your phone number so your clinic can reach you.',cpCta:'Finish',cpOther:'Use a different account',
+  streakLabel:'day compliance streak',checkInCta:'Mark today as worn',checkedInToday:'Checked in today',a2hsTitle:'Get reminders on your phone',a2hsIos:'Tap Share, then "Add to Home Screen" — this lets us send you aligner reminders.',a2hsAndroid:'Install Linea on your phone to get aligner reminders.',a2hsInstall:'Install',reviewTitle:'You finished your treatment!',reviewBody:'Your honest feedback helps other patients decide. It takes one minute.',reviewCta:'Share your experience',wearTitle:'Aligner wear time',wearOut:'Taking them out',wearIn:'Put back in',wearOutFor:'Out for',wearInNow:'Aligners in — keep it up',wearToday:'Out today',wearBudget:'2h allowed',wearHint:'Tap when you remove them to eat or brush, and again when they go back in. Target: 22 hours a day.',wearWeek:'Hours worn — last 7 days',wearOver:'Over the daily limit — put them back in soon.',swapLabel:'Aligner',swapTitle:'New aligner, new progress!',swapBody:'{n} to go — keep it up.',swapLast:'That was the last one!',ms25:'A quarter of the way!',ms50:'Halfway there!',ms75:'Three quarters done!',ms100:'Treatment complete!',msShare:'Share to my story',msStorySub:'My smile journey with Linea',googleCta:'Continue with Google',rtTitle:'Retainer phase',rtBody:'Wear your retainer every night to keep your new smile.',rtCheck:'I wore it last night',rtDone:'Logged for today',rtCleaner:'Order cleaner tablets',rtCleanerMsg:'Hi! I would like to order Linea retainer cleaner tablets',rtNew:'Need a new retainer',rtNewMsg:'Hi! I need a new retainer',rtCheckup:'Book a check-up',camCta:'Take a guided photo',camHint:'Fit your smile inside the outline',camFront:'Front',camLeft:'Left',camRight:'Right',camTurnL:'Turn your head slightly to the left',camTurnR:'Turn your head slightly to the right',camErr:'Camera not available. Allow camera access, or use the upload box instead.',cmpTitle:'Your progress',cmpFirst:'First photo',cmpLatest:'Latest',chatTitle:'Message your clinic',chatSub:'Your dentist replies here, and you get a notification.',chatEmpty:'No messages yet. Ask anything!',chatPh:'Write a message…',chatSend:'Send',orPhone:'or',cpTitle:'One last step',cpSub:'Add your phone number so your clinic can reach you.',cpCta:'Finish',cpOther:'Use a different account',
   beforeAfter:'Before & after',beforeAfterHint:'Drag to compare your starting scan with today.',
   beforeLabel:'Before',afterLabel:'Today',
   paymentPlan:'Payment plan',installmentsPaid:'installments paid',nextDue:'Next due',
@@ -261,7 +262,7 @@ sq:{
   forgotPassword:'Jeni regjistruar tashmë? Shkruani klinikës',
   editDate:'Ndrysho datën',yourTimezone:'Zona juaj kohore',yourUsername:'Username',profilePhone:'Telefoni',profileCity:'Vendbanimi',
   reminderTitle:'Pothuajse gati!',reminderBody:'Ndërrimi i radhës së aparatit po vjen së shpejti.',
-  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',a2hsTitle:'Merr njoftime në telefon',a2hsIos:'Shtyp Share, pastaj "Add to Home Screen" — kështu mund të të dërgojmë kujtesa për aligner-in.',a2hsAndroid:'Instalo Linea në telefon për të marrë kujtesa për aligner-in.',a2hsInstall:'Instalo',reviewTitle:'Përfundove trajtimin!',reviewBody:'Mendimi yt i sinqertë i ndihmon pacientët e tjerë. Merr vetëm një minutë.',reviewCta:'Ndaj përvojën tënde',wearTitle:'Koha e mbajtjes së aligner-ave',wearOut:'Po i heq',wearIn:'I vendosa përsëri',wearOutFor:'Jashtë prej',wearInNow:'Aligner-at janë brenda — vazhdo kështu',wearToday:'Jashtë sot',wearBudget:'2 orë të lejuara',wearHint:'Shtyp kur i heq për të ngrënë ose larë dhëmbët, dhe përsëri kur i vendos. Qëllimi: 22 orë në ditë.',wearWeek:'Orët e mbajtjes — 7 ditët e fundit',wearOver:'Ke kaluar limitin ditor — vendosi sa më shpejt.',swapLabel:'Aligner-i',swapTitle:'Aligner i ri, progres i ri!',swapBody:'Edhe {n} — vazhdo kështu.',swapLast:'Ky ishte i fundit!',ms25:'Një çerek e rrugës!',ms50:'Në gjysmë të rrugës!',ms75:'Tre të katërtat gati!',ms100:'Trajtimi përfundoi!',msShare:'Ndaje në story',msStorySub:'Rrugëtimi im drejt buzëqeshjes me Linea',googleCta:'Vazhdo me Google',orPhone:'ose',cpTitle:'Edhe një hap',cpSub:'Shto numrin e telefonit që klinika të mund të të kontaktojë.',cpCta:'Përfundo',cpOther:'Përdor llogari tjetër',
+  streakLabel:'ditë rresht me përpikëri',checkInCta:'Shëno sot si e veshur',checkedInToday:'U shënua sot',a2hsTitle:'Merr njoftime në telefon',a2hsIos:'Shtyp Share, pastaj "Add to Home Screen" — kështu mund të të dërgojmë kujtesa për aligner-in.',a2hsAndroid:'Instalo Linea në telefon për të marrë kujtesa për aligner-in.',a2hsInstall:'Instalo',reviewTitle:'Përfundove trajtimin!',reviewBody:'Mendimi yt i sinqertë i ndihmon pacientët e tjerë. Merr vetëm një minutë.',reviewCta:'Ndaj përvojën tënde',wearTitle:'Koha e mbajtjes së aligner-ave',wearOut:'Po i heq',wearIn:'I vendosa përsëri',wearOutFor:'Jashtë prej',wearInNow:'Aligner-at janë brenda — vazhdo kështu',wearToday:'Jashtë sot',wearBudget:'2 orë të lejuara',wearHint:'Shtyp kur i heq për të ngrënë ose larë dhëmbët, dhe përsëri kur i vendos. Qëllimi: 22 orë në ditë.',wearWeek:'Orët e mbajtjes — 7 ditët e fundit',wearOver:'Ke kaluar limitin ditor — vendosi sa më shpejt.',swapLabel:'Aligner-i',swapTitle:'Aligner i ri, progres i ri!',swapBody:'Edhe {n} — vazhdo kështu.',swapLast:'Ky ishte i fundit!',ms25:'Një çerek e rrugës!',ms50:'Në gjysmë të rrugës!',ms75:'Tre të katërtat gati!',ms100:'Trajtimi përfundoi!',msShare:'Ndaje në story',msStorySub:'Rrugëtimi im drejt buzëqeshjes me Linea',googleCta:'Vazhdo me Google',rtTitle:'Faza e retainer-it',rtBody:'Mbaje retainer-in çdo natë për ta ruajtur buzëqeshjen e re.',rtCheck:'E mbajta mbrëmë',rtDone:'U shënua për sot',rtCleaner:'Porosit tableta pastrimi',rtCleanerMsg:'Përshëndetje! Dua të porosis tableta pastrimi për retainer',rtNew:'Më duhet retainer i ri',rtNewMsg:'Përshëndetje! Më duhet një retainer i ri',rtCheckup:'Rezervo kontroll',camCta:'Bëj foto me udhëzues',camHint:'Vendose buzëqeshjen brenda vijës',camFront:'Para',camLeft:'Majtas',camRight:'Djathtas',camTurnL:'Ktheje kokën pak majtas',camTurnR:'Ktheje kokën pak djathtas',camErr:'Kamera nuk është e qasshme. Lejo kamerën ose ngarko foto më poshtë.',cmpTitle:'Progresi yt',cmpFirst:'Foto e parë',cmpLatest:'E fundit',chatTitle:'Shkruaji klinikës',chatSub:'Dentisti përgjigjet këtu dhe ti merr njoftim.',chatEmpty:'Ende s’ka mesazhe. Pyet çfarëdo!',chatPh:'Shkruaj një mesazh…',chatSend:'Dërgo',orPhone:'ose',cpTitle:'Edhe një hap',cpSub:'Shto numrin e telefonit që klinika të mund të të kontaktojë.',cpCta:'Përfundo',cpOther:'Përdor llogari tjetër',
   beforeAfter:'Para & pas',beforeAfterHint:'Tërhiqni për të krahasuar skanimin fillestar me sot.',
   beforeLabel:'Para',afterLabel:'Sot',
   paymentPlan:'Plani i pagesës',installmentsPaid:'këste të paguara',nextDue:'Kësti tjetër',
@@ -359,6 +360,36 @@ function ProgressRing({pct,size=88,stroke=7}){
       h('circle',{cx:size/2,cy:size/2,r,fill:'none',stroke:'var(--color-neutral-800)',strokeWidth:stroke}),
       h('circle',{cx:size/2,cy:size/2,r,fill:'none',stroke:`url(#${gid})`,strokeWidth:stroke,strokeLinecap:'round',strokeDasharray:C,strokeDashoffset:off,style:{transition:'stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)',filter:'drop-shadow(0 0 6px color-mix(in srgb,var(--color-accent) 70%,transparent))'}})),
     h('div',{style:{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--font-heading)',fontWeight:600,fontSize:Math.round(size*.22)}},h(CountUp,{v:pct,dur:1400}),'%'));
+}
+function GuidedCam({t,onClose,onShot}){
+  const vRef=useRef(),sRef=useRef();
+  const [err,setErr]=useState('');const [angle,setAngle]=useState('front');const [flash,setFlash]=useState(false);
+  useEffect(()=>{let stop=false;
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setErr(t.camErr);return}
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:960}},audio:false})
+      .then(s=>{if(stop){s.getTracks().forEach(x=>x.stop());return}sRef.current=s;if(vRef.current){vRef.current.srcObject=s;vRef.current.play().catch(()=>{})}})
+      .catch(()=>setErr(t.camErr));
+    return()=>{stop=true;if(sRef.current)sRef.current.getTracks().forEach(x=>x.stop())};
+  },[]);
+  const snap=async()=>{const v=vRef.current;if(!v||!v.videoWidth)return;setFlash(true);setTimeout(()=>setFlash(false),250);
+    const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.9));if(b)onShot(new File([b],'guided_'+angle+'_'+Date.now()+'.jpg',{type:'image/jpeg'}))};
+  const hint=angle==='left'?t.camTurnL:angle==='right'?t.camTurnR:t.camHint;
+  return h('div',{style:{position:'fixed',inset:0,zIndex:320,background:'#000',display:'flex',flexDirection:'column'}},
+    h('div',{style:{position:'relative',flex:1,overflow:'hidden'}},
+      h('video',{ref:vRef,playsInline:true,muted:true,autoPlay:true,style:{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}),
+      h('svg',{viewBox:'0 0 100 100',preserveAspectRatio:'xMidYMid meet',style:{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}},
+        h('ellipse',{cx:50,cy:46,rx:27,ry:36,fill:'none',stroke:'rgba(255,255,255,.35)',strokeWidth:.5,strokeDasharray:'2 2'}),
+        h('path',{d:'M34 62 Q50 74 66 62 Q50 67 34 62 Z',fill:'rgba(124,127,214,.12)',stroke:'#c9caf5',strokeWidth:.8,style:{filter:'drop-shadow(0 0 2px #7c7fd6)',animation:'breathe 2.4s ease-in-out infinite',transformOrigin:'50% 64%'}})),
+      h('p',{style:{position:'absolute',top:'max(16px, env(safe-area-inset-top))',left:0,right:0,textAlign:'center',margin:0,padding:'0 16px',fontSize:15,fontWeight:600,textShadow:'0 2px 8px rgba(0,0,0,.6)'}},hint),
+      err&&h('div',{style:{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center',background:'rgba(0,0,0,.75)',fontSize:14}},err),
+      flash&&h('div',{style:{position:'absolute',inset:0,background:'#fff',opacity:.85}})),
+    h('div',{style:{padding:'16px 16px max(20px, env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:14,alignItems:'center',background:'#0b0b14'}},
+      h('div',{style:{display:'flex',gap:8}},[['front',t.camFront],['left',t.camLeft],['right',t.camRight]].map(([k,l])=>h('button',{key:k,type:'button',onClick:()=>setAngle(k),style:{padding:'7px 14px',borderRadius:999,border:'1px solid rgba(255,255,255,.2)',background:angle===k?'var(--color-accent)':'transparent',color:'#fff',fontSize:13,cursor:'pointer'}},l))),
+      h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',maxWidth:360}},
+        h('button',{type:'button',onClick:onClose,'aria-label':'Close',style:{width:48,height:48,borderRadius:'50%',border:'none',background:'rgba(255,255,255,.12)',color:'#fff',fontSize:20,cursor:'pointer'}},h('i',{className:'ph ph-x'})),
+        h('button',{type:'button',onClick:snap,disabled:!!err,'aria-label':'Take photo',style:{width:74,height:74,borderRadius:'50%',border:'4px solid #fff',background:'rgba(255,255,255,.25)',cursor:'pointer',boxShadow:'0 0 0 4px rgba(124,127,214,.5)'}}),
+        h('div',{style:{width:48}}))));
 }
 function App(){
   const [lang,setLang]=useState('en');
@@ -483,6 +514,17 @@ function App(){
   const [outSince,setOutSince]=useState(null);
   const [wearMap,setWearMap]=useState({});
   const [nowTick,setNowTick]=useState(Date.now());
+  const [camOpen,setCamOpen]=useState(false);
+  const [chatMsgs,setChatMsgs]=useState([]);
+  const [chatText,setChatText]=useState('');
+  const [chatSending,setChatSending]=useState(false);
+  const chatBox=useRef();
+  useEffect(()=>{if(!patientId)return;
+    SUPA.from('messages').select('*').eq('patient_id',patientId).order('created_at',{ascending:true}).limit(200).then(({data})=>{if(data)setChatMsgs(data)});
+    const ch=SUPA.channel('chat-'+patientId).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'patient_id=eq.'+patientId},p=>{const m=p.new;if(!m)return;setChatMsgs(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,m]);if(m.sender==='clinic'){try{toast(document.documentElement.lang==='en'?'New message from your clinic 💬':'Mesazh i ri nga klinika 💬')}catch(e){}}}).subscribe();
+    return()=>{SUPA.removeChannel(ch)};
+  },[patientId]);
+  useEffect(()=>{const b=chatBox.current;if(b)b.scrollTop=b.scrollHeight},[chatMsgs.length,tab]);
   useEffect(()=>{if(!outSince)return;setNowTick(Date.now());const iv=setInterval(()=>setNowTick(Date.now()),1000);return()=>clearInterval(iv)},[outSince]);
   useEffect(()=>{
     if(!patientId)return;
@@ -548,6 +590,16 @@ function App(){
     if(err){setAuthErr('Error: '+err.message);setLoading(false);return;}
     if(refParam&&pid){await SUPA.from('patients').update({referred_by:refParam}).eq('id',pid);}
     window.location.replace('/portal/');
+  };
+  const uploadScanFile=async(file)=>{
+    if(!patientId){toast('Sign in first');return;}
+    const path=patientId+'/'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const {error}=await SUPA.storage.from('scans').upload(path,file,{upsert:false});
+    if(error){toast('Upload failed: '+error.message);return;}
+    const {data:url}=SUPA.storage.from('scans').getPublicUrl(path);
+    const {data:row}=await SUPA.from('scans').insert({patient_id:patientId,file_name:file.name,file_url:url.publicUrl,file_size:Math.round(file.size/1024)+'KB'}).select().single();
+    setScans(prev=>[{id:(row&&row.id)||path,name:file.name,size:Math.round(file.size/1024)+'KB',url:url.publicUrl,ago:0},...prev]);
+    toast(lang==='sq'?'Fotoja u ngarkua ✓':'Photo uploaded ✓');
   };
   const login=async e=>{e.preventDefault();
     if(!regFullName.trim()){setAuthErr('Enter your name.');return;}
@@ -971,6 +1023,7 @@ function App(){
         h('span',{style:{position:'absolute',inset:0,animation:'numIn .6s 1.1s cubic-bezier(.16,1,.3,1) both'}},swap.to))),
     h('p',{style:{fontSize:21,fontWeight:600,margin:0,animation:'popIn .6s 1.25s both'}},t.swapTitle),
     h('p',{style:{fontSize:14,opacity:.7,margin:0,animation:'fadeIn .5s 1.45s both'}},swap.to>=swap.total?t.swapLast:t.swapBody.replace('{n}',swap.total-swap.to)));
+  const CamView=camOpen&&h(GuidedCam,{t,onClose:()=>setCamOpen(false),onShot:async f=>{setCamOpen(false);await uploadScanFile(f)}});
 
   // ── SCHEDULING DLG ─────────────────────────────────────────────────────
   const SchedDlg=sched&&h('div',{className:'dialog-backdrop'},
@@ -1096,6 +1149,16 @@ function App(){
           h('div',{title:d.has?d.worn.toFixed(1)+'h':'',style:{width:'100%',maxWidth:28,height:d.has?Math.min(48,Math.max(4,(d.worn-14)/10*48)):4,borderRadius:6,background:!d.has?'color-mix(in srgb,#fff 10%,transparent)':d.worn>=22?'var(--color-success,#22c55e)':d.worn>=20?'#f5b942':'#f87171',transition:'height .6s'}}),
           h('span',{style:{fontSize:10,opacity:.5}},d.label))))),
     h('p',{style:{margin:0,fontSize:11,opacity:.45}},t.wearHint));
+  const waMsg=m=>'https://wa.me/38349772307?text='+encodeURIComponent(m+(fullName?' — '+fullName:''));
+  const retainerCard=h('div',{className:'card',style:{padding:'var(--space-5)',gap:'var(--space-4)',background:'linear-gradient(135deg,color-mix(in srgb,var(--color-accent-900) 70%,transparent),var(--color-surface))'}},
+    h('div',{style:{display:'flex',alignItems:'center',gap:12}},
+      h('i',{className:'ph ph-moon-stars',style:{fontSize:26,color:'var(--color-accent-300)'}}),
+      h('div',null,h('p',{style:{margin:0,fontWeight:600,fontSize:16}},t.rtTitle),h('p',{style:{margin:'2px 0 0',fontSize:13,opacity:.65}},t.rtBody))),
+    h('button',{className:checkedInToday?'btn btn-secondary':'btn btn-primary',onClick:checkIn,disabled:checkedInToday,style:{justifyContent:'center'}},h('i',{className:checkedInToday?'ph ph-check-circle':'ph ph-moon'}),checkedInToday?t.rtDone:t.rtCheck),
+    h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:8}},
+      h('a',{className:'btn btn-secondary',href:waMsg(t.rtCleanerMsg),target:'_blank',rel:'noopener noreferrer',style:{justifyContent:'center',fontSize:13}},h('i',{className:'ph ph-sparkle'}),t.rtCleaner),
+      h('a',{className:'btn btn-secondary',href:waMsg(t.rtNewMsg),target:'_blank',rel:'noopener noreferrer',style:{justifyContent:'center',fontSize:13}},h('i',{className:'ph ph-arrows-clockwise'}),t.rtNew),
+      h('button',{className:'btn btn-secondary',onClick:()=>setTab('appointment'),style:{justifyContent:'center',fontSize:13}},h('i',{className:'ph ph-calendar-plus'}),t.rtCheckup)));
   const Dashboard=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
     h('div',{className:'fade-up'},
       h('h1',{style:{fontSize:36,fontWeight:600,letterSpacing:'-.02em'}},`${greet}, ${fname} 👋`),
@@ -1114,7 +1177,7 @@ function App(){
         checkedInToday?t.checkedInToday:t.checkInCta)),
     a2hsBanner,
     reviewCard,
-    wearCard,
+    finished?retainerCard:wearCard,
     h('div',{className:'fade-up',style:{display:'flex',flexDirection:'column',gap:'var(--space-3)'}},
       h('p',{style:{opacity:.5,fontSize:13,fontWeight:600,margin:0}},t.badgesTitle),
       h('div',{style:{display:'flex',flexWrap:'wrap',gap:10}},
@@ -1203,17 +1266,16 @@ function App(){
   // ── UPLOAD ─────────────────────────────────────────────────────────────
   const Upload=h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},
     h('div',null,h('h1',{style:{fontSize:30}},t.uploadTitle),h('p',{style:{opacity:.6,fontSize:15,margin:0}},t.uploadHint)),
+    h('button',{className:'btn btn-primary',onClick:()=>setCamOpen(true),style:{width:'fit-content',padding:'12px 18px'}},h('i',{className:'ph ph-camera'}),t.camCta),
+    (()=>{const wu=scans.filter(s=>s.url);if(wu.length<2)return null;const pair=[[wu[wu.length-1],t.cmpFirst],[wu[0],t.cmpLatest]];
+      return h('div',{className:'card',style:{padding:'var(--space-5)',gap:'var(--space-3)'}},
+        h('h2',{style:{fontSize:17,margin:0}},t.cmpTitle),
+        h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-3)'}},
+          pair.map(([s,l],i)=>h('div',{key:i,style:{display:'flex',flexDirection:'column',gap:6}},
+            h('img',{src:s.url,alt:l,onClick:()=>setLightboxUrl(s.url),style:{width:'100%',aspectRatio:'4/3',objectFit:'cover',borderRadius:12,border:'1px solid var(--color-divider)',cursor:'zoom-in'}}),
+            h('p',{style:{margin:0,fontSize:12,opacity:.65}},l+' · '+new Date(now-s.ago*DAY).toLocaleDateString(loc))))));})(),
     h('label',{style:{width:'100%',height:220,borderRadius:14,border:'2px dashed var(--color-accent-700)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,color:'color-mix(in srgb,var(--color-text) 55%,transparent)',cursor:'pointer',background:'color-mix(in srgb,var(--color-accent-900) 30%,transparent)',transition:'border-color .2s,background .2s'},
-      onChange:async e=>{
-        const file=e.target.files[0];if(!file)return;
-        if(!patientId){toast('Sign in first');return;}
-        const path=patientId+'/'+Date.now()+'_'+file.name;
-        const {data:up,error}=await SUPA.storage.from('scans').upload(path,file,{upsert:false});
-        if(error){toast('Upload failed: '+error.message);return;}
-        const {data:url}=SUPA.storage.from('scans').getPublicUrl(path);
-        await SUPA.from('scans').insert({patient_id:patientId,file_name:file.name,file_url:url.publicUrl,file_size:Math.round(file.size/1024)+'KB'});
-        toast('Photo uploaded!');
-      }},
+      onChange:async e=>{const file=e.target.files[0];if(!file)return;await uploadScanFile(file);try{e.target.value=''}catch(er){}}},
       h('i',{className:'ph ph-upload-simple',style:{fontSize:32}}),
       h('p',{style:{fontSize:14,margin:0}},t.dropHint),
       h('p',{style:{fontSize:11,opacity:.45,margin:0}},'JPG, PNG up to 10MB'),
@@ -1295,13 +1357,7 @@ function App(){
           h('div',{key:l},h('p',{style:{opacity:.5,fontSize:12,fontWeight:600,margin:'0 0 2px'}},l),h('p',{style:{fontSize:16,fontWeight:600,margin:0}},v))),
         h('p',{style:{opacity:.5,fontSize:13,margin:0}},t.infoNote),
         h('a',{href:WA,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{width:'fit-content'}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),t.contactClinic))),
-    h('div',{className:'col2',style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--space-6)'}},
-      h('div',{className:'card',style:{padding:'var(--space-6)'}},
-        h('h2',{style:{fontSize:17,display:'flex',alignItems:'center',gap:8,marginBottom:'var(--space-3)'}},h('i',{className:'ph ph-credit-card',style:{color:'var(--color-accent-2-400)'}}),t.paymentPlan),
-        h('p',{style:{opacity:.6,fontSize:13,margin:'0 0 var(--space-3)'}},`${paid} ${t.of} ${totalInst} ${t.installmentsPaid}`),
-        h('div',{style:{height:8,background:'var(--color-neutral-800)',borderRadius:999,overflow:'hidden',marginBottom:'var(--space-3)'}},
-          h('div',{style:{height:'100%',background:'var(--color-accent)',borderRadius:999,width:payPct}})),
-        h('p',{style:{fontSize:13,opacity:.65,margin:0}},`${t.nextDue}: `,h('span',{style:{color:'var(--color-text)',fontWeight:600}},nextDue),' · €180')),
+    h('div',{className:'col2',style:{display:'grid',gridTemplateColumns:'1fr',gap:'var(--space-6)'}},
       h('div',{className:'card',style:{padding:'var(--space-6)',alignItems:'center',textAlign:'center',justifyContent:'center',gap:'var(--space-3)'}},
         h('i',{className:'ph ph-gift',style:{fontSize:28,color:'var(--color-accent-2-400)'}}),
         h('p',{style:{fontWeight:600,fontSize:15,margin:0}},t.referTitle),
@@ -1323,7 +1379,25 @@ function App(){
     h('div',{style:{display:'flex',justifyContent:'center'}},
       h('button',{className:'btn btn-secondary',onClick:async()=>{await SUPA.auth.signOut();setAuthed(false);setPatientId(null);toast(t.toastSignedOut)}},h('i',{className:'ph ph-sign-out'}),t.signOut)));
 
-  const tabs={dashboard:Dashboard,progress:Progress,upload:Upload,appointment:Appointment,help:Help,settings:Settings};
+  const sendChat=async e=>{e.preventDefault();const txt=chatText.trim();if(!txt||!patientId)return;setChatSending(true);
+    const{data,error}=await SUPA.from('messages').insert({patient_id:patientId,content:txt,sender:'patient'}).select().single();
+    setChatSending(false);
+    if(error){toast(lang==='sq'?'Mesazhi nuk u dërgua. Provo përsëri.':'Message not sent. Try again.');return;}
+    setChatText('');setChatMsgs(prev=>prev.some(x=>x.id===data.id)?prev:[...prev,data]);
+  };
+  const ChatCard=h('div',{className:'card',style:{padding:'var(--space-5)',gap:'var(--space-3)'}},
+    h('h2',{style:{fontSize:17,margin:0,display:'flex',alignItems:'center',gap:8}},h('i',{className:'ph ph-chats-circle',style:{color:'var(--color-accent-300)'}}),t.chatTitle),
+    h('p',{style:{margin:0,fontSize:12,opacity:.55}},t.chatSub),
+    h('div',{ref:chatBox,style:{display:'flex',flexDirection:'column',gap:8,maxHeight:360,minHeight:120,overflowY:'auto',padding:'4px 2px'}},
+      chatMsgs.length===0&&h('p',{style:{opacity:.45,fontSize:13,textAlign:'center',margin:'24px 0'}},t.chatEmpty),
+      chatMsgs.map(m=>{const mine=(m.sender||'patient')==='patient';return h('div',{key:m.id,style:{alignSelf:mine?'flex-end':'flex-start',maxWidth:'80%',padding:'10px 14px',borderRadius:mine?'16px 16px 4px 16px':'16px 16px 16px 4px',background:mine?'var(--color-accent)':'var(--color-neutral-800)',fontSize:14,lineHeight:1.45,animation:'tabIn .35s cubic-bezier(.16,1,.3,1) both'}},
+        !mine&&h('p',{style:{margin:'0 0 2px',fontSize:11,fontWeight:600,opacity:.7}},'Linea'),
+        h('span',{style:{whiteSpace:'pre-wrap',wordBreak:'break-word'}},m.content),
+        h('p',{style:{margin:'4px 0 0',fontSize:10,opacity:.55,textAlign:'right'}},new Date(m.created_at).toLocaleString(loc,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})))})),
+    h('form',{onSubmit:sendChat,style:{display:'flex',gap:8}},
+      h('input',{className:'input',value:chatText,onChange:e=>setChatText(e.target.value),placeholder:t.chatPh,maxLength:1000,style:{flex:1}}),
+      h('button',{type:'submit',className:'btn btn-primary',disabled:!chatText.trim()||chatSending,'aria-label':t.chatSend},h('i',{className:'ph ph-paper-plane-right'}))));
+  const tabs={dashboard:Dashboard,progress:Progress,upload:Upload,appointment:Appointment,help:h('div',{style:{display:'flex',flexDirection:'column',gap:'var(--space-8)'}},ChatCard,Help),settings:Settings};
 
   // ── LETTER FROM CLINIC ────────────────────────────────────────────────
   const EnvelopeTrigger=letters.length>0&&!openLetter&&h('button',{onClick:()=>selectLetter(letters[0]),style:{position:'fixed',top:16,right:16,zIndex:90,width:52,height:52,borderRadius:'50%',background:'linear-gradient(135deg,var(--color-accent),var(--color-accent-2))',border:'2px solid color-mix(in srgb,#fff 30%,transparent)',boxShadow:'0 8px 24px color-mix(in srgb,var(--color-accent) 40%,transparent)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',animation:'envBob 2.4s ease-in-out infinite'}},
@@ -1351,7 +1425,7 @@ function App(){
             letters.length>1&&h('p',{style:{textAlign:'center',fontSize:12,opacity:.5,marginTop:20}},'You have '+(letters.length-1)+' more letter'+(letters.length>2?'s':'')))));
 
   return h(React.Fragment,null,
-    Splash,Header,MobileNav,Toasts,ConfirmDlg,Celebrate,SwapAnim,SchedDlg,EmergDlg,ReportDlg,D3Dlg,EnvelopeTrigger,LetterModal,
+    Splash,Header,MobileNav,Toasts,ConfirmDlg,Celebrate,SwapAnim,CamView,SchedDlg,EmergDlg,ReportDlg,D3Dlg,EnvelopeTrigger,LetterModal,
     h('div',{className:'ambient','aria-hidden':true},h('span',{className:'a1'}),h('span',{className:'a2'})),
     h('main',{style:{maxWidth:1080,margin:'0 auto',padding:'var(--space-8) var(--space-6) 100px'}},h('div',{key:tab,className:'tab-enter'},tabs[tab])));
 }

@@ -48,14 +48,30 @@ export default async function handler(req: any, res: any) {
     let sent = 0, failed = 0, skipped = 0, alignerDue = 0, apptDue = 0;
 
     // 1) Aligner change due today / tomorrow
+    const kind = String((req.query && req.query.kind) || '');
+    if (kind === 'retainer') {
+      const { data: all, error: rErr } = await supabase.from('patients').select('id, first_name, current_aligner, total_aligners');
+      if (rErr) throw rErr;
+      let rDue = 0;
+      for (const p of all || []) {
+        if (!p.total_aligners || (p.current_aligner || 0) < p.total_aligners) continue;
+        rDue++;
+        const r2 = await pushToPatient(supabase, p.id, { title: 'Linea Aligners', body: `Good night ${p.first_name}! Don't forget your retainer tonight 🌙`, url: '/portal/' });
+        sent += r2.sent; failed += r2.failed; if (!r2.hadSubs) skipped++;
+      }
+      res.status(200).json({ ok: true, kind, retainerDue: rDue, sent, failed, skipped });
+      return;
+    }
+
     const { data: duePatients, error: dueErr } = await supabase
       .from('patients')
-      .select('id, first_name, next_change_date')
+      .select('id, first_name, next_change_date, current_aligner, total_aligners')
       .in('next_change_date', [today, tomorrow])
       .eq('status', 'active');
     if (dueErr) throw dueErr;
 
     for (const p of duePatients || []) {
+      if (p.total_aligners && (p.current_aligner || 0) >= p.total_aligners) continue;
       alignerDue++;
       const isToday = p.next_change_date === today;
       const body = isToday

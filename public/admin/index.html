@@ -246,6 +246,9 @@ function App(){
   const [leadPhotos,setLeadPhotos]=useState({});
   const [openLead,setOpenLead]=useState(null);
   const [wearStats,setWearStats]=useState({});
+  const [thread,setThread]=useState([]);
+  const [replyText,setReplyText]=useState('');
+  const threadBox=useRef();const selRef=useRef(null);
   const [patientLetters,setPatientLetters]=useState([]);
 
   const toast=msg=>{const id=Date.now();setToasts(p=>[...p,{id,msg}]);setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3000)};
@@ -296,6 +299,7 @@ function App(){
       .on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>refreshData())
       .on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>refreshData())
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'},(p)=>{loadLeads();const n=p&&p.new||{};toast('New smile assessment: '+(n.name||''));try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification('New smile assessment',{body:(n.name||'')+' · '+(n.phone||'')})}catch(e){}})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},(p)=>{const m=p&&p.new;if(m&&selRef.current===m.patient_id)setThread(th=>th.some(x=>x.id===m.id)?th:[...th,m])})
       .subscribe();
     return ()=>{SUPA.removeChannel(channel)};
   },[ok]);
@@ -312,6 +316,19 @@ function App(){
   },[ok,patients.length]);
   const updateLead=async(id,patch)=>{setLeads(ls=>ls.map(l=>l.id===id?{...l,...patch}:l));await SUPA.from('leads').update(patch).eq('id',id)};
   const loadLeadPhotos=async(l)=>{if(!l.photo_paths||!l.photo_paths.length)return;const{data}=await SUPA.storage.from('leads').createSignedUrls(l.photo_paths,3600);if(data)setLeadPhotos(p=>({...p,[l.id]:data.map(d=>d.signedUrl).filter(Boolean)}))};
+  useEffect(()=>{
+    selRef.current=selected?selected.id:null;
+    if(!selected||!ok){setThread([]);return}
+    SUPA.from('messages').select('*').eq('patient_id',selected.id).order('created_at',{ascending:true}).limit(200).then(({data})=>{if(data)setThread(data)});
+    SUPA.from('messages').update({read_at:new Date().toISOString()}).eq('patient_id',selected.id).is('read_at',null).then(()=>setMsgs(prev=>prev.filter(m=>m.patientId!==selected.id)));
+  },[selected&&selected.id,ok]);
+  useEffect(()=>{const b=threadBox.current;if(b)b.scrollTop=b.scrollHeight},[thread.length]);
+  const sendReply=async e=>{e.preventDefault();const txt=replyText.trim();if(!txt||!selected)return;setReplyText('');
+    const{data,error}=await SUPA.from('messages').insert({patient_id:selected.id,content:txt,sender:'clinic',read_at:new Date().toISOString()}).select().single();
+    if(error){toast('Message not sent: '+error.message);setReplyText(txt);return}
+    setThread(th=>th.some(x=>x.id===data.id)?th:[...th,data]);
+    try{const{data:{session}}=await SUPA.auth.getSession();fetch('/api/send-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({patient_id:selected.id,title:'Linea Aligners',body:'💬 '+txt.slice(0,120),url:'/portal/'})}).catch(()=>{})}catch(er){}
+  };
   const waNum=p=>{let d=String(p||'').replace(/[^0-9]/g,'');if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='383'+d.slice(1);return d};
   const signOut=async()=>{await SUPA.auth.signOut();setOk(false)};
 
@@ -674,6 +691,7 @@ function App(){
             h('div',{style:{display:'flex',gap:8}},
               h('a',{href:`https://wa.me/${p?.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'Reply'),
               h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setSelected(p)},'Open'),
+              h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>{const p=patients.find(x=>x.id===m.patientId);if(p){setTab('patients');setSelected(p)}}},h('i',{className:'ph ph-arrow-bend-up-left'}),'Reply'),
               h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>delMsg(m.id)},'Archive'))));
       }),
       msgs.length===0&&h('div',{className:'card',style:{padding:40,textAlign:'center',opacity:.5}},'No unread messages')));
@@ -681,30 +699,26 @@ function App(){
   // ── ANALYTICS ──
   const realP=patients.filter(p=>p.createdAt);
   const nowD=new Date(),mStart=new Date(nowD.getFullYear(),nowD.getMonth(),1);
-  const activeN=realP.filter(p=>p.status==='active').length;
+  const activeN=realP.filter(p=>p.status==='active'&&p.currentAligner<p.totalAligners).length;
+  const retainerN=realP.filter(p=>p.currentAligner>=p.totalAligners).length;
   const startedMonth=realP.filter(p=>new Date(p.createdAt)>=mStart).length;
-  const instPaid=realP.reduce((s,p)=>s+(p.payment.paid||0),0),instTotal=realP.reduce((s,p)=>s+(p.payment.total||0),0);
-  const share=p=>p.payment.total?Math.min(1,(p.payment.paid||0)/p.payment.total):0;
-  const collected=realP.reduce((s,p)=>s+casePrice*share(p),0),outstanding=realP.reduce((s,p)=>s+casePrice*(1-share(p)),0);
-  const finishingN=realP.filter(p=>p.status==='active'&&p.totalAligners-p.currentAligner<=2).length;
+  const inTx=realP.filter(p=>p.currentAligner<p.totalAligners);
+  const avgProg=inTx.length?Math.round(inTx.reduce((s,p)=>s+p.currentAligner/Math.max(1,p.totalAligners),0)/inTx.length*100):0;
+  const finishingN=realP.filter(p=>p.status==='active'&&p.totalAligners-p.currentAligner<=2&&p.currentAligner<p.totalAligners).length;
   const lc={new:0,contacted:0,converted:0,lost:0};leads.forEach(l=>{lc[l.status]=(lc[l.status]||0)+1});
   const convRate=leads.length?Math.round(lc.converted/leads.length*100):0;
   const leadsMonth=leads.filter(l=>new Date(l.created_at)>=mStart).length;
-  const eur=n=>'€'+Math.round(n).toLocaleString('de-DE');
   const months=[5,4,3,2,1,0].map(k=>{const d=new Date(nowD.getFullYear(),nowD.getMonth()-k,1),e=new Date(d.getFullYear(),d.getMonth()+1,1);
     return{label:d.toLocaleDateString('en-GB',{month:'short'}),cases:realP.filter(p=>{const c=new Date(p.createdAt);return c>=d&&c<e}).length,leads:leads.filter(l=>{const c=new Date(l.created_at);return c>=d&&c<e}).length}});
   const mMax=Math.max(1,...months.map(m=>Math.max(m.cases,m.leads)));
   const funnel=[['new','New','var(--color-accent-300)'],['contacted','Contacted','#f5b942'],['converted','Converted','#22c55e'],['lost','Lost','rgba(255,255,255,.4)']];
   const Analytics=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
-    h('div',{style:{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:12,flexWrap:'wrap'}},
-      h('div',null,h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Business'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'Live from your patients and leads')),
-      h('label',{style:{display:'flex',alignItems:'center',gap:8,fontSize:12,opacity:.85}},'Avg case price (€)',
-        h('input',{className:'input',type:'number',min:0,step:10,value:casePrice||'',placeholder:'e.g. 1500',onChange:e=>{const v=Number(e.target.value)||0;setCasePrice(v);try{localStorage.setItem('linea_case_price',String(v))}catch(er){}},style:{width:110,padding:'8px 10px'}}))),
+    h('div',null,h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Business'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'Live from your patients and leads')),
     h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
-      StatCard('ph-users','Active patients',String(activeN),finishingN+' finishing soon','var(--color-accent-300)'),
+      StatCard('ph-users','In treatment',String(activeN),finishingN+' finishing soon','var(--color-accent-300)'),
       StatCard('ph-plus-circle','Cases this month',String(startedMonth),nowD.toLocaleDateString('en-GB',{month:'long'}),null),
-      StatCard('ph-currency-eur','Collected (est.)',casePrice?eur(collected):'—',casePrice?instPaid+' / '+instTotal+' installments':'Set case price →','var(--color-success)'),
-      StatCard('ph-hourglass','Outstanding (est.)',casePrice?eur(outstanding):'—',(instTotal-instPaid)+' installments left','var(--color-gold)')),
+      StatCard('ph-chart-line-up','Avg progress',avgProg+'%','Across patients in treatment','var(--color-success)'),
+      StatCard('ph-moon-stars','Retainer phase',String(retainerN),'Finished treatment','var(--color-gold)')),
     h('div',{className:'stats-grid',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}},
       StatCard('ph-user-plus','Leads this month',String(leadsMonth),leads.length+' total',null),
       StatCard('ph-arrows-clockwise','Lead conversion',convRate+'%',lc.converted+' of '+leads.length+' converted','var(--color-success)'),
@@ -724,8 +738,7 @@ function App(){
         h('div',{style:{display:'flex',flexDirection:'column',gap:12}},
           funnel.map(([k,lbl,c])=>h('div',{key:k},
             h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}},h('span',{style:{opacity:.8}},lbl),h('span',{style:{fontWeight:700}},lc[k]||0)),
-            h('div',{style:{height:8,borderRadius:8,background:'var(--color-neutral-800)',overflow:'hidden'}},h('div',{style:{height:'100%',width:(leads.length?(lc[k]||0)/leads.length*100:0)+'%',background:c,borderRadius:8,transition:'width .6s'}}))))))),
-    h('p',{style:{fontSize:11,opacity:.45,margin:0}},'Money figures are estimates: case price × share of installments each patient has paid. Demo patients are excluded.'));
+            h('div',{style:{height:8,borderRadius:8,background:'var(--color-neutral-800)',overflow:'hidden'}},h('div',{style:{height:'100%',width:(leads.length?(lc[k]||0)/leads.length*100:0)+'%',background:c,borderRadius:8,transition:'width .6s'}}))))))));
   const Settings=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
     h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Settings'),
     h('div',{className:'card',style:{padding:24}},
@@ -771,9 +784,8 @@ function App(){
           h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>sendPush({patient_id:selected.id,title:'Linea Aligners',body:'How was your experience with Linea? We would love your feedback.'},'Review request sent')},h('i',{className:'ph ph-star'}),'Request review'),
           h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>deletePatient(selected.id)},h('i',{className:'ph ph-trash'}),'Delete patient'))),
       // Info grid
-      h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}},
+      h('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}},
         [['Streak',selected.streak+'d','ph-flame','#ff9d4d'],
-         ['Payment',`${selected.payment.paid}/${selected.payment.total}`,'ph-credit-card','var(--color-accent-300)'],
          ['Scans sent',selected.scans,'ph-image','var(--color-accent-2-400)'],
          ['Appt',selected.hasAppt?selected.apptDaysAhead+'d':'—','ph-calendar','var(--color-gold)']]
         .map(([l,v,i,c])=>h('div',{key:l,style:{padding:12,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',textAlign:'center'}},
@@ -793,6 +805,14 @@ function App(){
           return h('div',{style:{marginTop:8}},
             !ph&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>loadLeadPhotos(ll)},h('i',{className:'ph ph-images'}),'Assessment photos ('+ll.photo_paths.length+')'),
             ph&&h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},ph.map((u,i)=>h('a',{key:i,href:u,target:'_blank',rel:'noopener noreferrer'},h('img',{src:u,style:{width:72,height:72,objectFit:'cover',borderRadius:8,border:'1px solid var(--color-divider)'}})))));})()),
+      h('div',{style:{marginBottom:16}},
+        h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Chat'),
+        h('div',{ref:threadBox,style:{display:'flex',flexDirection:'column',gap:6,maxHeight:260,minHeight:60,overflowY:'auto',padding:8,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)'}},
+          thread.length===0&&h('p',{style:{fontSize:12,opacity:.5,margin:8,textAlign:'center'}},'No messages yet'),
+          thread.map(m=>{const mine=m.sender==='clinic';return h('div',{key:m.id,style:{alignSelf:mine?'flex-end':'flex-start',maxWidth:'85%',padding:'8px 12px',borderRadius:12,background:mine?'var(--color-accent)':'var(--color-neutral-800)',fontSize:13}},h('span',{style:{whiteSpace:'pre-wrap',wordBreak:'break-word'}},m.content),h('div',{style:{fontSize:10,opacity:.55,marginTop:2,textAlign:'right'}},new Date(m.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})))})),
+        h('form',{onSubmit:sendReply,style:{display:'flex',gap:6,marginTop:8}},
+          h('input',{className:'input',value:replyText,onChange:e=>setReplyText(e.target.value),placeholder:'Reply to '+selected.first+'…',maxLength:1000,style:{flex:1,fontSize:13}}),
+          h('button',{type:'submit',className:'btn btn-primary',disabled:!replyText.trim(),style:{fontSize:12},'aria-label':'Send'},h('i',{className:'ph ph-paper-plane-right'})))),
       // Notes
       selected.notes&&h('div',{style:{padding:16,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)',marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
@@ -949,9 +969,7 @@ function EditPatientDlg({patient,onCancel,onSave}){
         field('Phone','phone','tel'),field('Email','email','email'),
         field('City','city'),
         field('Current aligner #','currentAligner','number',{min:1,max:f.totalAligners}),
-        field('Total aligners','totalAligners','number',{min:1}),
-        field('Payment paid','paymentPaid','number',{min:0}),
-        field('Payment total','paymentTotal','number',{min:0})),
+        field('Total aligners','totalAligners','number',{min:1})),
       h('div',{style:{marginBottom:12}},
         h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Doctor'),
         h('select',{className:'input',value:f.doctor,onChange:e=>set('doctor',e.target.value),style:{marginTop:4}},
