@@ -855,7 +855,6 @@ function App(){
           h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
             h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPlanDlg(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit plan'),
             h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPlanPreview(planInfo.viewer_url)},h('i',{className:'ph ph-cube'}),'Preview 3D'),
-            h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPdfDlg(true)},h('i',{className:'ph ph-file-pdf'}),(planInfo.before_image?'Replace':'Add')+' before/after from PDF'),
             (planInfo.status==='draft'||planInfo.status==='updated')&&h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>publishPlan(planInfo.id)},h('i',{className:'ph ph-paper-plane-tilt'}),planInfo.status==='updated'?'Republish updated plan':'Publish'),
             planInfo.version>0&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>regenLink(planInfo.id)},h('i',{className:'ph ph-link'}),planInfo.link_status==='active'?'New patient link':'Create patient link'),
             planInfo.link_status!=='none'&&planInfo.status!=='revoked'&&h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>revokePlan(planInfo.id)},h('i',{className:'ph ph-prohibit'}),'Revoke access'),
