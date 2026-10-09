@@ -25,6 +25,18 @@ test('accepts an mlink with an encoded space in the path', () => {
   assert.equal(r.ok, true);
 });
 
+test('keeps mlink literal exactly as OnyxCeph exports it (viewer needs it unencoded)', () => {
+  const src = VALID.replace('TEST-CASE', 'TEST%20CASE');
+  const r = validateViewerUrl(src, cfg);
+  assert.equal(r.url, src); // canonical form of a clean export is the export itself
+  assert.equal(r.url.includes('%2F'), false);
+  assert.equal(r.url.includes('%2520'), false);
+});
+
+test('rejects an mlink that would smuggle extra query parameters', () => {
+  assert.equal(validateViewerUrl(VALID.replace('.iiwgl', '.iiwgl%26p%3DX'), cfg).ok, false);
+});
+
 test('drops unknown / unsafe display parameters', () => {
   const r = validateViewerUrl(VALID + '&evil=<script>&fg=zzz', cfg);
   assert.equal(r.ok, true);

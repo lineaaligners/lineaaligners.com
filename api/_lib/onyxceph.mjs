@@ -62,13 +62,17 @@ export function validateViewerUrl(input, cfg = onyxConfig()) {
   if (m.search || m.hash) return { ok: false, error: 'model_link_invalid' };
 
   // Rebuild with known display parameters only; anything else is dropped.
-  const out = new URL(`https://${hostKey(u)}${u.pathname}`);
-  out.searchParams.set('mlink', m.href);
+  // The OnyxCeph viewer reads `mlink` literally (as OnyxCeph exports it), so
+  // it must NOT be percent-encoded again — that broke model loading.
+  // m.href is already normalised by URL(); it may not contain characters
+  // that would split or alter the outer query string.
+  if (/[&#?+\s"'<>\\]/.test(m.href)) return { ok: false, error: 'model_link_invalid' };
+  const parts = [`mlink=${m.href}`];
   const fg = u.searchParams.get('fg'), bg = u.searchParams.get('bg'), p = u.searchParams.get('p');
-  if (fg && /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(fg)) out.searchParams.set('fg', fg);
-  if (bg && /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(bg)) out.searchParams.set('bg', bg);
-  if (p && /^[A-Za-z]{1,16}$/.test(p)) out.searchParams.set('p', p);
-  const url = out.href;
+  if (fg && /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(fg)) parts.push(`fg=${fg}`);
+  if (bg && /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(bg)) parts.push(`bg=${bg}`);
+  if (p && /^[A-Za-z]{1,16}$/.test(p)) parts.push(`p=${p}`);
+  const url = `https://${hostKey(u)}${u.pathname}?${parts.join('&')}`;
   if (url.length > MAX_URL_LENGTH) return { ok: false, error: 'url_too_long' };
   return { ok: true, url };
 }

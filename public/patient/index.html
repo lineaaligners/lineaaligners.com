@@ -116,7 +116,8 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
   var NA = '<span class="na">Nuk është caktuar ende</span>';
   function show(id){ ['loading','gone','plan'].forEach(function(x){ $(x).classList.toggle('hidden', x !== id); }); }
   function set(id, v){ var el = $(id); if (v == null || v === '') el.innerHTML = NA; else el.textContent = v; }
-  function fmtDate(d){ try { return new Date(d + 'T12:00:00').toLocaleDateString('sq-AL', { day:'numeric', month:'long', year:'numeric' }); } catch(e){ return d; } }
+  var MUAJT = ['janar','shkurt','mars','prill','maj','qershor','korrik','gusht','shtator','tetor','nëntor','dhjetor'];
+  function fmtDate(d){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d)); return m ? (+m[3]) + ' ' + MUAJT[+m[2] - 1] + ' ' + m[1] : String(d); }
 
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) { show('gone'); return; }
 
