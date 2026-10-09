@@ -1007,7 +1007,7 @@ function SendLetterDlg({patient,onCancel,onSave}){
 }
 
 function PlanImportDlg({patient,plan,onCancel,onSave,errText}){
-  const [f,setF]=useState({viewer_url:(plan&&plan.viewer_url)||'',case_ref:(plan&&plan.case_ref)||'',start_date:(plan&&plan.start_date)||'',duration_months:(plan&&plan.duration_months)||'',total_aligners:(plan&&plan.total_aligners)||patient.totalAligners||'',change_interval_days:(plan&&plan.change_interval_days)||'',est_completion_date:(plan&&plan.est_completion_date)||'',notes:(plan&&plan.notes)||''});
+  const [f,setF]=useState({viewer_url:(plan&&plan.viewer_url)||'',case_ref:(plan&&plan.case_ref)||'',start_date:(plan&&plan.start_date)||'',duration_months:(plan&&plan.duration_months)||'',total_aligners:(plan&&plan.total_aligners)||patient.totalAligners||'',change_interval_days:(plan&&plan.change_interval_days)||10,est_completion_date:(plan&&plan.est_completion_date)||'',notes:(plan&&plan.notes)||''});
   const [err,setErr]=useState(null);const [busy,setBusy]=useState(false);const [preview,setPreview]=useState(false);
   const urlLooksOk=/^https:\/\/www\.image-instruments\.de\/webviewer\/index\.html\?.*mlink=/i.test(f.viewer_url.trim());
   const go=async publish=>{setErr(null);if(!f.viewer_url.trim()){setErr({field:'viewer_url',message:'url_required'});return}setBusy(true);try{await onSave(f,publish)}catch(e){setErr(e)}setBusy(false)};
