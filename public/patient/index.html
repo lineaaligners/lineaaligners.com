@@ -147,6 +147,8 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
     set('s-dur', d.duration_months ? (String(d.duration_months).replace('.', ',') + ' muaj') : null);
     set('s-total', d.total_aligners);
     set('s-every', d.change_interval_days ? ('Çdo ' + d.change_interval_days + ' ditë') : null);
+    set('s-end', d.est_completion_date ? fmtDate(d.est_completion_date) : null);
+    set('s-start', d.start_date ? fmtDate(d.start_date) : null);
     if (d.doctor) $('s-doc').textContent = d.doctor; else $('doc-card').classList.add('hidden');
 
     // Viewer: URL was validated + canonicalised server-side against the
