@@ -1021,8 +1021,8 @@ function PdfImagesDlg({onCancel,onSave}){
   const render=async(doc,n)=>{ // page -> JPEG, without the blue title band at the top
     const page=await doc.getPage(n);const vp=page.getViewport({scale:2});
     const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
-    const top=Math.round(vp.height*0.27),o=document.createElement('canvas');o.width=vp.width;o.height=vp.height-top;
-    o.getContext('2d').drawImage(c,0,top,vp.width,vp.height-top,0,0,vp.width,vp.height-top);
+    const top=Math.round(vp.height*0.30),hh=Math.round(vp.height*0.56),o=document.createElement('canvas');o.width=vp.width;o.height=hh;
+    o.getContext('2d').drawImage(c,0,top,vp.width,hh,0,0,vp.width,hh);
     const blob=await new Promise(r=>o.toBlob(r,'image/jpeg',0.86));return{blob,url:URL.createObjectURL(blob)};
   };
   const pick=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;setErr('');setBusy(true);
