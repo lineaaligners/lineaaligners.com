@@ -19,7 +19,7 @@ const db = {
     { id: 'p1', patient_id: 'pat1', status: 'published', published_at: '2026-10-09T10:00:00Z', notes: 'INTERNAL NOTE', case_ref: 'CASE-1',
       published_snapshot: { viewer_url: VIEWER, total_aligners: 24, duration_months: 6, change_interval_days: 7, start_date: '2026-10-01', est_completion_date: '2027-04-09' } },
     { id: 'p2', patient_id: 'pat1', status: 'draft', published_snapshot: null },
-    { id: 'p3', patient_id: 'pat2', status: 'published', published_at: '2026-10-09T10:00:00Z', published_snapshot: { viewer_url: VIEWER, total_aligners: 10 } },
+    { id: 'p3', patient_id: 'pat2', status: 'published', published_at: '2026-10-09T10:00:00Z', published_snapshot: { viewer_url: VIEWER, total_aligners: 10, before_image: 'p3/before-1791545000000.jpg', after_image: 'p3/after-1791545000000.jpg' } },
   ],
   patients: [
     { id: 'pat1', first_name: 'Erdo', current_aligner: 1, next_change_date: '2026-10-16', doctor: 'Dr. Test', phone: '+38300000000', email: 'x@y.z' },
@@ -36,7 +36,8 @@ function from(table) {
   };
   return q;
 }
-mock.module('@supabase/supabase-js', { namedExports: { createClient: () => ({ from }) } });
+const storage = { from: () => ({ createSignedUrl: (path, ttl) => Promise.resolve({ data: { signedUrl: `https://signed.example/${path}?ttl=${ttl}` } }) }) };
+mock.module('@supabase/supabase-js', { namedExports: { createClient: () => ({ from, storage }) } });
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
 const { default: handler } = await import('../api/patient-plan.ts');
 
@@ -109,4 +110,12 @@ test('rate limiting kicks in on rapid guessing from one address', async () => {
   let last;
   for (let i = 0; i < 35; i++) last = await call({ token: newToken() }, 'POST', '10.9.9.9');
   assert.equal(last.status, 429);
+});
+
+test('before/after photos come back as short-lived signed links, never raw paths', async () => {
+  const r = await call({ token: tok.other });
+  assert.match(r.body.before_url, /^https:\/\/signed\.example\/p3\/before-.*ttl=3600$/);
+  assert.match(r.body.after_url, /ttl=3600$/);
+  const none = await call({ token: tok.ok });
+  assert.equal(none.body.before_url, null);
 });

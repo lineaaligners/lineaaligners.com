@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 // @ts-ignore - plain ESM helper shared with the public endpoint and tests
-import { validatePlanFields, snapshotOf, newToken, hashToken, rateLimited } from './_lib/onyxceph.mjs';
+import { validatePlanFields, snapshotOf, newToken, hashToken, rateLimited, imagePathOk } from './_lib/onyxceph.mjs';
 
 // Admin-only management of OnyxCeph treatment plans.
 // POST { action: 'list' | 'save' | 'publish' | 'revoke' | 'regenerate' | 'history', ... }
@@ -37,7 +37,7 @@ export default async function handler(req: any, res: any) {
   try {
     switch (body.action) {
       case 'list': {
-        let q = db.from('treatment_plans').select('id,patient_id,case_ref,status,version,total_aligners,duration_months,start_date,est_completion_date,change_interval_days,viewer_url,notes,created_at,updated_at,published_at,revoked_at');
+        let q = db.from('treatment_plans').select('id,patient_id,case_ref,status,version,total_aligners,duration_months,start_date,est_completion_date,change_interval_days,viewer_url,notes,before_image,after_image,created_at,updated_at,published_at,revoked_at');
         if (body.patient_id) q = q.eq('patient_id', String(body.patient_id));
         const { data: plans, error } = await q.order('updated_at', { ascending: false }).limit(500);
         if (error) throw error;
@@ -85,7 +85,7 @@ export default async function handler(req: any, res: any) {
         if (!plan) return fail(res, 404, 'plan_not_found');
         const v = validatePlanFields(plan); // re-check what is stored before it becomes visible
         if (!v.ok) return fail(res, 400, v.error, { field: v.field });
-        const snapshot = snapshotOf(v.plan);
+        const snapshot = snapshotOf({ ...v.plan, before_image: plan.before_image, after_image: plan.after_image });
         const version = (plan.version || 0) + 1;
         const now = new Date().toISOString();
         const { error: verErr } = await db.from('plan_versions').insert({ plan_id: plan.id, version, snapshot, published_by: actor, published_at: now });
@@ -102,6 +102,19 @@ export default async function handler(req: any, res: any) {
         const link = await issueLink(db, plan.id, actor, body.expires_in_days);
         await audit(plan.id, 'link_issue');
         return res.status(200).json({ version, link, link_kept: false });
+      }
+
+      case 'set_images': {
+        const plan = await loadPlan(db, body.plan_id);
+        if (!plan) return fail(res, 404, 'plan_not_found');
+        for (const k of ['before_image', 'after_image']) {
+          if (body[k] != null && !imagePathOk(plan.id, body[k])) return fail(res, 400, 'invalid_image', { field: k });
+        }
+        const status = plan.status === 'published' || plan.status === 'updated' ? 'updated' : plan.status;
+        const { error } = await db.from('treatment_plans').update({ before_image: body.before_image ?? null, after_image: body.after_image ?? null, status, updated_at: new Date().toISOString() }).eq('id', plan.id);
+        if (error) throw error;
+        await audit(plan.id, 'set_images');
+        return res.status(200).json({ ok: true, status });
       }
 
       case 'regenerate': {

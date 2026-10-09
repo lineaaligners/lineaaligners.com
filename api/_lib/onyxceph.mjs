@@ -124,9 +124,17 @@ export function validatePlanFields(body, cfg = onyxConfig()) {
   return { ok: true, plan };
 }
 
+// Before/after images live in the private 'plan-images' bucket under <planId>/
+export function imagePathOk(planId, path) {
+  return typeof path === 'string' && new RegExp('^' + String(planId) + '/(before|after)-[0-9]{10,16}\\.jpg$').test(path)
+    && /^[0-9a-f-]{36}$/i.test(String(planId));
+}
+
 // What the patient is allowed to see (internal notes / case ref excluded).
 export function snapshotOf(p) {
   return {
+    before_image: p.before_image ?? null,
+    after_image: p.after_image ?? null,
     viewer_url: p.viewer_url,
     start_date: p.start_date ?? null,
     duration_months: p.duration_months ?? null,

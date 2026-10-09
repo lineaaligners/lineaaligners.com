@@ -55,7 +55,15 @@ export default async function handler(req: any, res: any) {
     // published plan. Never derived from calendar time.
     const progress = total && current ? Math.min(100, Math.round((Math.min(current, total) / total) * 100)) : null;
 
+    const sign = async (path: any) => {
+      if (typeof path !== 'string' || !path) return null;
+      const { data } = await db.storage.from('plan-images').createSignedUrl(path, 3600);
+      return data?.signedUrl || null;
+    };
+    const [before_url, after_url] = await Promise.all([sign(s.before_image), sign(s.after_image)]);
+
     return res.status(200).json({
+      before_url, after_url,
       first_name: p.first_name || null,
       doctor: p.doctor || null,
       viewer_url: s.viewer_url,

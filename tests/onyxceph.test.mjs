@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateViewerUrl, validatePlanFields, snapshotOf, newToken, hashToken,
-  sameHash, TOKEN_RE, rateLimited, onyxConfig,
+  sameHash, TOKEN_RE, rateLimited, onyxConfig, imagePathOk,
 } from '../api/_lib/onyxceph.mjs';
 
 const cfg = onyxConfig({}); // defaults = hosts verified from the real export
@@ -138,4 +138,18 @@ test('rate limiter blocks after the limit within the window', () => {
   for (let i = 0; i < 5; i++) assert.equal(rateLimited(key, 5, 60000, 1000), false);
   assert.equal(rateLimited(key, 5, 60000, 1000), true);
   assert.equal(rateLimited(key, 5, 60000, 70000), false); // new window
+});
+
+test('before/after image paths must belong to the plan and be plain jpgs', () => {
+  const id = '0f8b2c1e-1234-4abc-9def-0123456789ab', other = '1f8b2c1e-1234-4abc-9def-0123456789ab';
+  assert.equal(imagePathOk(id, `${id}/before-1791545000000.jpg`), true);
+  assert.equal(imagePathOk(id, `${id}/after-1791545000000.jpg`), true);
+  for (const bad of [`${other}/before-1791545000000.jpg`, `${id}/../x.jpg`, `${id}/before-1791545000000.png`, `${id}/before-1791545000000xjpg`, `${id}/evil-1791545000000.jpg`, ''])
+    assert.equal(imagePathOk(id, bad), false, bad);
+  assert.equal(imagePathOk('not-a-uuid', 'not-a-uuid/before-1791545000000.jpg'), false);
+});
+
+test('patient snapshot carries image paths only when set', () => {
+  assert.equal(snapshotOf({ viewer_url: VALID }).before_image, null);
+  assert.equal(snapshotOf({ viewer_url: VALID, before_image: 'x', after_image: 'y' }).after_image, 'y');
 });

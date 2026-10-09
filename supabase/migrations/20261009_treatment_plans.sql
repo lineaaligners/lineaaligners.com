@@ -72,3 +72,14 @@ create policy tp_admin_read on public.treatment_plans for select using (public.i
 create policy pa_admin_read on public.plan_access     for select using (public.is_admin());
 create policy pv_admin_read on public.plan_versions   for select using (public.is_admin());
 create policy au_admin_read on public.plan_audit      for select using (public.is_admin());
+
+-- Before/After images taken from the lab's plan PDF (added same day)
+alter table public.treatment_plans add column if not exists before_image text check (before_image is null or char_length(before_image) <= 200);
+alter table public.treatment_plans add column if not exists after_image  text check (after_image  is null or char_length(after_image)  <= 200);
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('plan-images','plan-images',false,5242880,array['image/jpeg'])
+on conflict (id) do nothing;
+drop policy if exists plan_images_admin_insert on storage.objects;
+drop policy if exists plan_images_admin_read on storage.objects;
+create policy plan_images_admin_insert on storage.objects for insert to authenticated with check (bucket_id = 'plan-images' and public.is_admin());
+create policy plan_images_admin_read on storage.objects for select to authenticated using (bucket_id = 'plan-images' and public.is_admin());

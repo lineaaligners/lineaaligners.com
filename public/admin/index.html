@@ -247,6 +247,7 @@ function App(){
   const [planLink,setPlanLink]=useState(null);
   const [planPreview,setPlanPreview]=useState(null);
   const [planHist,setPlanHist]=useState(null);
+  const [pdfDlg,setPdfDlg]=useState(false);
   const [allPlans,setAllPlans]=useState([]);
   const planApi=async(payload)=>{
     const{data:{session}}=await SUPA.auth.getSession();
@@ -854,6 +855,7 @@ function App(){
           h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
             h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPlanDlg(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit plan'),
             h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPlanPreview(planInfo.viewer_url)},h('i',{className:'ph ph-cube'}),'Preview 3D'),
+            h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPdfDlg(true)},h('i',{className:'ph ph-file-pdf'}),(planInfo.before_image?'Replace':'Add')+' before/after from PDF'),
             (planInfo.status==='draft'||planInfo.status==='updated')&&h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>publishPlan(planInfo.id)},h('i',{className:'ph ph-paper-plane-tilt'}),planInfo.status==='updated'?'Republish updated plan':'Publish'),
             planInfo.version>0&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>regenLink(planInfo.id)},h('i',{className:'ph ph-link'}),planInfo.link_status==='active'?'New patient link':'Create patient link'),
             planInfo.link_status!=='none'&&planInfo.status!=='revoked'&&h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>revokePlan(planInfo.id)},h('i',{className:'ph ph-prohibit'}),'Revoke access'),
@@ -908,6 +910,12 @@ function App(){
       else toast('Draft saved — not visible to the patient yet');
       setPlanDlg(false);await loadPlan(selected.id);
     }});
+  const PdfDialog=pdfDlg&&planInfo&&h(PdfImagesDlg,{onCancel:()=>setPdfDlg(false),onSave:async(before,after)=>{
+    const ts=Date.now(), bp=planInfo.id+'/before-'+ts+'.jpg', ap=planInfo.id+'/after-'+ts+'.jpg';
+    for(const [path,blob] of [[bp,before],[ap,after]]){const{error}=await SUPA.storage.from('plan-images').upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw new Error('upload: '+error.message);}
+    await planApi({action:'set_images',plan_id:planInfo.id,before_image:bp,after_image:ap});
+    setPdfDlg(false);toast('Photos saved — press "Republish updated plan" to show them to the patient');await loadPlan(selected.id);
+  }});
   const PlanPreviewDlg=planPreview&&h('div',{className:'dialog-backdrop',onClick:e=>{if(e.target===e.currentTarget)setPlanPreview(null)}},
     h('div',{className:'dialog fade-up',style:{width:'min(960px,calc(100vw - 32px))',padding:0,overflow:'hidden'}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px'}},h('b',null,'3D preview (what the patient will see)'),h('button',{className:'btn btn-secondary',onClick:()=>setPlanPreview(null)},'Close')),
@@ -980,7 +988,7 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
+    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PdfDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
 }
 
 function SendLetterDlg({patient,onCancel,onSave}){
@@ -1004,6 +1012,41 @@ function SendLetterDlg({patient,onCancel,onSave}){
       h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
         h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
         h('button',{type:'submit',className:'btn btn-gold'},h('i',{className:'ph ph-paper-plane-tilt'}),'Send letter'))));
+}
+
+function PdfImagesDlg({onCancel,onSave}){
+  const [pdf,setPdf]=useState(null);const [pages,setPages]=useState(0);const [pb,setPb]=useState(3);const [pa,setPa]=useState(4);
+  const [imgs,setImgs]=useState({});const [busy,setBusy]=useState(false);const [err,setErr]=useState('');
+  const loadLib=()=>window.pdfjsLib?Promise.resolve(window.pdfjsLib):new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res(window.pdfjsLib)};s.onerror=()=>rej(new Error('Could not load the PDF reader'));document.head.appendChild(s)});
+  const render=async(doc,n)=>{ // page -> JPEG, without the blue title band at the top
+    const page=await doc.getPage(n);const vp=page.getViewport({scale:2});
+    const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    const top=Math.round(vp.height*0.27),o=document.createElement('canvas');o.width=vp.width;o.height=vp.height-top;
+    o.getContext('2d').drawImage(c,0,top,vp.width,vp.height-top,0,0,vp.width,vp.height-top);
+    const blob=await new Promise(r=>o.toBlob(r,'image/jpeg',0.86));return{blob,url:URL.createObjectURL(blob)};
+  };
+  const pick=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;setErr('');setBusy(true);
+    try{const lib=await loadLib();const doc=await lib.getDocument({data:await f.arrayBuffer()}).promise;setPdf(doc);setPages(doc.numPages);
+      if(doc.numPages<4){setErr('This PDF has only '+doc.numPages+' pages — expected the lab report with Before (page 3) and After (page 4).');}
+      const b=Math.min(3,doc.numPages),a2=Math.min(4,doc.numPages);setPb(b);setPa(a2);setImgs({before:await render(doc,b),after:await render(doc,a2)});
+    }catch(x){setErr(x.message||'Could not read the PDF')}setBusy(false)};
+  const change=async(which,n)=>{if(!pdf)return;setBusy(true);which==='before'?setPb(n):setPa(n);const r=await render(pdf,n);setImgs(p=>({...p,[which]:r}));setBusy(false)};
+  const sel=(which,val)=>h('select',{className:'input',value:val,onChange:e=>change(which,Number(e.target.value)),style:{width:'auto',fontSize:12,padding:'4px 8px'}},Array.from({length:pages},(_,i)=>h('option',{key:i,value:i+1},'Page '+(i+1))));
+  return h('div',{className:'dialog-backdrop'},
+    h('div',{className:'dialog fade-up',style:{width:'min(760px,calc(100vw - 32px))',maxHeight:'88vh',overflowY:'auto'}},
+      h('h3',{style:{fontSize:17,fontWeight:700,margin:'0 0 4px'}},'Before / After from the plan PDF'),
+      h('p',{style:{fontSize:12,opacity:.6,margin:'0 0 12px'}},'Upload the lab\'s treatment-plan PDF. Pages 3 (Before) and 4 (After) are used — check the previews, change the page if needed.'),
+      h('input',{type:'file',accept:'application/pdf',onChange:pick,className:'input',style:{marginBottom:12}}),
+      busy&&h('p',{style:{fontSize:13,opacity:.7}},'Reading PDF…'),
+      err&&h('p',{style:{color:'var(--color-danger)',fontSize:13}},err),
+      imgs.before&&h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:12}},
+        [['before','Before',pb],['after','After',pa]].map(([k,l,v])=>h('div',{key:k},
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},h('b',{style:{fontSize:13}},l),pages>0&&sel(k,v)),
+          imgs[k]&&h('img',{src:imgs[k].url,alt:l,style:{width:'100%',borderRadius:8,border:'1px solid var(--color-divider)',background:'#fff'}})))),
+      h('p',{style:{fontSize:11,opacity:.5,margin:'10px 0'}},'Only these two pictures are stored (privately). The PDF itself is not uploaded.'),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{className:'btn btn-secondary',onClick:onCancel,disabled:busy},'Cancel'),
+        h('button',{className:'btn btn-primary',disabled:busy||!imgs.before||!imgs.after,onClick:async()=>{setBusy(true);setErr('');try{await onSave(imgs.before.blob,imgs.after.blob)}catch(x){setErr(x.message)}setBusy(false)}},h('i',{className:'ph ph-check'}),'Save photos'))));
 }
 
 function PlanImportDlg({patient,plan,onCancel,onSave,errText}){

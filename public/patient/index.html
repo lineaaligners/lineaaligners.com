@@ -34,6 +34,15 @@ html,body{margin:0;min-height:100%;background:var(--bg);color:#f2f4fb;font-famil
 @keyframes tw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:.9;transform:scale(1)}}
 .cta{opacity:0;animation:up .7s 1.9s cubic-bezier(.16,1,.3,1) forwards,pulse 2.4s 2.8s ease-in-out infinite;font-size:16px!important;padding:14px 26px!important;border-radius:999px!important;box-shadow:0 10px 30px rgba(65,105,225,.45)}
 @keyframes pulse{0%,100%{box-shadow:0 10px 30px rgba(65,105,225,.45)}50%{box-shadow:0 10px 44px rgba(91,184,221,.75)}}
+.ba{padding:0;overflow:hidden;margin-bottom:18px}
+.ba .cmp{position:relative;width:100%;max-width:100%;background:#fff;touch-action:pan-y;user-select:none}
+.ba .cmp img{display:block;width:100%;height:auto;pointer-events:none}
+.ba .top{position:absolute;inset:0;overflow:hidden;clip-path:inset(0 calc(100% - var(--x,50%)) 0 0)}
+.ba .top img{width:100%;height:100%;object-fit:cover}
+.ba .handle{position:absolute;top:0;bottom:0;left:var(--x,50%);width:3px;margin-left:-1.5px;background:var(--accent);box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+.ba .handle::after{content:'⟷';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.ba .tag{position:absolute;top:10px;padding:4px 10px;border-radius:999px;background:rgba(11,18,32,.75);color:#fff;font-size:12px;font-weight:600}
+.ba input[type=range]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
 .brandcover{position:absolute;top:0;left:0;width:min(80%,420px);height:104px;background:#000;display:flex;align-items:center;gap:8px;padding:0 14px;pointer-events:none;z-index:2}
 .brandcover img{height:26px;width:auto;filter:brightness(0) invert(1);opacity:.9}
 main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:20px 18px calc(48px + env(safe-area-inset-bottom))}
@@ -105,6 +114,17 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
       <div class="card stat"><p class="l"><i class="ph ph-calendar-check"></i>Fillimi i trajtimit</p><p class="v" id="s-start"></p></div>
     </div>
 
+    <div class="card ba up hidden" id="ba" style="animation-delay:.2s">
+      <div class="vhead"><h2><i class="ph ph-arrows-left-right"></i>Para → Pas</h2><span style="font-size:12px;color:var(--muted)">Lëviz shiritin</span></div>
+      <div class="cmp" id="cmp">
+        <img id="ba-after" alt="Dhëmbët pas trajtimit (plani)">
+        <div class="top"><img id="ba-before" alt="Dhëmbët para trajtimit"></div>
+        <div class="handle"></div>
+        <span class="tag" style="left:10px">Para</span><span class="tag" style="right:10px">Pas</span>
+        <input type="range" id="ba-x" min="0" max="100" value="50" aria-label="Krahaso para dhe pas">
+      </div>
+    </div>
+
     <div class="card viewer up" style="animation-delay:.24s">
       <div class="vhead"><h2><i class="ph ph-cube"></i>Plani yt në 3D</h2><a class="btn" id="open-new" target="_blank" rel="noopener noreferrer"><i class="ph ph-arrow-square-out"></i>Hape në ekran të plotë</a></div>
       <div class="frame">
@@ -149,6 +169,11 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
     set('s-every', d.change_interval_days ? ('Çdo ' + d.change_interval_days + ' ditë') : null);
     set('s-end', d.est_completion_date ? fmtDate(d.est_completion_date) : null);
     set('s-start', d.start_date ? fmtDate(d.start_date) : null);
+    if (d.before_url && d.after_url) {
+      $('ba-before').src = d.before_url; $('ba-after').src = d.after_url; $('ba').classList.remove('hidden');
+      var cmp = $('cmp'), r = $('ba-x');
+      r.oninput = function(){ cmp.style.setProperty('--x', r.value + '%'); };
+    }
     if (d.doctor) $('s-doc').textContent = d.doctor; else $('doc-card').classList.add('hidden');
 
     // Viewer: URL was validated + canonicalised server-side against the
