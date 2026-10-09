@@ -23,6 +23,14 @@
     {
       "source": "/assessment/:path*",
       "destination": "/assessment/index.html"
+    },
+    {
+      "source": "/patient",
+      "destination": "/patient/index.html"
+    },
+    {
+      "source": "/patient/",
+      "destination": "/patient/index.html"
     }
   ],
   "crons": [
@@ -33,6 +41,75 @@
     {
       "path": "/api/send-reminders?kind=retainer",
       "schedule": "0 19 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/patient",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com https://unpkg.com; img-src 'self' data:; connect-src 'self'; frame-src https://www.image-instruments.de; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/patient/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com https://unpkg.com; img-src 'self' data:; connect-src 'self'; frame-src https://www.image-instruments.de; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/api/patient-plan",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
     }
   ]
 }

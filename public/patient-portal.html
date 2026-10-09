@@ -446,7 +446,7 @@ function App(){
           const u=session.user||{};const md=u.user_metadata||{};
           setRegFullName(md.full_name||md.name||'');
           setReg(p=>({...p,email:u.email||''}));
-          setNeedsProfile(true);
+          if(((u.app_metadata||{}).provider)==='google')setNeedsProfile(true);
         }
       }
       setCheckingSession(false);

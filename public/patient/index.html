@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b1220">
+<title>Plani yt — Linea Aligners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+:root{--bg:#0b1220;--surface:#141d33;--accent:#4169e1;--accent-300:#8fa8f0;--accent-900:#16224a;--accent2:#5bb8dd;--line:rgba(255,255,255,.1);--muted:rgba(255,255,255,.62)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#f2f4fb;font-family:Poppins,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.bg{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bg span{position:absolute;border-radius:50%;filter:blur(110px);opacity:.22}
+.bg .a{width:440px;height:440px;background:var(--accent);top:-160px;left:-120px;animation:d1 20s ease-in-out infinite}
+.bg .b{width:400px;height:400px;background:var(--accent2);bottom:-170px;right:-130px;animation:d2 24s ease-in-out infinite}
+@keyframes d1{50%{transform:translate(60px,40px) scale(1.12)}}@keyframes d2{50%{transform:translate(-50px,-60px) scale(1.1)}}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:20px 18px calc(48px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;padding:4px 0 24px}
+header img{height:34px;width:auto;filter:brightness(0) invert(1)}
+.up{animation:up .6s cubic-bezier(.16,1,.3,1) both}
+h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
+.sub{margin:0 0 26px;color:var(--muted);font-size:15px}
+.card{background:color-mix(in srgb,var(--surface) 72%,transparent);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.stat{padding:16px}
+.stat .l{font-size:12px;color:var(--muted);margin:0 0 4px;display:flex;align-items:center;gap:6px}
+.stat .v{font-size:18px;font-weight:600;margin:0}
+.stat .na{font-size:13px;font-weight:500;color:rgba(255,255,255,.4)}
+.prog{padding:16px;margin-bottom:18px}
+.bar{height:10px;border-radius:10px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;width:0;border-radius:10px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1.4s cubic-bezier(.16,1,.3,1)}
+.viewer{position:relative;overflow:hidden;padding:0;margin-bottom:12px}
+.viewer .frame{position:relative;width:100%;aspect-ratio:16/10;background:#000}
+.viewer iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.loading,.vfail{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;background:#000;color:var(--muted);font-size:14px}
+.ring{width:38px;height:38px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:var(--accent-300);animation:spin 1s linear infinite}
+.vhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.vhead h2{font-size:16px;margin:0;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:9px 14px;font:600 13px Poppins,sans-serif;text-decoration:none;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent)}
+.hint{font-size:12px;color:rgba(255,255,255,.45);margin:0 0 18px}
+.doc{padding:16px;display:flex;align-items:center;gap:12px}
+.doc .av{width:44px;height:44px;border-radius:50%;background:var(--accent-900);display:flex;align-items:center;justify-content:center;color:var(--accent-300);font-size:20px;flex:none}
+.state{max-width:440px;margin:12vh auto 0;text-align:center;padding:32px 24px}
+.state i{font-size:40px;color:var(--accent-300)}
+.state h1{font-size:24px;margin-top:12px}
+.hidden{display:none!important}
+@media(max-width:720px){.grid{grid-template-columns:1fr 1fr}.viewer .frame{aspect-ratio:3/4}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><span class="a"></span><span class="b"></span></div>
+<main>
+  <header><img id="logo" alt="Linea Aligners"></header>
+
+  <section id="loading" class="state up" aria-live="polite"><div class="ring" style="margin:0 auto"></div><p class="sub" style="margin-top:16px">Duke hapur planin tënd…</p></section>
+
+  <section id="gone" class="card state hidden">
+    <i class="ph ph-link-break"></i>
+    <h1>Ky link nuk është më aktiv</h1>
+    <p class="sub">Linku mund të ketë skaduar ose është zëvendësuar. Kërko një link të ri nga klinika.</p>
+    <a class="btn primary" href="https://wa.me/38349772307" target="_blank" rel="noopener noreferrer"><i class="ph ph-whatsapp-logo"></i>Shkruaji klinikës</a>
+  </section>
+
+  <section id="plan" class="hidden">
+    <h1 class="up" id="hello"></h1>
+    <p class="sub up" style="animation-delay:.06s">Ky është plani yt për një buzëqeshje të re.</p>
+
+    <div class="grid up" style="animation-delay:.12s">
+      <div class="card stat"><p class="l"><i class="ph ph-clock"></i>Kohëzgjatja</p><p class="v" id="s-dur"></p></div>
+      <div class="card stat"><p class="l"><i class="ph ph-stack"></i>Numri total i maskerinave</p><p class="v" id="s-total"></p></div>
+      <div class="card stat"><p class="l"><i class="ph ph-tooth"></i>Maskerina aktuale</p><p class="v" id="s-cur"></p></div>
+      <div class="card stat"><p class="l"><i class="ph ph-arrows-clockwise"></i>Ndërrimi i radhës</p><p class="v" id="s-next"></p></div>
+      <div class="card stat"><p class="l"><i class="ph ph-flag-checkered"></i>Përfundimi i parashikuar</p><p class="v" id="s-end"></p></div>
+      <div class="card stat"><p class="l"><i class="ph ph-calendar-check"></i>Fillimi i trajtimit</p><p class="v" id="s-start"></p></div>
+    </div>
+
+    <div class="card prog up" style="animation-delay:.18s">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600">Progresi</span><span id="s-pct" style="font-weight:700;font-size:18px"></span></div>
+      <div class="bar"><i id="s-bar"></i></div>
+      <p class="hint" style="margin:8px 0 0">Llogaritet nga maskerina aktuale e regjistruar te Linea, pjesëtuar me numrin total në plan.</p>
+    </div>
+
+    <div class="card viewer up" style="animation-delay:.24s">
+      <div class="vhead"><h2><i class="ph ph-cube"></i>Plani yt në 3D</h2><a class="btn" id="open-new" target="_blank" rel="noopener noreferrer"><i class="ph ph-arrow-square-out"></i>Hape në ekran të plotë</a></div>
+      <div class="frame">
+        <div class="loading" id="v-loading"><div class="ring"></div>Duke ngarkuar modelin 3D…</div>
+        <div class="vfail hidden" id="v-fail"><i class="ph ph-warning-circle" style="font-size:32px"></i><span>Modeli 3D nuk u ngarkua këtu.</span><a class="btn primary" id="open-new-2" target="_blank" rel="noopener noreferrer"><i class="ph ph-arrow-square-out"></i>Hape në dritare të re</a></div>
+      </div>
+    </div>
+    <p class="hint">Rrotullo me gisht ose me maus. Shtyp ▶ për të parë lëvizjen e dhëmbëve hap pas hapi.</p>
+
+    <div class="card doc up" id="doc-card" style="animation-delay:.3s">
+      <div class="av"><i class="ph ph-stethoscope"></i></div>
+      <div style="flex:1"><p style="margin:0;font-size:12px;color:var(--muted)">Dentisti yt</p><p style="margin:2px 0 0;font-weight:600" id="s-doc"></p></div>
+      <a class="btn" href="https://wa.me/38349772307" target="_blank" rel="noopener noreferrer"><i class="ph ph-whatsapp-logo" style="color:#25D366"></i>Pyet</a>
+    </div>
+  </section>
+</main>
+<script>
+(function(){
+  var LOGO = '/linea-logo.svg';
+  var logo = document.getElementById('logo');
+  if (LOGO.indexOf('__') === 0) logo.remove(); else logo.src = LOGO;
+
+  var token = (location.hash || '').slice(1);
+  var $ = function(id){ return document.getElementById(id); };
+  var NA = '<span class="na">Nuk është caktuar ende</span>';
+  function show(id){ ['loading','gone','plan'].forEach(function(x){ $(x).classList.toggle('hidden', x !== id); }); }
+  function set(id, v){ var el = $(id); if (v == null || v === '') el.innerHTML = NA; else el.textContent = v; }
+  function fmtDate(d){ try { return new Date(d + 'T12:00:00').toLocaleDateString('sq-AL', { day:'numeric', month:'long', year:'numeric' }); } catch(e){ return d; } }
+
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) { show('gone'); return; }
+
+  fetch('/api/patient-plan', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ token: token }), cache:'no-store', referrerPolicy:'no-referrer' })
+    .then(function(r){ if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+    .then(render)
+    .catch(function(){ show('gone'); });
+
+  function render(d){
+    $('hello').textContent = d.first_name ? 'Mirë se erdhe, ' + d.first_name + '!' : 'Mirë se erdhe!';
+    set('s-dur', d.duration_months ? (String(d.duration_months).replace('.', ',') + ' muaj') : null);
+    set('s-total', d.total_aligners);
+    set('s-cur', d.current_aligner && d.total_aligners ? (d.current_aligner + ' nga ' + d.total_aligners) : null);
+    if (d.next_change_date) {
+      var days = Math.round((new Date(d.next_change_date + 'T12:00:00') - new Date(new Date().toDateString() + ' 12:00')) / 86400000);
+      set('s-next', days > 1 ? 'Pas ' + days + ' ditësh' : days === 1 ? 'Nesër' : days === 0 ? 'Sot' : fmtDate(d.next_change_date));
+    } else set('s-next', null);
+    set('s-end', d.est_completion_date ? fmtDate(d.est_completion_date) : null);
+    set('s-start', d.start_date ? fmtDate(d.start_date) : null);
+    if (d.progress_pct != null) { $('s-pct').textContent = d.progress_pct + '%'; setTimeout(function(){ $('s-bar').style.width = d.progress_pct + '%'; }, 200); }
+    else $('s-pct').innerHTML = NA;
+    if (d.doctor) $('s-doc').textContent = d.doctor; else $('doc-card').classList.add('hidden');
+
+    // Viewer: URL was validated + canonicalised server-side against the
+    // OnyxCeph allowlist before it could be published.
+    var url = String(d.viewer_url || '');
+    if (url.indexOf('https://') !== 0) { $('v-loading').classList.add('hidden'); $('v-fail').classList.remove('hidden'); }
+    else {
+      $('open-new').href = url; $('open-new-2').href = url;
+      var f = document.createElement('iframe');
+      f.title = 'Plani yt i trajtimit në 3D (OnyxCeph)';
+      f.referrerPolicy = 'no-referrer';
+      f.allow = 'fullscreen';
+      f.setAttribute('allowfullscreen', '');
+      f.loading = 'eager';
+      var done = false;
+      f.onload = function(){ done = true; $('v-loading').classList.add('hidden'); };
+      f.src = url;
+      document.querySelector('.viewer .frame').appendChild(f);
+      setTimeout(function(){ if (!done) { $('v-loading').classList.add('hidden'); $('v-fail').classList.remove('hidden'); } }, 25000);
+    }
+    show('plan');
+  }
+})();
+</script>
+</body>
+</html>

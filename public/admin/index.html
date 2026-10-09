@@ -242,6 +242,23 @@ function App(){
   const [editPatientFor,setEditPatientFor]=useState(false);
   const [letterFor,setLetterFor]=useState(null);
   const [pushFor,setPushFor]=useState(null);
+  const [planInfo,setPlanInfo]=useState(null);
+  const [planDlg,setPlanDlg]=useState(false);
+  const [planLink,setPlanLink]=useState(null);
+  const [planPreview,setPlanPreview]=useState(null);
+  const [planHist,setPlanHist]=useState(null);
+  const [allPlans,setAllPlans]=useState([]);
+  const planApi=async(payload)=>{
+    const{data:{session}}=await SUPA.auth.getSession();
+    const r=await fetch('/api/treatment-plans',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session&&session.access_token)},body:JSON.stringify(payload)});
+    const j=await r.json().catch(()=>({error:'server_error'}));
+    if(!r.ok)throw Object.assign(new Error(j.error||'server_error'),{field:j.field});
+    return j;
+  };
+  const PLAN_ERR={url_required:'Paste the OnyxCeph WebViewer link.',url_invalid:'That is not a valid link.',https_required:'The link must start with https://',credentials_not_allowed:'Links containing a username or password are not allowed.',viewer_host_not_allowed:'This is not an approved OnyxCeph WebViewer address.',viewer_path_not_allowed:'This is not an OnyxCeph WebViewer page.',model_link_missing:'The link has no model (mlink). Copy the full WebViewer link from OnyxCeph.',model_link_invalid:'The model address inside the link is invalid.',model_https_required:'The model address must use https.',model_host_not_allowed:'The model is on a server that is not approved.',model_file_unsupported:'The link does not point to an OnyxCeph web model (.iiwgl).',url_too_long:'The link is too long.',invalid_number:'Check this number.',invalid_date:'Check this date.',completion_before_start:'Completion must be after the start date.',patient_not_found:'Patient not found.',admins_only:'Only Linea admins can do this.',not_signed_in:'Please sign in again.',publish_first:'Publish the plan first.',already_published_retry:'Already published — refresh and try again.',too_many_requests:'Too many requests — wait a minute.',server_not_configured:'Server is missing configuration.',server_error:'Something went wrong. Try again.'};
+  const planErr=e=>PLAN_ERR[e&&e.message]||('Error: '+(e&&e.message));
+  const loadPlan=async(pid)=>{try{const j=await planApi({action:'list',patient_id:pid});setPlanInfo(j.plans[0]||null)}catch(e){setPlanInfo(null)}};
+  const loadAllPlans=async()=>{try{const j=await planApi({action:'list'});setAllPlans(j.plans||[])}catch(e){}};
   const [leads,setLeads]=useState([]);
   const [leadPhotos,setLeadPhotos]=useState({});
   const [openLead,setOpenLead]=useState(null);
@@ -329,6 +346,12 @@ function App(){
     setThread(th=>th.some(x=>x.id===data.id)?th:[...th,data]);
     try{const{data:{session}}=await SUPA.auth.getSession();fetch('/api/send-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({patient_id:selected.id,title:'Linea Aligners',body:'💬 '+txt.slice(0,120),url:'/portal/'})}).catch(()=>{})}catch(er){}
   };
+  useEffect(()=>{setPlanLink(null);setPlanInfo(undefined);if(selected&&ok)loadPlan(selected.id)},[selected&&selected.id,ok]);
+  useEffect(()=>{if(ok&&tab==='plans')loadAllPlans()},[ok,tab]);
+  const publishPlan=async(planId)=>{try{const j=await planApi({action:'publish',plan_id:planId});if(j.link)setPlanLink(j.link);toast(j.link_kept?'Plan updated — the patient\'s existing link now shows this version':'Plan published');await loadPlan(selected.id)}catch(e){toast(planErr(e))}};
+  const regenLink=async(planId)=>{if(!window.confirm('Create a new link? The old link will stop working.'))return;try{const j=await planApi({action:'regenerate',plan_id:planId});setPlanLink(j.link);toast('New link ready');await loadPlan(selected.id)}catch(e){toast(planErr(e))}};
+  const revokePlan=async(planId)=>{if(!window.confirm('Revoke access? The patient\'s link will stop working immediately.'))return;try{await planApi({action:'revoke',plan_id:planId});setPlanLink(null);toast('Access revoked');await loadPlan(selected.id)}catch(e){toast(planErr(e))}};
+  const showHistory=async(planId)=>{try{setPlanHist(await planApi({action:'history',plan_id:planId}))}catch(e){toast(planErr(e))}};
   const waNum=p=>{let d=String(p||'').replace(/[^0-9]/g,'');if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='383'+d.slice(1);return d};
   const signOut=async()=>{await SUPA.auth.signOut();setOk(false)};
 
@@ -472,6 +495,7 @@ function App(){
     {id:'patients',icon:'ph-users',label:'Patients',badge:patients.length},
     {id:'appointments',icon:'ph-calendar',label:'Appointments',badge:stats.apptsThisWeek},
     {id:'emergencies',icon:'ph-first-aid',label:'Emergencies',badge:stats.emergencies,urgent:stats.emergencies>0},
+    {id:'plans',icon:'ph-cube',label:'Plans'},
     {id:'leads',icon:'ph-user-plus',label:'Leads',badge:leads.filter(l=>l.status==='new').length,urgent:leads.some(l=>l.status==='new')},
     {id:'messages',icon:'ph-chat-circle',label:'Messages',badge:stats.unreadMsgs},
     {id:'analytics',icon:'ph-chart-bar',label:'Business'},
@@ -805,6 +829,35 @@ function App(){
           return h('div',{style:{marginTop:8}},
             !ph&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>loadLeadPhotos(ll)},h('i',{className:'ph ph-images'}),'Assessment photos ('+ll.photo_paths.length+')'),
             ph&&h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},ph.map((u,i)=>h('a',{key:i,href:u,target:'_blank',rel:'noopener noreferrer'},h('img',{src:u,style:{width:72,height:72,objectFit:'cover',borderRadius:8,border:'1px solid var(--color-divider)'}})))));})()),
+      h('div',{style:{marginBottom:16,padding:14,borderRadius:12,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)'}},
+        h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:10}},
+          h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:0,textTransform:'uppercase',letterSpacing:'.08em'}},'Orthodontic Treatment Plan'),
+          planInfo&&h('span',{style:{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:999,background:{draft:'rgba(255,255,255,.08)',published:'rgba(34,197,94,.15)',updated:'rgba(245,185,66,.15)',revoked:'rgba(248,113,113,.15)'}[planInfo.status],color:{draft:'inherit',published:'#22c55e',updated:'#f5b942',revoked:'#f87171'}[planInfo.status]}},{draft:'Draft',published:'Published',updated:'Unpublished changes',revoked:'Revoked'}[planInfo.status])),
+        planInfo===undefined&&h('p',{style:{fontSize:12,opacity:.5,margin:0}},'Loading…'),
+        planInfo===null&&h('div',null,
+          h('p',{style:{fontSize:13,opacity:.65,margin:'0 0 10px'}},'No treatment plan yet.'),
+          h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>setPlanDlg(true)},h('i',{className:'ph ph-cube'}),'Import from OnyxCeph')),
+        planInfo&&h('div',null,
+          h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 12px',fontSize:12,marginBottom:10}},
+            [['Aligners',planInfo.total_aligners],['Duration',planInfo.duration_months?planInfo.duration_months+' months':null],['Published',planInfo.published_at&&new Date(planInfo.published_at).toLocaleDateString('en-GB')],['Updated',new Date(planInfo.updated_at).toLocaleDateString('en-GB')],['Link',{active:'Active',expired:'Expired',none:'No link'}[planInfo.link_status]+(planInfo.link_expires_at&&planInfo.link_status==='active'?' · until '+new Date(planInfo.link_expires_at).toLocaleDateString('en-GB'):'')],['Last opened',planInfo.link_last_access_at?new Date(planInfo.link_last_access_at).toLocaleDateString('en-GB'):'—'],['Version',planInfo.version||'—'],['Case ref',planInfo.case_ref]]
+              .map(([l,v])=>h('div',{key:l},h('span',{style:{opacity:.55}},l+': '),h('span',{style:{fontWeight:600}},v==null||v===''?'—':String(v))))),
+          planLink&&h('div',{style:{padding:10,borderRadius:10,background:'rgba(34,197,94,.08)',border:'1px solid rgba(34,197,94,.3)',marginBottom:10}},
+            h('p',{style:{margin:'0 0 2px',fontWeight:700,fontSize:13}},'Plani u publikua me sukses.'),
+            h('p',{style:{margin:'0 0 8px',fontSize:12,opacity:.75}},'Linku i pacientit është gati për t\'u shpërndarë.'),
+            h('div',{style:{display:'flex',gap:6}},
+              h('input',{className:'input',readOnly:true,value:planLink,onFocus:e=>e.target.select(),style:{flex:1,fontSize:11}}),
+              h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>{navigator.clipboard&&navigator.clipboard.writeText(planLink);toast('Patient link copied')}},h('i',{className:'ph ph-copy'}),'Copy')),
+            h('div',{style:{display:'flex',gap:6,marginTop:6,flexWrap:'wrap'}},
+              h('a',{className:'btn btn-secondary',style:{fontSize:12},href:planLink,target:'_blank',rel:'noopener noreferrer'},h('i',{className:'ph ph-eye'}),'Open patient preview'),
+              h('a',{className:'btn btn-secondary',style:{fontSize:12},href:'https://wa.me/'+waNum(selected.phone)+'?text='+encodeURIComponent('Përshëndetje '+selected.first+'! Ky është plani yt i trajtimit me Linea: '+planLink),target:'_blank',rel:'noopener noreferrer'},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'Open WhatsApp')),
+            h('p',{style:{margin:'6px 0 0',fontSize:11,opacity:.5}},'Copy it now — for security only a fingerprint of the link is stored, so it can\'t be shown again later (you can always create a new one).')),
+          h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
+            h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPlanDlg(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit plan'),
+            h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setPlanPreview(planInfo.viewer_url)},h('i',{className:'ph ph-cube'}),'Preview 3D'),
+            (planInfo.status==='draft'||planInfo.status==='updated')&&h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>publishPlan(planInfo.id)},h('i',{className:'ph ph-paper-plane-tilt'}),planInfo.status==='updated'?'Republish updated plan':'Publish'),
+            planInfo.version>0&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>regenLink(planInfo.id)},h('i',{className:'ph ph-link'}),planInfo.link_status==='active'?'New patient link':'Create patient link'),
+            planInfo.link_status!=='none'&&planInfo.status!=='revoked'&&h('button',{className:'btn btn-danger',style:{fontSize:12},onClick:()=>revokePlan(planInfo.id)},h('i',{className:'ph ph-prohibit'}),'Revoke access'),
+            planInfo.version>0&&h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>showHistory(planInfo.id)},h('i',{className:'ph ph-clock-counter-clockwise'}),'History')))),
       h('div',{style:{marginBottom:16}},
         h('p',{style:{fontSize:11,opacity:.55,fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.08em'}},'Chat'),
         h('div',{ref:threadBox,style:{display:'flex',flexDirection:'column',gap:6,maxHeight:260,minHeight:60,overflowY:'auto',padding:8,borderRadius:10,background:'var(--color-neutral-900)',border:'1px solid var(--color-divider)'}},
@@ -848,6 +901,25 @@ function App(){
     setPushFor(null);
   };
   const pushTarget=pushFor&&(pushFor.all?'All patients':((patients.find(x=>x.id===pushFor.id)||{}).first||'Patient'));
+  const PlanDialog=planDlg&&selected&&h(PlanImportDlg,{patient:selected,plan:planInfo,onCancel:()=>setPlanDlg(false),errText:planErr,
+    onSave:async(fields,publish)=>{
+      const j=await planApi({action:'save',patient_id:selected.id,...fields});
+      if(publish){const p=await planApi({action:'publish',plan_id:j.plan.id});if(p.link)setPlanLink(p.link);toast(p.link_kept?'Plan updated — existing link shows the new version':'Plan published')}
+      else toast('Draft saved — not visible to the patient yet');
+      setPlanDlg(false);await loadPlan(selected.id);
+    }});
+  const PlanPreviewDlg=planPreview&&h('div',{className:'dialog-backdrop',onClick:e=>{if(e.target===e.currentTarget)setPlanPreview(null)}},
+    h('div',{className:'dialog fade-up',style:{width:'min(960px,calc(100vw - 32px))',padding:0,overflow:'hidden'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px'}},h('b',null,'3D preview (what the patient will see)'),h('button',{className:'btn btn-secondary',onClick:()=>setPlanPreview(null)},'Close')),
+      h('div',{style:{position:'relative',aspectRatio:'16/10',background:'#000'}},h('iframe',{src:planPreview,title:'OnyxCeph plan preview',referrerPolicy:'no-referrer',allow:'fullscreen',style:{position:'absolute',inset:0,width:'100%',height:'100%',border:0}}))));
+  const PlanHistDlg=planHist&&h('div',{className:'dialog-backdrop',onClick:e=>{if(e.target===e.currentTarget)setPlanHist(null)}},
+    h('div',{className:'dialog fade-up',style:{width:'min(520px,calc(100vw - 32px))'}},
+      h('h3',{style:{margin:'0 0 12px'}},'Publication history'),
+      h('div',{style:{display:'flex',flexDirection:'column',gap:6,maxHeight:'60vh',overflowY:'auto',fontSize:13}},
+        planHist.versions.map(v=>h('div',{key:'v'+v.version,style:{padding:8,borderRadius:8,background:'var(--color-neutral-900)'}},h('b',null,'Version '+v.version),' · '+new Date(v.published_at).toLocaleString('en-GB')+' · '+(v.snapshot.total_aligners||'—')+' aligners')),
+        h('p',{style:{fontSize:11,opacity:.55,margin:'8px 0 2px',textTransform:'uppercase'}},'Activity'),
+        planHist.events.map((ev,i)=>h('div',{key:'e'+i,style:{opacity:.8}},new Date(ev.created_at).toLocaleString('en-GB')+' — '+ev.action.replace(/_/g,' ')))),
+      h('div',{style:{display:'flex',justifyContent:'flex-end',marginTop:12}},h('button',{className:'btn btn-secondary',onClick:()=>setPlanHist(null)},'Close'))));
   const PushDialog=pushFor&&h(PushDlg,{target:pushTarget,onCancel:()=>setPushFor(null),onSend:(title,body)=>sendPush(pushFor.all?{all:true,title,body}:{patient_id:pushFor.id,title,body})});
   const letterPatient=letterFor&&patients.find(x=>x.id===letterFor);
   const LetterDialog=letterPatient&&h(SendLetterDlg,{patient:letterPatient,onCancel:()=>setLetterFor(null),onSave:(subject,content)=>sendLetter(letterPatient.id,subject,content)});
@@ -891,7 +963,16 @@ function App(){
       l.message&&h('p',{style:{margin:0,fontSize:13,opacity:.8}},l.message),
       openLead===l.id&&h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
         (leadPhotos[l.id]||[]).map((u,i)=>h('a',{key:i,href:u,target:'_blank',rel:'noopener noreferrer'},h('img',{src:u,style:{width:140,height:140,objectFit:'cover',borderRadius:10,border:'1px solid var(--color-divider)'}})))))));
-  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,leads:Leads,analytics:loading?Loader:Analytics,settings:Settings};
+  const Plans=h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+    h('div',null,h('h1',{style:{fontSize:24,fontWeight:700,margin:0}},'Treatment plans'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'OnyxCeph plans and patient links. Open a patient to import, edit, publish or revoke.')),
+    allPlans.length===0&&h('div',{className:'card',style:{padding:28,textAlign:'center',opacity:.6,fontSize:13}},'No plans yet. Open a patient → Orthodontic Treatment Plan → Import from OnyxCeph.'),
+    allPlans.length>0&&h('div',{className:'card',style:{padding:0,overflowX:'auto'}},
+      h('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:13}},
+        h('thead',null,h('tr',null,['Patient','Status','Published','Updated','Duration','Aligners','Link'].map(c=>h('th',{key:c,style:{textAlign:'left',padding:'10px 12px',fontSize:11,opacity:.55,fontWeight:600,textTransform:'uppercase',borderBottom:'1px solid var(--color-divider)'}},c)))),
+        h('tbody',null,allPlans.map(pl=>{const p=patients.find(x=>x.id===pl.patient_id);return h('tr',{key:pl.id,style:{cursor:p?'pointer':'default'},onClick:()=>{if(p){setTab('patients');setSelected(p)}}},
+          [p?p.first+' '+p.last:'—',{draft:'Draft',published:'Published',updated:'Updated (unpublished)',revoked:'Revoked'}[pl.status],pl.published_at?new Date(pl.published_at).toLocaleDateString('en-GB'):'—',new Date(pl.updated_at).toLocaleDateString('en-GB'),pl.duration_months?pl.duration_months+' mo':'—',pl.total_aligners||'—',{active:'Active',expired:'Expired',none:'None'}[pl.link_status]]
+            .map((v,i)=>h('td',{key:i,style:{padding:'10px 12px',borderBottom:'1px solid var(--color-divider)'}},v)))})))));
+  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,leads:Leads,plans:Plans,analytics:loading?Loader:Analytics,settings:Settings};
 
   return h('div',{style:{display:'flex',minHeight:'100vh'}},
     Sidebar,
@@ -899,7 +980,7 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,ConfirmDlg,Toasts);
+    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
 }
 
 function SendLetterDlg({patient,onCancel,onSave}){
@@ -923,6 +1004,37 @@ function SendLetterDlg({patient,onCancel,onSave}){
       h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
         h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
         h('button',{type:'submit',className:'btn btn-gold'},h('i',{className:'ph ph-paper-plane-tilt'}),'Send letter'))));
+}
+
+function PlanImportDlg({patient,plan,onCancel,onSave,errText}){
+  const [f,setF]=useState({viewer_url:(plan&&plan.viewer_url)||'',case_ref:(plan&&plan.case_ref)||'',start_date:(plan&&plan.start_date)||'',duration_months:(plan&&plan.duration_months)||'',total_aligners:(plan&&plan.total_aligners)||patient.totalAligners||'',change_interval_days:(plan&&plan.change_interval_days)||'',est_completion_date:(plan&&plan.est_completion_date)||'',notes:(plan&&plan.notes)||''});
+  const [err,setErr]=useState(null);const [busy,setBusy]=useState(false);const [preview,setPreview]=useState(false);
+  const urlLooksOk=/^https:\/\/www\.image-instruments\.de\/webviewer\/index\.html\?.*mlink=/i.test(f.viewer_url.trim());
+  const go=async publish=>{setErr(null);if(!f.viewer_url.trim()){setErr({field:'viewer_url',message:'url_required'});return}setBusy(true);try{await onSave(f,publish)}catch(e){setErr(e)}setBusy(false)};
+  const lbl=(t,req)=>h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},t+(req?' *':''));
+  const fld=(t,k,type,extra)=>h('div',{style:{marginBottom:10}},lbl(t),h('input',Object.assign({className:'input',type:type||'text',value:f[k],onChange:e=>setF({...f,[k]:e.target.value}),style:{marginTop:4,borderColor:err&&err.field===k?'var(--color-danger)':undefined}},extra||{})));
+  return h('div',{className:'dialog-backdrop'},
+    h('div',{className:'dialog fade-up',style:{width:'min(560px,calc(100vw - 32px))',maxHeight:'88vh',overflowY:'auto'}},
+      h('h3',{style:{fontSize:17,fontWeight:700,margin:'0 0 2px'}},plan?'Edit treatment plan':'Import from OnyxCeph'),
+      h('p',{style:{opacity:.6,fontSize:12,margin:'0 0 14px'}},'Patient: '+patient.first+' '+patient.last),
+      h('div',{style:{marginBottom:10}},lbl('OnyxCeph WebViewer link',true),
+        h('textarea',{className:'input',rows:3,value:f.viewer_url,placeholder:'https://www.image-instruments.de/webviewer/index.html?mlink=…',onChange:e=>{setF({...f,viewer_url:e.target.value});setPreview(false)},style:{marginTop:4,fontSize:12,fontFamily:'monospace',resize:'vertical',borderColor:err&&err.field==='viewer_url'?'var(--color-danger)':undefined}}),
+        h('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:6}},
+          f.viewer_url&&h('span',{style:{fontSize:12,color:urlLooksOk?'#22c55e':'#f5b942'}},urlLooksOk?'✓ Looks like an OnyxCeph WebViewer link':'⚠ Doesn\'t look like an OnyxCeph WebViewer link'),
+          urlLooksOk&&h('button',{type:'button',className:'btn btn-secondary',style:{fontSize:12,marginLeft:'auto'},onClick:()=>setPreview(p=>!p)},h('i',{className:'ph ph-cube'}),preview?'Hide preview':'Check it loads')),
+        preview&&h('div',{style:{position:'relative',aspectRatio:'16/10',background:'#000',borderRadius:10,overflow:'hidden',marginTop:8}},h('iframe',{src:f.viewer_url.trim(),title:'OnyxCeph preview',referrerPolicy:'no-referrer',style:{position:'absolute',inset:0,width:'100%',height:'100%',border:0}})),
+        h('p',{style:{fontSize:11,opacity:.5,margin:'6px 0 0'}},'Tip: name the case in OnyxCeph with a code (e.g. LIN-0123), not the patient\'s name — the name is visible inside the viewer and in the model address.')),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 12px'}},
+        fld('Start date','start_date','date'),fld('Estimated completion','est_completion_date','date'),
+        fld('Duration (months)','duration_months','number',{min:0.5,max:60,step:0.5}),fld('Total aligners','total_aligners','number',{min:1,max:200}),
+        fld('Change every (days)','change_interval_days','number',{min:1,max:60}),fld('Case reference (internal)','case_ref')),
+      h('div',{style:{marginBottom:10}},lbl('Clinician notes (internal, not shown to patient)'),h('textarea',{className:'input',rows:2,value:f.notes,onChange:e=>setF({...f,notes:e.target.value}),style:{marginTop:4,resize:'vertical',fontFamily:'inherit'}})),
+      err&&h('p',{style:{color:'var(--color-danger)',fontSize:13,margin:'0 0 10px'}},errText(err)),
+      h('p',{style:{fontSize:11,opacity:.5,margin:'0 0 12px'}},'Empty fields show as "not set yet" to the patient — nothing is filled in automatically.'),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end',flexWrap:'wrap'}},
+        h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel,disabled:busy},'Cancel'),
+        h('button',{type:'button',className:'btn btn-secondary',onClick:()=>go(false),disabled:busy},'Save as draft'),
+        h('button',{type:'button',className:'btn btn-primary',onClick:()=>go(true),disabled:busy},h('i',{className:busy?'ph ph-circle-notch':'ph ph-paper-plane-tilt'}),busy?'Saving…':'Save & publish'))));
 }
 
 function PushDlg({target,onCancel,onSend}){
