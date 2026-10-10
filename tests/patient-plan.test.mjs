@@ -17,7 +17,7 @@ const db = {
   ],
   treatment_plans: [
     { id: 'p1', patient_id: 'pat1', status: 'published', published_at: '2026-10-09T10:00:00Z', notes: 'INTERNAL NOTE', case_ref: 'CASE-1',
-      published_snapshot: { viewer_url: VIEWER, total_aligners: 24, duration_months: 6, change_interval_days: 7, start_date: '2026-10-01', est_completion_date: '2027-04-09' } },
+      version: 2, published_snapshot: { viewer_url: VIEWER, total_aligners: 24, duration_months: 6, change_interval_days: 7, start_date: '2026-10-01', est_completion_date: '2027-04-09' } },
     { id: 'p2', patient_id: 'pat1', status: 'draft', published_snapshot: null },
     { id: 'p3', patient_id: 'pat2', status: 'published', published_at: '2026-10-09T10:00:00Z', published_snapshot: { viewer_url: VIEWER, total_aligners: 10, before_image: 'p3/before-1791545000000.jpg', after_image: 'p3/after-1791545000000.jpg' } },
   ],
@@ -26,12 +26,14 @@ const db = {
     { id: 'pat2', first_name: 'Other', current_aligner: 5, next_change_date: null, doctor: null },
   ],
 };
+const inserted = {};
 function from(table) {
   const filters = [];
   const q = {
     select() { return q; },
     eq(k, v) { filters.push(r => r[k] === v); return q; },
-    update() { return { eq: () => Promise.resolve({ error: null }) }; },
+    update(v) { return { eq: (k, id) => { if (table === 'treatment_plans') db[table].filter(r => r[k] === id).forEach(r => Object.assign(r, v)); return Promise.resolve({ error: null }); } }; },
+    insert(v) { (inserted[table] ||= []).push(v); return Promise.resolve({ error: null }); },
     maybeSingle() { const row = db[table].find(r => filters.every(f => f(r))); return Promise.resolve({ data: row ? { ...row } : null }); },
   };
   return q;
@@ -112,10 +114,32 @@ test('rate limiting kicks in on rapid guessing from one address', async () => {
   assert.equal(last.status, 429);
 });
 
-test('before/after photos come back as short-lived signed links, never raw paths', async () => {
+test('photos are not part of the patient response', async () => {
   const r = await call({ token: tok.other });
-  assert.match(r.body.before_url, /^https:\/\/signed\.example\/p3\/before-.*ttl=3600$/);
-  assert.match(r.body.after_url, /ttl=3600$/);
-  const none = await call({ token: tok.ok });
-  assert.equal(none.body.before_url, null);
+  assert.equal('before_url' in r.body, false);
+  assert.equal('after_url' in r.body, false);
+});
+
+test('patient accepts the plan: recorded once, admin gets a message', async () => {
+  const before = await call({ token: tok.ok });
+  assert.equal(before.body.accepted_at, null);
+  const a = await call({ token: tok.ok, action: 'accept' });
+  assert.equal(a.status, 200); assert.equal(a.body.already, false); assert.equal(a.body.accepted_version, 2);
+  assert.equal(inserted.messages.length, 1);
+  assert.equal(inserted.messages[0].patient_id, 'pat1');
+  const again = await call({ token: tok.ok, action: 'accept' });
+  assert.equal(again.body.already, true);
+  assert.equal(inserted.messages.length, 1);
+  const view = await call({ token: tok.ok });
+  assert.equal(view.body.accepted_at, a.body.accepted_at);
+});
+
+test('a new published version needs fresh acceptance', async () => {
+  db.treatment_plans[0].version = 3;
+  const view = await call({ token: tok.ok });
+  assert.equal(view.body.accepted_at, null);
+});
+
+test('revoked or unpublished links cannot accept', async () => {
+  for (const t of [tok.revoked, tok.expired, tok.unpublished]) assert.equal((await call({ token: t, action: 'accept' })).status, 404);
 });

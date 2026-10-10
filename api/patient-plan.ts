@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 // @ts-ignore - plain ESM helper
 import { TOKEN_RE, hashToken, rateLimited, clientIp } from './_lib/onyxceph.mjs';
 
-// Public, passwordless: POST /api/patient-plan  { token }
+// Public, passwordless: POST /api/patient-plan  { token, action?: 'accept' }
 // The token travels in the body (not the URL) so it never lands in access logs.
 // Possession of the link = access to exactly one published plan.
 // Every failure returns the same generic 404 so the endpoint can't be used
@@ -21,6 +21,7 @@ export default async function handler(req: any, res: any) {
   const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
   const token = String(body.token || '');
   if (!TOKEN_RE.test(token)) return unavailable(res);
+  const action = body.action === 'accept' ? 'accept' : 'view';
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) return res.status(500).json({ error: 'server_not_configured' });
@@ -34,9 +35,24 @@ export default async function handler(req: any, res: any) {
     if (access.expires_at && Date.parse(access.expires_at) < Date.now()) return unavailable(res);
 
     const { data: plan } = await db.from('treatment_plans')
-      .select('patient_id,status,published_snapshot,published_at')
+      .select('id,patient_id,status,published_snapshot,published_at,version,accepted_at,accepted_version')
       .eq('id', access.plan_id).maybeSingle();
     if (!plan || plan.status === 'revoked' || !plan.published_snapshot) return unavailable(res);
+
+    // ---- patient accepts the currently published version ------------------
+    if (action === 'accept') {
+      const version = Number.isInteger(plan.version) ? plan.version : null;
+      if (plan.accepted_at && plan.accepted_version === version) {
+        return res.status(200).json({ accepted_at: plan.accepted_at, accepted_version: version, already: true });
+      }
+      const now = new Date().toISOString();
+      const { error } = await db.from('treatment_plans').update({ accepted_at: now, accepted_version: version }).eq('id', plan.id);
+      if (error) throw error;
+      await db.from('plan_audit').insert({ plan_id: plan.id, action: 'patient_accept_v' + (version ?? '?') });
+      // shows up in the admin "Messages" tab and the patient's chat, using the existing realtime flow
+      await db.from('messages').insert({ patient_id: plan.patient_id, sender: 'patient', content: '✅ E pranoj planin e trajtimit' + (version ? ' (versioni ' + version + ')' : '') + '.' });
+      return res.status(200).json({ accepted_at: now, accepted_version: version, already: false });
+    }
 
     const { data: p } = await db.from('patients')
       .select('first_name,current_aligner,next_change_date,doctor')
@@ -54,16 +70,10 @@ export default async function handler(req: any, res: any) {
     // Progress = aligner stage recorded in Linea / total aligners in the
     // published plan. Never derived from calendar time.
     const progress = total && current ? Math.min(100, Math.round((Math.min(current, total) / total) * 100)) : null;
-
-    const sign = async (path: any) => {
-      if (typeof path !== 'string' || !path) return null;
-      const { data } = await db.storage.from('plan-images').createSignedUrl(path, 3600);
-      return data?.signedUrl || null;
-    };
-    const [before_url, after_url] = await Promise.all([sign(s.before_image), sign(s.after_image)]);
+    const version = Number.isInteger(plan.version) ? plan.version : null;
+    const acceptedCurrent = !!plan.accepted_at && plan.accepted_version === version;
 
     return res.status(200).json({
-      before_url, after_url,
       first_name: p.first_name || null,
       doctor: p.doctor || null,
       viewer_url: s.viewer_url,
@@ -76,6 +86,7 @@ export default async function handler(req: any, res: any) {
       next_change_date: p.next_change_date || null,
       progress_pct: progress,
       published_at: plan.published_at,
+      accepted_at: acceptedCurrent ? plan.accepted_at : null,
     });
   } catch {
     return unavailable(res);

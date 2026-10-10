@@ -83,3 +83,7 @@ drop policy if exists plan_images_admin_insert on storage.objects;
 drop policy if exists plan_images_admin_read on storage.objects;
 create policy plan_images_admin_insert on storage.objects for insert to authenticated with check (bucket_id = 'plan-images' and public.is_admin());
 create policy plan_images_admin_read on storage.objects for select to authenticated using (bucket_id = 'plan-images' and public.is_admin());
+
+-- patient acceptance
+alter table public.treatment_plans add column if not exists accepted_at timestamptz;
+alter table public.treatment_plans add column if not exists accepted_version int;

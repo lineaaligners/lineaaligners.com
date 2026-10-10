@@ -37,7 +37,7 @@ export default async function handler(req: any, res: any) {
   try {
     switch (body.action) {
       case 'list': {
-        let q = db.from('treatment_plans').select('id,patient_id,case_ref,status,version,total_aligners,duration_months,start_date,est_completion_date,change_interval_days,viewer_url,notes,before_image,after_image,created_at,updated_at,published_at,revoked_at');
+        let q = db.from('treatment_plans').select('id,patient_id,case_ref,status,version,total_aligners,duration_months,start_date,est_completion_date,change_interval_days,viewer_url,notes,before_image,after_image,created_at,updated_at,published_at,revoked_at,accepted_at,accepted_version');
         if (body.patient_id) q = q.eq('patient_id', String(body.patient_id));
         const { data: plans, error } = await q.order('updated_at', { ascending: false }).limit(500);
         if (error) throw error;

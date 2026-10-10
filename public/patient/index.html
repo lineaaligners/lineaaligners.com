@@ -75,6 +75,34 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
 .state{max-width:440px;margin:12vh auto 0;text-align:center;padding:32px 24px}
 .state i{font-size:40px;color:var(--accent-300)}
 .state h1{font-size:24px;margin-top:12px}
+.sec{padding:16px 18px;margin-bottom:18px}
+.sec h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.ex{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.ex li{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.5}
+.ex li b{display:block;font-weight:600}
+.ex li span{color:var(--muted)}
+.sw{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.cal .d{padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.cal .d small{display:block;font-size:11px;color:var(--muted)}
+.cal .d b{font-size:14px;font-weight:600}
+.cal .d.next{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.cal .d.end{border-color:var(--accent2)}
+.accept{padding:20px;margin-bottom:18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),var(--surface))}
+.accept h2{font-size:20px;margin:0}
+.accept p{margin:0;color:var(--muted);font-size:14px;max-width:420px}
+.accept .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.accept .big{font-size:15px;padding:13px 22px;border-radius:999px}
+.accept .okmark{width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,.15);border:2px solid #22c55e;color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:28px;animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.faq details{border-top:1px solid var(--line);padding:12px 0}
+.faq details:first-of-type{border-top:none;padding-top:0}
+.faq summary{cursor:pointer;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';color:var(--accent-300);font-size:18px;line-height:1}
+.faq details[open] summary::after{content:'–'}
+.faq details p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
+.btn:focus-visible,summary:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .hidden{display:none!important}
 @media(max-width:720px){.grid{grid-template-columns:1fr 1fr}.viewer .frame{aspect-ratio:3/4}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -123,6 +151,50 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
     </div>
     <p class="hint">Rrotullo me gisht ose me maus. Shtyp ▶ për të parë lëvizjen e dhëmbëve hap pas hapi.</p>
 
+    <div class="card sec">
+      <h2><i class="ph ph-info"></i>Çfarë po shoh?</h2>
+      <ul class="ex">
+        <li><div class="sw"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="2" fill="#2ec4c9"/></svg></div>
+          <div><b>Katrorët blu janë "attachments"</b><span>Gunga të vogla në ngjyrën e dhëmbit që ngjiten në disa dhëmbë. Ndihmojnë maskerinën të kapet dhe t'i lëvizë dhëmbët saktë. Nuk duken shumë dhe hiqen pa dhimbje në fund.</span></div></li>
+        <li><div class="sw"><svg width="18" height="16" viewBox="0 0 18 16" aria-hidden="true"><rect x="1" y="2" width="6" height="12" rx="2.5" fill="#efe7d8"/><rect x="11" y="2" width="6" height="12" rx="2.5" fill="#efe7d8"/><path d="M9 1v14" stroke="#f5b942" stroke-width="1.4" stroke-dasharray="2 2"/></svg></div>
+          <div><b>Shenjat mes dhëmbëve janë "IPR"</b><span>Nëse i sheh: një lëmim shumë i lehtë mes disa dhëmbëve, sa një fletë letre, që krijon pak vend. Bëhet shpejt dhe zakonisht pa anestezi.</span></div></li>
+        <li><div class="sw"><i class="ph ph-play" style="color:var(--accent-300)"></i></div>
+          <div><b>Numrat poshtë janë hapat</b><span>Çdo hap është një palë maskerina. Shtyp ▶ dhe sheh si lëvizin dhëmbët nga dita e parë deri në buzëqeshjen përfundimtare.</span></div></li>
+      </ul>
+    </div>
+
+    <div class="card sec hidden" id="cal-card">
+      <h2><i class="ph ph-calendar-dots"></i>Kalendari i maskerinave</h2>
+      <div class="cal" id="cal"></div>
+      <p class="hint" style="margin:10px 0 0">Datat janë të përafërta. Dentisti mund t'i rregullojë sipas kontrolleve.</p>
+    </div>
+
+    <div class="card accept" id="accept-card">
+      <div id="acc-ask">
+        <h2>A je gati të fillosh?</h2>
+        <p style="margin:6px auto 14px">Nëse të pëlqen plani, konfirmoje këtu. Klinika njoftohet menjëherë dhe të kontakton për hapat e ardhshëm.</p>
+        <div class="row" id="acc-row1"><button class="btn primary big" id="acc-btn"><i class="ph ph-check-circle"></i>E pranoj planin</button></div>
+        <div class="row hidden" id="acc-row2"><button class="btn primary big" id="acc-yes"><i class="ph ph-check"></i>Po, konfirmoj</button><button class="btn big" id="acc-no">Anulo</button></div>
+        <p style="font-size:12px;margin-top:10px">Kjo nuk është pagesë. Vetëm i tregon klinikës që je dakord me planin.</p>
+        <p class="hidden" id="acc-err" style="color:#fca5a5;font-size:13px;margin-top:8px">Nuk u ruajt. Kontrollo internetin dhe provo përsëri.</p>
+      </div>
+      <div class="hidden" id="acc-done" style="display:flex;flex-direction:column;align-items:center;gap:10px">
+        <div class="okmark">✓</div>
+        <h2>E pranove planin</h2>
+        <p id="acc-when"></p>
+      </div>
+    </div>
+
+    <div class="card sec faq">
+      <h2><i class="ph ph-question"></i>Pyetjet e shpeshta</h2>
+      <details><summary>A dhemb?</summary><p>Zakonisht jo. Ditën e parë ose të dytë të çdo maskerine të re ndjen shtrëngim. Kjo është shenjë që dhëmbët po lëvizin dhe kalon shpejt.</p></details>
+      <details><summary>Sa orë në ditë duhet t'i mbaj?</summary><p>20–22 orë në ditë. I heq vetëm kur ha, kur pi diçka tjetër përveç ujit dhe kur lan dhëmbët.</p></details>
+      <details><summary>A mund të ha me to?</summary><p>Jo. Hiqi para se të hash. Pasi të hash, laj dhëmbët ose të paktën shpërlaje gojën, pastaj vendosi përsëri.</p></details>
+      <details><summary>Si i pastroj?</summary><p>Me furçë të butë dhe ujë të vakët, jo të nxehtë. Tabletat Linea për pastrimin e maskerinave i mbajnë të pastra dhe të tejdukshme.</p></details>
+      <details><summary>Po nëse humbas ose thyej një maskerinë?</summary><p>Na shkruaj menjëherë. Zakonisht vazhdon me maskerinën e radhës ose të mëparshme derisa të marrësh të renë.</p></details>
+      <div style="margin-top:14px"><a class="btn" id="ask-btn" target="_blank" rel="noopener noreferrer"><i class="ph ph-whatsapp-logo" style="color:#25D366"></i>Ke pyetje për planin? Shkruaj këtu</a></div>
+    </div>
+
     <div class="card doc up" id="doc-card" style="animation-delay:.3s">
       <div class="av"><i class="ph ph-stethoscope"></i></div>
       <div style="flex:1"><p style="margin:0;font-size:12px;color:var(--muted)">Dentisti yt</p><p style="margin:2px 0 0;font-weight:600" id="s-doc"></p></div>
@@ -162,6 +234,46 @@ h1{font-size:clamp(26px,5vw,36px);font-weight:600;letter-spacing:-.02em;margin:0
     set('s-end', d.est_completion_date ? fmtDate(d.est_completion_date) : null);
     set('s-start', d.start_date ? fmtDate(d.start_date) : null);
     if (d.doctor) $('s-doc').textContent = d.doctor; else $('doc-card').classList.add('hidden');
+    var askHref = 'https://wa.me/38349772307?text=' + encodeURIComponent('Përshëndetje, kam një pyetje për planin tim të trajtimit' + (d.first_name ? ' (' + d.first_name + ')' : '') + '.');
+    $('ask-btn').href = askHref;
+    var docAsk = document.querySelector('#doc-card a.btn'); if (docAsk) docAsk.href = askHref;
+
+    // Aligner calendar: start date + n x interval (UTC, so no timezone drift)
+    var sm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d.start_date || ''));
+    if (sm && d.total_aligners && d.change_interval_days && d.total_aligners <= 120) {
+      var t0 = Date.UTC(+sm[1], +sm[2] - 1, +sm[3]), today = new Date(), tUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      var shortM = ['jan','shk','mar','pri','maj','qer','kor','gus','sht','tet','nën','dhj'];
+      var cal = $('cal'), nextMarked = false;
+      for (var i = 0; i <= d.total_aligners; i++) {
+        var t = t0 + i * d.change_interval_days * 86400000, dt = new Date(t);
+        var last = i === d.total_aligners;
+        var cell = document.createElement('div'); cell.className = 'd';
+        var lab = document.createElement('small'); lab.textContent = last ? 'Përfundimi' : 'Maskerina ' + (i + 1);
+        var val = document.createElement('b'); val.textContent = dt.getUTCDate() + ' ' + shortM[dt.getUTCMonth()];
+        cell.appendChild(lab); cell.appendChild(val);
+        if (last) cell.classList.add('end');
+        else if (!nextMarked && t >= tUTC) { cell.classList.add('next'); nextMarked = true; }
+        cal.appendChild(cell);
+      }
+      $('cal-card').classList.remove('hidden');
+      if (!d.est_completion_date) { var e = new Date(t0 + d.total_aligners * d.change_interval_days * 86400000); set('s-end', e.getUTCDate() + ' ' + MUAJT[e.getUTCMonth()] + ' ' + e.getUTCFullYear()); }
+    }
+
+    // Accept the plan
+    function showAccepted(at){
+      $('acc-ask').classList.add('hidden'); $('acc-done').classList.remove('hidden');
+      var w = new Date(at); $('acc-when').textContent = 'Më ' + w.getDate() + ' ' + MUAJT[w.getMonth()] + ' ' + w.getFullYear() + '. Klinika do të të kontaktojë për hapat e ardhshëm.';
+    }
+    if (d.accepted_at) showAccepted(d.accepted_at);
+    $('acc-btn').onclick = function(){ $('acc-row1').classList.add('hidden'); $('acc-row2').classList.remove('hidden'); $('acc-yes').focus(); };
+    $('acc-no').onclick = function(){ $('acc-row2').classList.add('hidden'); $('acc-row1').classList.remove('hidden'); };
+    $('acc-yes').onclick = function(){
+      var b = this; b.disabled = true; $('acc-err').classList.add('hidden');
+      fetch('/api/patient-plan', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ token: token, action: 'accept' }), cache:'no-store', referrerPolicy:'no-referrer' })
+        .then(function(r){ if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+        .then(function(j){ showAccepted(j.accepted_at); try { navigator.vibrate && navigator.vibrate(30); } catch(e){} })
+        .catch(function(){ b.disabled = false; $('acc-err').classList.remove('hidden'); });
+    };
 
     // Viewer: URL was validated + canonicalised server-side against the
     // OnyxCeph allowlist before it could be published.
