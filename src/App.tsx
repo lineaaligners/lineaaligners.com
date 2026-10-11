@@ -5,6 +5,7 @@ import { Features } from './components/Features';
 import { Process } from './components/Process';
 import { FAQSection } from './components/FAQ';
 import { Footer } from './components/Footer';
+import { Landing } from './components/home/Landing';
 import { TreatmentPlanner } from './components/TreatmentPlanner';
 import { ImageGenerator } from './components/ImageGenerator';
 import { AIAssistant } from './components/AIAssistant';
@@ -151,6 +152,16 @@ const App: React.FC = () => {
 
   if (view === 'admin' && isAdmin) {
     return <AdminPortal onLogout={handleLogout} onSwitchToPatient={() => setView('portal')} />;
+  }
+
+  if (view === 'home') {
+    return (
+      <>
+        <Landing lang={language} setLang={setLanguage} isAdmin={isAdmin} onAdmin={toggleAdminMode} onPlayVideo={() => setIsVideoModalOpen(true)} />
+        <AIAssistant language={language} />
+        <VideoModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} videoUrl={SCAN_VIDEO_URL} />
+      </>
+    );
   }
 
   return (
