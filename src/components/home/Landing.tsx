@@ -4,8 +4,20 @@ import { ArrowUpRight, Plus, Minus, Menu, X, Phone, MapPin, MessageCircle, ScanL
 import { WHATSAPP_URL, SCAN_VIDEO_URL, FAQS_CONTENT } from '../../constants';
 
 type Lang = 'en' | 'sq';
-const HERO_IMG = 'https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/freepik_anamorphic-lens-photograp_2698310219.jpeg';
-const ALIGNER_IMG = 'https://gwzvtrikxkudostserwe.supabase.co/storage/v1/object/public/linea/freepik_upscale-your-image-to-a-h_2777775323.jpeg';
+const HF = 'https://d8j0ntlcm91z4.cloudfront.net/user_3GK4EvYC3RV3gOLAljSryk8hjDQ/';
+const IMG = {
+  hero: HF + 'hf_20261004_203134_2798cb00-8f5e-4ca8-ac63-80617e2df842_min.webp',
+  laugh: HF + 'hf_20261004_203131_5905c43e-2e37-4bd0-b201-b62159882e58_min.webp',
+  grad: HF + 'hf_20261004_203129_039513d0-d62c-43c9-9334-45adef4cae92_min.webp',
+  selfie: HF + 'hf_20260827_083629_e56cf9a9-dfb3-44e8-b1a6-1313b61b81c5_min.webp',
+  night: HF + 'hf_20261004_203136_fac73ad2-ad76-4688-92ce-d8ddeac0064b_min.webp',
+  waterAligner: HF + 'hf_20261004_201720_30a4c15a-9650-4200-b999-6030f5de9149_min.webp',
+  caseHands: HF + 'hf_20261004_201417_1ff5d485-5840-44b2-87ae-5ccf98d9b047_min.webp',
+  tabletDrop: HF + 'hf_20261004_201010_5280e9fd-037a-463b-b5ee-083d7b7846f3_min.webp',
+  tabletFall: HF + 'hf_20261007_114956_7d5f6e9e-5c2a-4291-b261-71fd46d15ba6_min.webp',
+  box: '/images/retainer-cleaner-box.webp',
+  studio: '/images/linea-studio.webp',
+};
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const T = {
@@ -44,6 +56,11 @@ const T = {
     fCols: [['Linea', [['Si funksionon', '#si'], ['Pse Linea', '#pse'], ['Çmimi', '#cmimi'], ['Pyetje', '#pyetje']]], ['Pacientët', [['Portali', '/portal/'], ['A më përshtatet?', '/assessment/'], ['WhatsApp', WHATSAPP_URL]]]],
     fContact: 'Kontakti', fAddr: 'Rr. Bajram Kelmendi, Pejë 30000', fClinic: 'Në partneritet me Medident Dental Clinic',
     rights: 'Të gjitha të drejtat e rezervuara.',
+    momTag: 'Momentet', momTitle: 'Për çdo foto që ke pritur.',
+    moments: [['Pa u fshehur', 'Qesh lirshëm — askush s’i sheh.'], ['Dita e diplomës', 'Buzëqeshja gati për ditën e madhe.'], ['Çdo selfie', 'Pa tela në asnjë foto.'], ['Natën', 'I heq, i pastron, i vendos prapë.'], ['E pastër si kristal', 'Plastikë mjekësore transparente.']],
+    prodTag: 'Produkt i ri', prodTitle: 'Linea Retainer Cleaner', prodDesc: 'Tableta shkumuese antibakteriale për maskerina dhe retainer. Një tabletë në ujë, disa minuta — dhe maskerinat dalin të pastra e transparente.',
+    prodPts: ['30 tableta', 'Heq njollat dhe pllakën', 'Extra Strength'], prodBtn: 'Porosit në WhatsApp',
+    stuTag: 'Bërë në Pejë', stuTitle: 'Një brand kosovar, me standard botëror.', stuDesc: 'Linea lindi në Pejë — nga ideja te plani 3D, deri te maskerina në dorën tënde. Me mbështetjen klinike të Medident Dental Clinic, që nga viti 1999.',
   },
   en: {
     nav: [['How it works', '#si'], ['Why Linea', '#pse'], ['Pricing', '#cmimi'], ['FAQ', '#pyetje']],
@@ -80,6 +97,11 @@ const T = {
     fCols: [['Linea', [['How it works', '#si'], ['Why Linea', '#pse'], ['Pricing', '#cmimi'], ['FAQ', '#pyetje']]], ['Patients', [['Portal', '/portal/'], ['Is it right for me?', '/assessment/?lang=en'], ['WhatsApp', WHATSAPP_URL]]]],
     fContact: 'Contact', fAddr: 'Rr. Bajram Kelmendi, Pejë 30000', fClinic: 'In partnership with Medident Dental Clinic',
     rights: 'All rights reserved.',
+    momTag: 'Moments', momTitle: 'For every photo you’ve been waiting for.',
+    moments: [['No more hiding', 'Laugh freely — nobody sees them.'], ['Graduation day', 'A smile ready for the big day.'], ['Every selfie', 'No wires in any photo.'], ['At night', 'Take them out, clean, pop back in.'], ['Crystal clear', 'Transparent medical-grade plastic.']],
+    prodTag: 'New product', prodTitle: 'Linea Retainer Cleaner', prodDesc: 'Antibacterial effervescent tablets for aligners and retainers. One tablet in water, a few minutes — and your aligners come out clean and clear.',
+    prodPts: ['30 tablets', 'Removes stains & plaque', 'Extra Strength'], prodBtn: 'Order on WhatsApp',
+    stuTag: 'Made in Pejë', stuTitle: 'A Kosovar brand, world-class standard.', stuDesc: 'Linea was born in Pejë — from the idea to the 3D plan, to the aligner in your hand. Clinically backed by Medident Dental Clinic since 1999.',
   },
 };
 
@@ -219,7 +241,7 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
     <section id="top" ref={ref} onMouseMove={e => { mx.set((e.clientX / window.innerWidth - .5) * 30); my.set((e.clientY / window.innerHeight - .5) * 30); }}
       className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-end">
       <motion.div style={{ y: imgY }} className="absolute inset-0">
-        <img src={HERO_IMG} alt="" className="w-full h-full object-cover opacity-40 scale-110" fetchPriority="high" />
+        <img src={IMG.hero} alt="" className="w-full h-full object-cover object-[70%_center] opacity-55 scale-110" fetchPriority="high" />
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-b from-[#06101F]/60 via-[#06101F]/40 to-[#06101F]" />
       <motion.div style={{ x: sx, y: sy }} className="absolute -top-40 -right-40 w-[60vw] h-[60vw] rounded-full bg-[#4169E1] blur-[140px] opacity-40 blob" />
@@ -334,7 +356,7 @@ const Why: React.FC<{ lang: Lang }> = ({ lang }) => {
             return (
               <Up key={title} delay={i * .06} className={big ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : wide ? 'sm:col-span-2 lg:col-span-3' : ''}>
                 <div className={`group h-full rounded-[28px] p-7 sm:p-8 flex flex-col justify-between gap-10 transition-all duration-500 hover:-translate-y-1 ${big ? 'bg-[#0B1A33] text-white min-h-[340px] overflow-hidden relative' : 'bg-white border border-[#0B1A33]/[.06] hover:shadow-[0_30px_80px_rgba(11,26,51,.12)]'}`}>
-                  {big && <img src={ALIGNER_IMG} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-[1.5s]" />}
+                  {big && <img src={IMG.caseHands} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
                   {big && <div className="absolute inset-0 bg-gradient-to-t from-[#0B1A33] via-[#0B1A33]/50 to-transparent" />}
                   <div className={`relative w-12 h-12 rounded-2xl grid place-items-center transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110 ${big ? 'bg-white/15 backdrop-blur' : 'bg-[#4169E1]/10 text-[#4169E1]'}`}><I className="w-6 h-6" /></div>
                   <div className="relative">
@@ -392,7 +414,7 @@ const Film: React.FC<{ lang: Lang; onPlay: () => void }> = ({ lang, onPlay }) =>
   return (
     <section ref={ref} className="bg-[#F4F6FA] pb-28 sm:pb-40 px-3 sm:px-6">
       <motion.div style={{ scale, borderRadius: radius }} className="relative overflow-hidden mx-auto max-w-[1500px] aspect-[4/5] sm:aspect-[16/8] bg-[#06101F]">
-        <img src={HERO_IMG} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70" />
+        <img src={IMG.night} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         {inView && <video ref={vref} src={SCAN_VIDEO_URL} muted loop playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#06101F] via-[#06101F]/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-6 sm:p-14 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -529,6 +551,89 @@ const BigFooter: React.FC<{ lang: Lang }> = ({ lang }) => {
   );
 };
 
+/* ---------- moments: horizontal scroll gallery ---------- */
+const Moments: React.FC<{ lang: Lang }> = ({ lang }) => {
+  const t = T[lang];
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
+  const track = useRef<HTMLDivElement>(null);
+  const [dist, setDist] = useState(0);
+  useEffect(() => { const m = () => track.current && setDist(Math.max(0, track.current.scrollWidth - window.innerWidth + 32)); m(); window.addEventListener('resize', m); return () => window.removeEventListener('resize', m); }, []);
+  const x = useTransform(scrollYProgress, [0.05, 0.95], [0, -dist]);
+  const pics = [IMG.laugh, IMG.grad, IMG.selfie, IMG.waterAligner, IMG.night];
+  return (
+    <section ref={ref} className="relative h-[300vh] bg-[#06101F]" aria-label={t.momTag}>
+      <div className="sticky top-0 h-[100svh] overflow-hidden flex flex-col justify-center">
+        <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 mb-10">
+          <Tag>{t.momTag}</Tag>
+          <h2 className="font-display text-5xl sm:text-7xl text-white leading-[.95] tracking-[-.03em] mt-6 max-w-3xl"><Words text={t.momTitle} /></h2>
+        </div>
+        <motion.div ref={track} style={{ x }} className="flex gap-5 pl-5 sm:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] w-max">
+          {t.moments.map(([title, cap], i) => (
+            <figure key={title} className={`group relative shrink-0 overflow-hidden rounded-[28px] bg-white/5 ${i % 2 ? 'w-[70vw] sm:w-[30vw] h-[52vh]' : 'w-[80vw] sm:w-[44vw] h-[46vh] self-end'}`}>
+              <img src={pics[i]} alt={title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" />
+              <figcaption className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="font-display text-2xl text-white">{title}</div>
+                <div className="text-white/70 text-sm mt-1">{cap}</div>
+              </figcaption>
+            </figure>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+/* ---------- product: retainer cleaner ---------- */
+const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
+  const t = T[lang];
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const y1 = useTransform(scrollYProgress, [0, 1], [80, -80]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [-40, 120]);
+  const rot = useTransform(scrollYProgress, [0, 1], [-6, 4]);
+  return (
+    <section ref={ref} className="relative overflow-hidden bg-gradient-to-b from-[#0E0A24] via-[#1A1145] to-[#0E0A24] text-white py-28 sm:py-40">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-[#7C5CFF] blur-[200px] opacity-25" />
+      <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-16 items-center">
+        <div className="relative h-[520px] sm:h-[620px]">
+          <motion.img style={{ y: y2 }} src={IMG.tabletFall} alt="" loading="lazy" className="absolute left-0 top-6 w-[42%] aspect-square object-cover rounded-[28px] shadow-2xl" />
+          <motion.img style={{ y: y1, rotate: rot }} src={IMG.box} alt="Linea Antibacterial Retainer Cleaner" loading="lazy" className="absolute left-[22%] top-0 w-[56%] rounded-[28px] shadow-[0_60px_120px_rgba(0,0,0,.6)]" />
+          <motion.img style={{ y: y2 }} src={IMG.tabletDrop} alt="" loading="lazy" className="absolute right-0 bottom-0 w-[34%] aspect-[3/5] object-cover rounded-[28px] shadow-2xl" />
+        </div>
+        <div>
+          <div className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[#B9A6FF]"><span className="w-6 h-px bg-[#B9A6FF]" />{t.prodTag}</div>
+          <h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em] mt-6"><Words text={t.prodTitle} /></h2>
+          <Up delay={.15}><p className="text-white/70 text-lg mt-6 max-w-md">{t.prodDesc}</p></Up>
+          <Up delay={.25}>
+            <div className="flex flex-wrap gap-2 mt-8">{t.prodPts.map(x => <span key={x} className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm">{x}</span>)}</div>
+            <button onClick={openWA} className="group mt-10 flex items-center gap-4 rounded-full bg-white text-[#1A1145] pl-6 pr-2 py-2 font-semibold">{t.prodBtn}<span className="grid place-items-center w-10 h-10 rounded-full bg-[#7C5CFF] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span></button>
+          </Up>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ---------- studio / brand ---------- */
+const Studio: React.FC<{ lang: Lang }> = ({ lang }) => {
+  const t = T[lang];
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const scale = useTransform(scrollYProgress, [0, 1], [1.25, 1]);
+  return (
+    <section ref={ref} className="relative h-[90vh] min-h-[560px] overflow-hidden bg-[#0E0A24]">
+      <motion.img style={{ scale }} src={IMG.studio} alt="Linea studio, Pejë" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#06101F] via-[#06101F]/40 to-transparent" />
+      <div className="relative h-full max-w-7xl mx-auto px-5 sm:px-8 flex flex-col justify-end pb-16 sm:pb-24">
+        <Tag>{t.stuTag}</Tag>
+        <h2 className="font-display text-5xl sm:text-7xl text-white leading-[.95] tracking-[-.03em] mt-6 max-w-4xl"><Words text={t.stuTitle} /></h2>
+        <Up delay={.2}><p className="text-white/75 text-lg mt-6 max-w-xl">{t.stuDesc}</p></Up>
+      </div>
+    </section>
+  );
+};
+
 /* ---------- page ---------- */
 export const Landing: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin?: boolean; onAdmin?: () => void; onPlayVideo: () => void }> = ({ lang, setLang, isAdmin, onAdmin, onPlayVideo }) => (
   <div className="landing bg-[#06101F] text-white overflow-x-clip">
@@ -541,6 +646,9 @@ export const Landing: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin
       <Why lang={lang} />
       <How lang={lang} />
       <Film lang={lang} onPlay={onPlayVideo} />
+      <Moments lang={lang} />
+      <Studio lang={lang} />
+      <Product lang={lang} />
       <Pricing lang={lang} />
       <Faq lang={lang} />
     </main>
