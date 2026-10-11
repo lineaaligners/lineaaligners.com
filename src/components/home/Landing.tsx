@@ -564,14 +564,14 @@ const Moments: React.FC<{ lang: Lang }> = ({ lang }) => {
   return (
     <section ref={ref} className="relative h-[300vh] bg-[#06101F]" aria-label={t.momTag}>
       <div className="sticky top-0 h-[100svh] overflow-hidden flex flex-col justify-center">
-        <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 mb-10">
+        <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 mb-8 pt-16">
           <Tag>{t.momTag}</Tag>
-          <h2 className="font-display text-5xl sm:text-7xl text-white leading-[.95] tracking-[-.03em] mt-6 max-w-3xl"><Words text={t.momTitle} /></h2>
+          <h2 className="font-display text-5xl sm:text-7xl text-white leading-[.95] tracking-[-.03em] mt-4 max-w-3xl"><Words text={t.momTitle} /></h2>
         </div>
         <motion.div ref={track} style={{ x }} className="flex gap-5 pl-5 sm:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] w-max">
           {t.moments.map(([title, cap], i) => (
-            <figure key={title} className={`group relative shrink-0 overflow-hidden rounded-[28px] bg-white/5 ${i % 2 ? 'w-[70vw] sm:w-[30vw] h-[52vh]' : 'w-[80vw] sm:w-[44vw] h-[46vh] self-end'}`}>
-              <img src={pics[i]} alt={title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" />
+            <figure key={title} className={`group relative shrink-0 overflow-hidden rounded-[28px] bg-white/5 ${i % 2 ? 'w-[70vw] sm:w-[28vw] h-[44vh]' : 'w-[80vw] sm:w-[40vw] h-[38vh] self-end'}`}>
+              <img src={pics[i]} alt={title} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" />
               <figcaption className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
                 <div className="font-display text-2xl text-white">{title}</div>
                 <div className="text-white/70 text-sm mt-1">{cap}</div>
