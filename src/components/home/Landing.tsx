@@ -25,14 +25,14 @@ const T = {
   sq: {
     nav: [['Si funksionon', '#si'], ['Pse Linea', '#pse'], ['Çmimi', '#cmimi'], ['Pyetje', '#pyetje']],
     login: 'Hyr', cta: 'Skanim falas',
-    eyebrow: 'Aligner transparentë · Pejë, Kosovë',
+    eyebrow: 'Aligner transparentë në Pejë, Kosovë',
     h1a: 'Buzëqeshja', h1b: 'që e ke', h1c: 'merituar.',
     sub: 'Maskerina transparente, të dizajnuara në 3D vetëm për dhëmbët e tu. Pa tela, pa metal — dhe askush nuk e vëren.',
     b1: 'Rezervo skanimin falas', b2: 'A më përshtatet?',
     chips: ['0% interes', '4–9 muaj', 'Retainer të përfshirë'],
     marquee: ['Pa tela', 'Pa metal', 'Plan 3D', 'Skanim falas', 'Bërë në Pejë', 'Mbikëqyrje nga dentisti', 'Pagesë me këste'],
     trTag: 'Transformimi', trTitle: 'Çdo maskerinë, një hap më afër.', trDesc: 'Lëviz poshtë dhe shih si dhëmbët zhvendosen hap pas hapi — pikërisht siç planifikohet në 3D para se të fillosh.', step: 'Hapi',
-    whyTag: 'Pse Linea', whyTitle: 'Gjithçka që bëjnë telat.', whyTitle2: 'Asgjë nga ato që s’i do.',
+    whyIntro: 'Linea Aligners janë aligner transparentë (maskerina të padukshme) që i drejtojnë dhëmbët pa tela e pa breketa. Çdo trajtim planifikohet në 3D dhe mbikëqyret nga dentisti në Pejë.', whyTag: 'Pse Linea', whyTitle: 'Gjithçka që bëjnë telat.', whyTitle2: 'Asgjë nga ato që s’i do.',
     why: [
       ['Pothuajse të padukshme', 'Plastikë mjekësore krejt transparente. Në foto, në punë, në dasëm — askush s’e kupton.', 'eye'],
       ['I heq kur të duash', 'Ha, pi kafe, laj dhëmbët pa pengesa. I vendos prapë dhe vazhdon.', 'spark'],
@@ -66,14 +66,14 @@ const T = {
   en: {
     nav: [['How it works', '#si'], ['Why Linea', '#pse'], ['Pricing', '#cmimi'], ['FAQ', '#pyetje']],
     login: 'Log in', cta: 'Free scan',
-    eyebrow: 'Clear aligners · Pejë, Kosovo',
+    eyebrow: 'Clear aligners in Pejë, Kosovo',
     h1a: 'The smile', h1b: 'you’ve always', h1c: 'deserved.',
     sub: 'Clear aligners designed in 3D for your teeth only. No wires, no metal — and nobody notices.',
     b1: 'Book your free scan', b2: 'Is it right for me?',
     chips: ['0% interest', '4–9 months', 'Retainers included'],
     marquee: ['No wires', 'No metal', '3D planned', 'Free scan', 'Made in Pejë', 'Dentist-supervised', 'Pay in installments'],
     trTag: 'The transformation', trTitle: 'Every aligner, one step closer.', trDesc: 'Scroll and watch the teeth move step by step — exactly as it is planned in 3D before you start.', step: 'Step',
-    whyTag: 'Why Linea', whyTitle: 'Everything braces do.', whyTitle2: 'None of what you don’t want.',
+    whyIntro: 'Linea Aligners are clear aligners — nearly invisible trays that straighten teeth without wires or brackets. Every treatment is planned in 3D and supervised by a dentist in Pejë, Kosovo.', whyTag: 'Why Linea', whyTitle: 'Everything braces do.', whyTitle2: 'None of what you don’t want.',
     why: [
       ['Nearly invisible', 'Fully transparent medical-grade plastic. At work, in photos, at weddings — nobody can tell.', 'eye'],
       ['Remove them anytime', 'Eat, drink coffee, brush freely. Pop them back in and carry on.', 'spark'],
@@ -242,7 +242,7 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
     <section id="top" ref={ref} onMouseMove={e => { mx.set((e.clientX / window.innerWidth - .5) * 30); my.set((e.clientY / window.innerHeight - .5) * 30); }}
       className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-end">
       <motion.div style={{ y: imgY }} className="absolute inset-0">
-        <img src={IMG.hero} alt="" className="w-full h-full object-cover object-[70%_center] opacity-55 scale-110" fetchPriority="high" />
+        <img src={IMG.hero} alt={lang === 'sq' ? 'Çift që buzëqesh — buzëqeshje e drejtë me aligner transparentë' : 'Couple smiling — straight smile with clear aligners'} className="w-full h-full object-cover object-[70%_center] opacity-55 scale-110" fetchPriority="high" />
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-b from-[#06101F]/60 via-[#06101F]/40 to-[#06101F]" />
       <motion.div style={{ x: sx, y: sy }} className="absolute -top-40 -right-40 w-[60vw] h-[60vw] rounded-full bg-[#4169E1] blur-[140px] opacity-40 blob" />
@@ -252,12 +252,13 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
       <motion.div style={{ opacity: fade }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pb-14 sm:pb-20 pt-32">
         <div className="grid lg:grid-cols-12 gap-10 items-end">
           <div className="lg:col-span-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .3, duration: .8, ease: EASE }}
-              className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 backdrop-blur px-4 py-2 text-[12px] font-medium text-white/80 mb-8">
+            <h1 className="font-display text-white leading-[.92] tracking-[-.03em] text-[14vw] sm:text-[10vw] lg:text-[7.4rem]">
+            <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .3, duration: .8, ease: EASE }}
+              style={{ letterSpacing: 0, lineHeight: 1.5, fontSize: 12 }} className="flex w-fit items-center gap-3 rounded-full border border-white/15 bg-white/5 backdrop-blur px-4 py-2 text-[12px] font-medium text-white/80 mb-8">
               <span className="relative flex w-2 h-2"><span className="absolute inset-0 rounded-full bg-[#87CEEB] animate-ping" /><span className="relative w-2 h-2 rounded-full bg-[#87CEEB]" /></span>
               {t.eyebrow}
-            </motion.div>
-            <h1 className="font-display text-white leading-[.92] tracking-[-.03em] text-[14vw] sm:text-[10vw] lg:text-[7.4rem]">
+            </motion.span><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}> — </span>
+
               {[t.h1a, t.h1b].map((l, i) => (
                 <span key={i} className="block overflow-hidden pb-[.12em] -mb-[.12em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.2, ease: EASE, delay: .35 + i * .12 }}>{l}</motion.span></span>
               ))}
@@ -349,6 +350,7 @@ const Why: React.FC<{ lang: Lang }> = ({ lang }) => {
             <div className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[#4169E1]"><span className="w-6 h-px bg-[#4169E1]" />{t.whyTag}</div>
             <h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em] mt-6"><Words text={t.whyTitle} /><br /><Words text={t.whyTitle2} className="italic font-serif-i text-[#4169E1]" delay={.2} /></h2>
           </div>
+          <p className="text-[#0B1A33]/60 text-lg max-w-sm">{t.whyIntro}</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {t.why.map(([title, desc, ic], i) => {
@@ -357,7 +359,7 @@ const Why: React.FC<{ lang: Lang }> = ({ lang }) => {
             return (
               <Up key={title} delay={i * .06} className={big ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : wide ? 'sm:col-span-2 lg:col-span-3' : ''}>
                 <div className={`group h-full rounded-[28px] p-7 sm:p-8 flex flex-col justify-between gap-10 transition-all duration-500 hover:-translate-y-1 ${big ? 'bg-[#0B1A33] text-white min-h-[340px] overflow-hidden relative' : 'bg-white border border-[#0B1A33]/[.06] hover:shadow-[0_30px_80px_rgba(11,26,51,.12)]'}`}>
-                  {big && <img src={IMG.caseHands} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
+                  {big && <img src={IMG.caseHands} alt={lang === 'sq' ? 'Kutia Linea me aligner transparent' : 'Linea case with a clear aligner'} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
                   {big && <div className="absolute inset-0 bg-gradient-to-t from-[#0B1A33] via-[#0B1A33]/50 to-transparent" />}
                   <div className={`relative w-12 h-12 rounded-2xl grid place-items-center transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110 ${big ? 'bg-white/15 backdrop-blur' : 'bg-[#4169E1]/10 text-[#4169E1]'}`}><I className="w-6 h-6" /></div>
                   <div className="relative">
@@ -415,7 +417,7 @@ const Film: React.FC<{ lang: Lang; onPlay: () => void }> = ({ lang, onPlay }) =>
   return (
     <section ref={ref} className="bg-[#F4F6FA] pb-28 sm:pb-40 px-3 sm:px-6">
       <motion.div style={{ scale, borderRadius: radius }} className="relative overflow-hidden mx-auto max-w-[1500px] aspect-[4/5] sm:aspect-[16/8] bg-[#06101F]">
-        <img src={IMG.night} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={IMG.night} alt={lang === 'sq' ? 'Aligner në gotë uji natën' : 'Aligner in a glass of water at night'} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         {inView && <video ref={vref} src={SCAN_VIDEO_URL} muted loop playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#06101F] via-[#06101F]/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-6 sm:p-14 flex flex-col sm:flex-row sm:items-end justify-between gap-6">

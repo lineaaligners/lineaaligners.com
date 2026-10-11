@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /portal/
+Disallow: /patient/
+Disallow: /api/
 
 Sitemap: https://www.lineaaligners.com/sitemap.xml

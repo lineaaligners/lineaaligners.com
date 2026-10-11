@@ -198,7 +198,7 @@ export const FAQS_CONTENT = {
   en: [
     {
       question: 'What exactly are clear aligners?',
-      answer: "They're clear, custom-made plastic trays that fit snugly over your teeth. You wear a new set every 1-2 weeks, and each one gently nudges your teeth a little closer to where they should be. By the end, your teeth have moved into their new position — without a single metal bracket."
+      answer: "They're clear, custom-made plastic trays that fit snugly over your teeth. You switch to a new set about every 10 days, and each one gently nudges your teeth a little closer to where they should be. By the end, your teeth have moved into their new position — without a single metal bracket."
     },
     {
       question: 'How long does the treatment take?',
@@ -215,12 +215,24 @@ export const FAQS_CONTENT = {
     {
       question: 'Are there any age restrictions?',
       answer: 'Linea Aligners are suitable for adults and teenagers whose permanent teeth have fully erupted.'
+    },
+    {
+      question: 'Where can I get Linea clear aligners?',
+      answer: 'Linea Aligners are made in Pejë, Kosovo. Your free 3D scan and check-ups take place at Medident Dental Clinic, Rr. Bajram Kelmendi, Pejë. Patients come from across Kosovo, Albania, North Macedonia, Montenegro and the diaspora.'
+    },
+    {
+      question: 'How much do clear aligners cost in Kosovo?',
+      answer: 'The price depends on your case and the number of aligners you need. After the free 3D scan you get an exact written quote, and you can pay in installments with 0% interest.'
+    },
+    {
+      question: 'I live abroad. Can I still do treatment with Linea?',
+      answer: 'Yes. Aligners are worn at home, so most diaspora patients only need one or two visits to Pejë. Progress is followed through the Linea patient portal and WhatsApp.'
     }
   ],
   sq: [
     {
       question: 'Çka janë saktësisht aligner-at transparentë?',
-      answer: 'Janë pjata plastike transparente, të bëra posaçërisht për dhëmbët tuaj. Vishni një set të ri çdo 1-2 javë, dhe secili i afron pak dhëmbët drejt vendit të duhur. Në fund, dhëmbët tuaj kanë lëvizur në pozicionin e ri — pa asnjë breketë metalike.'
+      answer: 'Janë pjata plastike transparente, të bëra posaçërisht për dhëmbët tuaj. Ndërroni setin afërsisht çdo 10 ditë, dhe secili i afron pak dhëmbët drejt vendit të duhur. Në fund, dhëmbët tuaj kanë lëvizur në pozicionin e ri — pa asnjë breketë metalike.'
     },
     {
       question: 'Sa kohë zgjat trajtimi?',
@@ -237,6 +249,18 @@ export const FAQS_CONTENT = {
     {
       question: 'A ka kufizime moshe?',
       answer: 'Linea Aligners janë të përshtatshme për të rritur dhe adoleshentë dhëmbët e të cilëve kanë dalë plotësisht.'
+    },
+    {
+      question: 'Ku mund t\'i bëj aligner-at Linea?',
+      answer: 'Linea Aligners prodhohen në Pejë, Kosovë. Skanimi 3D falas dhe kontrollet bëhen në Medident Dental Clinic, Rr. Bajram Kelmendi, Pejë. Na vijnë pacientë nga e gjithë Kosova, Shqipëria, Maqedonia e Veriut, Mali i Zi dhe diaspora.'
+    },
+    {
+      question: 'Sa kushtojnë aligner-at transparentë në Kosovë?',
+      answer: 'Çmimi varet nga rasti juaj dhe numri i maskerinave. Pas skanimit 3D falas merrni ofertën e saktë me shkrim, dhe mund të paguani me këste pa interes (0%).'
+    },
+    {
+      question: 'Jetoj jashtë vendit. A mund ta bëj trajtimin me Linea?',
+      answer: 'Po. Maskerinat mbahen në shtëpi, prandaj shumica e pacientëve nga diaspora kanë nevojë vetëm për një ose dy vizita në Pejë. Progresi ndiqet përmes portalit të pacientit dhe WhatsApp-it.'
     }
   ]
 };
