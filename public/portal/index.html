@@ -1089,7 +1089,7 @@ function App(){
       h('p',{style:{margin:'2px 0 0',fontSize:12,opacity:.65}},isIOS?t.a2hsIos:t.a2hsAndroid)),
     !isIOS&&installEvt&&h('button',{className:'btn btn-primary',onClick:doInstall,style:{padding:'8px 14px',fontSize:12}},t.a2hsInstall),
     h('button',{onClick:dismissA2hs,'aria-label':'Dismiss',style:{background:'none',border:'none',color:'inherit',opacity:.5,cursor:'pointer',padding:4,display:'flex'}},h('i',{className:'ph ph-x'})));
-  const REVIEW_URL='';
+  const REVIEW_URL='https://www.lineaaligners.com/review';
   const finished=total>0&&cur>=total;
   const reviewHref=REVIEW_URL||('https://wa.me/38349772307?text='+encodeURIComponent(lang==='sq'?'Përshëndetje! Dua të ndaj përvojën time me Linea Aligners:':'Hi! I would like to share my Linea Aligners experience:'));
   const reviewCard=finished&&h('div',{className:'fade-up card',style:{padding:'var(--space-5)',gap:'var(--space-3)',alignItems:'flex-start'}},

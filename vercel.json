@@ -111,5 +111,12 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/review",
+      "destination": "https://wa.me/38349772307?text=P%C3%ABrsh%C3%ABndetje!%20Dua%20t%C3%AB%20ndaj%20p%C3%ABrvoj%C3%ABn%20time%20me%20Linea%20Aligners%3A",
+      "permanent": false
+    }
   ]
 }
