@@ -219,12 +219,12 @@ function alertBox(msg){const n=document.createElement('div');n.textContent=msg;n
 // export PNG
 async function toPNG(){
   const prev=state.sel;select(null);
-  const clone=svg.cloneNode(true);clone.setAttribute('width',2000);clone.setAttribute('height',1120);
+  const clone=svg.cloneNode(true);clone.setAttribute('width',1760);clone.setAttribute('height',800);
   const bg=document.createElementNS(NS,'rect');bg.setAttribute('width',1000);bg.setAttribute('height',560);bg.setAttribute('fill','#120C30');clone.insertBefore(bg,clone.firstChild);
-  const brand=document.createElementNS(NS,'text');brand.textContent='Linea Mouthguard · lineaaligners.com';brand.setAttribute('x',500);brand.setAttribute('y',535);brand.setAttribute('text-anchor','middle');brand.setAttribute('fill','#C7B8FF');brand.setAttribute('font-size','22');brand.setAttribute('font-family','Arial,sans-serif');clone.appendChild(brand);
+  const brand=document.createElementNS(NS,'text');brand.textContent='Linea Mouthguard · lineaaligners.com';brand.setAttribute('x',500);brand.setAttribute('y',478);brand.setAttribute('text-anchor','middle');brand.setAttribute('fill','#C7B8FF');brand.setAttribute('font-size','22');brand.setAttribute('font-family','Arial,sans-serif');clone.appendChild(brand);
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
   const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
-  const c=document.createElement('canvas');c.width=2000;c.height=1120;c.getContext('2d').drawImage(img,0,0,2000,1120);
+  const c=document.createElement('canvas');c.width=1760;c.height=800;c.getContext('2d').drawImage(img,0,0,1760,800);
   select(prev);return c.toDataURL('image/png');
 }
 $('dl').onclick=async()=>{try{const d=await toPNG();const a=document.createElement('a');a.href=d;a.download='linea-mouthguard.png';document.body.appendChild(a);a.click();a.remove()}catch(e){alertBox('Shkarkimi nuk funksionoi. Provo me një shfletues tjetër.')}};
