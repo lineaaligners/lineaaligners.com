@@ -31,6 +31,14 @@
     {
       "source": "/patient/",
       "destination": "/patient/index.html"
+    },
+    {
+      "source": "/mouthguard",
+      "destination": "/mouthguard/index.html"
+    },
+    {
+      "source": "/mouthguard/",
+      "destination": "/mouthguard/index.html"
     }
   ],
   "crons": [

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dizajno mbrojtësen tënde | Linea Mouthguard</title>
+<meta name="description" content="Dizajno mbrojtësen e gojës (mouthguard) me ngjyrat, numrin, emrin ose logon tënde. Bërë me porosi në Pejë nga Linea.">
+<link rel="icon" href="/linea-logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+:root{--bg:#0E0A24;--panel:#17113A;--panel2:#20184D;--line:rgba(255,255,255,.12);--ink:#F5F2FF;--muted:#B6ADDA;--violet:#7C5CFF;--lilac:#C7B8FF}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter Tight',system-ui,sans-serif}
+a{color:var(--lilac)}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px max(16px,env(safe-area-inset-left)) 18px max(16px,env(safe-area-inset-right));max-width:1280px;margin:0 auto}
+header img{height:30px;filter:brightness(0) invert(1)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px 48px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+h1{font-size:clamp(34px,5vw,60px);line-height:.98;letter-spacing:-.035em;margin:8px 0 10px;font-weight:700}
+h1 em{font-family:'Instrument Serif',Georgia,serif;font-weight:400;color:var(--lilac)}
+.sub{color:var(--muted);font-size:16px;max-width:620px;margin:0 0 18px}
+.stage{position:relative;background:radial-gradient(70% 60% at 50% 40%,#2A1F66 0%,#120C30 70%);border:1px solid var(--line);border-radius:28px;padding:16px;aspect-ratio:2/1;display:grid;place-items:center;overflow:hidden;touch-action:none}
+.stage svg{width:100%;height:100%}
+.views{position:absolute;left:16px;top:14px;display:flex;gap:6px}
+.hint{position:absolute;right:16px;bottom:12px;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:18px;align-self:start;position:sticky;top:12px}
+@media(max-width:900px){.panel{position:static}.stage{aspect-ratio:4/3;padding:4px}}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec h3{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lilac)}
+.sw{display:flex;flex-wrap:wrap;gap:8px}
+.sw button{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.sw button[aria-pressed="true"]{border-color:#fff;transform:scale(1.08)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:600 13px 'Inter Tight',sans-serif;cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--violet);border-color:var(--violet)}
+.row{display:flex;gap:8px}
+input[type=text]{flex:1;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:500 15px 'Inter Tight',sans-serif}
+.btn{padding:11px 14px;border-radius:12px;border:0;background:var(--violet);color:#fff;font:600 14px 'Inter Tight',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line)}
+.btn.wide{width:100%;padding:14px}
+.stk{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.stk button{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;display:grid;place-items:center;padding:6px}
+.stk svg{width:100%;height:100%}
+.edit{background:var(--panel2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.edit label{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.edit input[type=range]{flex:1;accent-color:var(--violet)}
+.upload{border:1.5px dashed rgba(199,184,255,.45);border-radius:14px;padding:14px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+:focus-visible{outline:2px solid var(--lilac);outline-offset:2px}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" aria-label="Linea Aligners"><img src="/linea-logo.svg" alt="Linea"></a>
+  <a class="btn ghost" href="https://wa.me/38349772307" target="_blank" rel="noopener">WhatsApp</a>
+</header>
+
+<div class="wrap">
+  <main>
+    <div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--lilac);font-weight:600">Linea Mouthguard</div>
+    <h1>Dizajno <em>mbrojtësen</em> tënde.</h1>
+    <p class="sub">Zgjidh ngjyrat, shto numrin, emrin, stiker ose logon e ekipit. E bëjmë me masën e dhëmbëve të tu, në Pejë.</p>
+    <div class="stage" id="stage">
+      <svg id="svg" viewBox="60 90 880 400" xmlns="http://www.w3.org/2000/svg" aria-label="Pamja e mbrojtëses">
+        <defs>
+          <clipPath id="clip"><path id="clipPath"/></clipPath>
+          <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".35" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
+          <pattern id="pStripes" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="30" height="60" id="pStripesC"/></pattern>
+          <pattern id="pDots" width="44" height="44" patternUnits="userSpaceOnUse"><circle cx="22" cy="22" r="8" id="pDotsC"/></pattern>
+          <linearGradient id="pFade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" id="pFadeA"/><stop offset="1" id="pFadeB"/></linearGradient>
+        </defs>
+        <g id="guard">
+          <path id="base" stroke="rgba(0,0,0,.35)" stroke-width="3"/>
+          <g clip-path="url(#clip)"><rect id="patt" x="0" y="0" width="1000" height="560" fill="none"/><g id="layers"></g></g>
+          <path id="teethLine" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3"/>
+          <path id="shine" fill="url(#gloss)" pointer-events="none"/>
+        </g>
+        <rect id="sel" fill="none" stroke="#C7B8FF" stroke-width="3" stroke-dasharray="10 8" visibility="hidden" pointer-events="none"/>
+      </svg>
+      <div class="hint">Tërhiq elementet me gisht ose maus</div>
+    </div>
+    <p class="note" style="margin-top:12px">Pamja është ilustrim. Mbrojtësja bëhet me porosi sipas masës së dhëmbëve, dhe dizajni final konfirmohet me ty para prodhimit.</p>
+  </main>
+
+  <aside class="panel" aria-label="Opsionet e dizajnit">
+    <div class="sec"><h3>Ngjyra kryesore</h3><div class="sw" id="sw1"></div></div>
+    <div class="sec"><h3>Motivi</h3><div class="pills" id="patterns"></div><div class="sw" id="sw2" aria-label="Ngjyra e dytë"></div></div>
+    <div class="sec"><h3>Numri</h3><div class="row"><input type="text" id="numIn" inputmode="numeric" maxlength="3" placeholder="p.sh. 23" aria-label="Numri"><button class="btn" id="numAdd">Shto</button></div></div>
+    <div class="sec"><h3>Emri ose teksti</h3><div class="row"><input type="text" id="txtIn" maxlength="14" placeholder="p.sh. ARTA" aria-label="Teksti"><button class="btn" id="txtAdd">Shto</button></div></div>
+    <div class="sec"><h3>Stikerë</h3><div class="stk" id="stickers"></div></div>
+    <div class="sec"><h3>Logo ose imazh (PNG)</h3>
+      <label class="upload" for="file">Ngarko PNG, JPG ose SVG<br><span style="font-size:11px">Më mirë PNG me sfond transparent</span></label>
+      <input type="file" id="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
+    </div>
+    <div class="edit" id="edit" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">Elementi i zgjedhur</b><button class="btn ghost" id="del" style="padding:7px 10px">Fshije</button></div>
+      <label>Madhësia <input type="range" id="size" min="0.3" max="3" step="0.01"></label>
+      <label>Rrotullimi <input type="range" id="rot" min="-180" max="180" step="1"></label>
+      <div class="sw" id="swEl" aria-label="Ngjyra e elementit"></div>
+    </div>
+    <div class="sec">
+      <button class="btn wide" id="order">Porosit në WhatsApp</button>
+      <button class="btn ghost wide" id="dl">Shkarko dizajnin (PNG)</button>
+      <p class="note">Pas porosisë, na dërgo në WhatsApp edhe imazhin e shkarkuar të dizajnit.</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const svg=$('svg'), layers=$('layers'), sel=$('sel');
+// Mouthguard front view: smooth labial flange on top, scalloped teeth edge at the bottom
+const yb=x=>335+85*Math.sin(Math.PI*(x-90)/820);           // incisal edge baseline
+const yt=x=>215-95*Math.sin(Math.PI*(x-90)/820);           // gum flange line
+const widths=[70,74,78,84,96,104,104,96,84,78,74,70];        // molars -> incisors -> molars
+const total=widths.reduce((a,b)=>a+b,0), k=820/total;
+let xs=[90];widths.forEach(w=>xs.push(xs[xs.length-1]+w*k));
+let d=`M90 ${yt(90)+40} C90 ${yt(90)-10} 120 ${yt(150)} 160 ${yt(160)}`;
+for(let x=200;x<=840;x+=40)d+=` L${x} ${yt(x).toFixed(1)}`;
+d+=` C880 ${yt(860)} 910 ${yt(910)-10} 910 ${yt(910)+40} L910 ${yb(910)-10}`;
+let seps='';
+for(let i=xs.length-1;i>0;i--){const a=xs[i],b=xs[i-1],m=(a+b)/2;d+=` Q${m.toFixed(1)} ${(yb(m)+22).toFixed(1)} ${b.toFixed(1)} ${yb(b).toFixed(1)}`;if(i<xs.length-1)seps+=`M${a.toFixed(1)} ${(yb(a)-4).toFixed(1)} L${a.toFixed(1)} ${(yb(a)-70).toFixed(1)} `;}
+d+=' Z';
+['base','clipPath'].forEach(id=>$(id).setAttribute('d',d));
+let sh=`M140 ${yt(140)+18}`;for(let x=180;x<=860;x+=40)sh+=` L${x} ${(yt(x)+14).toFixed(1)}`;for(let x=860;x>=140;x-=40)sh+=` L${x} ${(yt(x)+52).toFixed(1)}`;
+$('shine').setAttribute('d',sh+' Z');
+$('teethLine').setAttribute('d',seps);
+const COLORS=['#111827','#FFFFFF','#E11D48','#F97316','#FACC15','#22C55E','#0EA5E9','#1D4ED8','#7C5CFF','#EC4899','#A3E635','#94A3B8','rgba(220,235,255,.55)'];
+const state={c1:'#7C5CFF',c2:'#FFFFFF',pattern:'solid',items:[],sel:null};
+let uid=0;
+
+function swatches(el,cur,on){el.innerHTML='';COLORS.forEach(c=>{const b=document.createElement('button');b.style.background=c==='rgba(220,235,255,.55)'?'linear-gradient(135deg,#e6f0ff,#9fb6d9)':c;b.setAttribute('aria-label',c==='rgba(220,235,255,.55)'?'Transparente':c);b.setAttribute('aria-pressed',String(c===cur()));b.onclick=()=>{on(c);swatches(el,cur,on)};el.appendChild(b)})}
+const PATTERNS=[['solid','Një ngjyrë'],['stripes','Vija'],['dots','Pika'],['fade','Gradient'],['split','Dy ngjyra']];
+function renderPatterns(){const el=$('patterns');el.innerHTML='';PATTERNS.forEach(([k,l])=>{const b=document.createElement('button');b.className='pill';b.textContent=l;b.setAttribute('aria-pressed',String(state.pattern===k));b.onclick=()=>{state.pattern=k;renderPatterns();paint()};el.appendChild(b)})}
+function paint(){
+  $('base').setAttribute('fill',state.c1);
+  $('pStripesC').setAttribute('fill',state.c2);$('pDotsC').setAttribute('fill',state.c2);
+  $('pFadeA').setAttribute('stop-color',state.c1);$('pFadeB').setAttribute('stop-color',state.c2);
+  const p=$('patt');
+  if(state.pattern==='solid'){p.setAttribute('fill','none');p.setAttribute('width',1000)}
+  else if(state.pattern==='stripes'){p.setAttribute('fill','url(#pStripes)');p.setAttribute('width',1000)}
+  else if(state.pattern==='dots'){p.setAttribute('fill','url(#pDots)');p.setAttribute('width',1000)}
+  else if(state.pattern==='fade'){p.setAttribute('fill','url(#pFade)');p.setAttribute('width',1000)}
+  else if(state.pattern==='split'){p.setAttribute('fill',state.c2);p.setAttribute('width',500);p.setAttribute('x',500);return}
+  p.setAttribute('x',0);
+}
+
+// stickers: simple vector shapes
+const STK={
+ star:'<path d="M50 6 61 38 95 38 67 58 78 92 50 71 22 92 33 58 5 38 39 38Z"/>',
+ bolt:'<path d="M58 4 18 56 46 56 38 96 82 40 54 40Z"/>',
+ heart:'<path d="M50 88 C10 60 6 34 22 20 C36 8 50 18 50 30 C50 18 64 8 78 20 C94 34 90 60 50 88Z"/>',
+ crown:'<path d="M10 76 16 28 36 52 50 18 64 52 84 28 90 76Z"/><rect x="10" y="80" width="80" height="10" rx="3"/>',
+ flame:'<path d="M50 6 C62 30 82 40 82 64 C82 84 68 96 50 96 C32 96 18 84 18 64 C18 50 28 42 34 30 C38 44 44 48 48 48 C44 32 44 18 50 6Z"/>',
+ ball:'<circle cx="50" cy="50" r="42" fill="none" stroke-width="7" stroke="currentColor"/><path d="M8 50h84M50 8c-16 20-16 64 0 84M50 8c16 20 16 64 0 84" fill="none" stroke-width="6" stroke="currentColor"/>',
+ eagle:'<path d="M50 30 C40 14 18 10 4 18 C18 22 26 30 30 40 C18 38 10 42 6 50 C18 48 28 50 34 56 C30 64 30 74 36 84 C40 74 46 68 50 66 C54 68 60 74 64 84 C70 74 70 64 66 56 C72 50 82 48 94 50 C90 42 82 38 70 40 C74 30 82 22 96 18 C82 10 60 14 50 30Z"/>',
+ fist:'<rect x="22" y="30" width="56" height="50" rx="12"/><rect x="22" y="22" width="14" height="22" rx="6"/><rect x="38" y="18" width="14" height="24" rx="6"/><rect x="54" y="20" width="14" height="22" rx="6"/>',
+ shield:'<path d="M50 6 88 20 C88 56 74 80 50 94 C26 80 12 56 12 20Z"/>',
+ wave:'<path d="M4 60 C20 40 34 40 50 60 C66 80 80 80 96 60 L96 92 L4 92Z"/>',
+ sk:'<path d="M50 10 C28 10 14 26 14 46 C14 60 22 68 30 72 V86 H70 V72 C78 68 86 60 86 46 C86 26 72 10 50 10Z"/><circle cx="36" cy="46" r="9" fill="#000"/><circle cx="64" cy="46" r="9" fill="#000"/>',
+ tooth:'<path d="M20 22 C20 8 40 6 50 14 C60 6 80 8 80 22 C80 40 72 50 70 70 C68 88 62 94 58 94 C52 94 54 70 50 70 C46 70 48 94 42 94 C38 94 32 88 30 70 C28 50 20 40 20 22Z"/>'
+};
+const stEl=$('stickers');
+Object.entries(STK).forEach(([k,d])=>{const b=document.createElement('button');b.setAttribute('aria-label','Stiker '+k);b.innerHTML=`<svg viewBox="0 0 100 100" fill="#F5F2FF" style="color:#F5F2FF">${d}</svg>`;b.onclick=()=>add({type:'sticker',key:k,color:'#FFFFFF'});stEl.appendChild(b)});
+
+function add(it){it.id=++uid;const n=state.items.length;it.x=it.x??[500,330,670,500,250,750][n%6];it.y=it.y??[280,300,300,360,250,250][n%6];it.s=it.s??1;it.r=it.r??0;state.items.push(it);draw();select(it.id)}
+function nodeFor(it){
+  const g=document.createElementNS(NS,'g');g.dataset.id=it.id;g.style.cursor='move';
+  g.setAttribute('transform',`translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})`);
+  if(it.type==='number'||it.type==='text'){
+    const t=document.createElementNS(NS,'text');t.textContent=it.value;t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','central');
+    t.setAttribute('font-family',"'Inter Tight',Arial,sans-serif");t.setAttribute('font-weight','800');t.setAttribute('font-size',it.type==='number'?150:84);
+    t.setAttribute('fill',it.color);t.setAttribute('stroke','rgba(0,0,0,.35)');t.setAttribute('stroke-width','3');t.setAttribute('paint-order','stroke');
+    if(it.type==='text')t.setAttribute('letter-spacing','4');g.appendChild(t);
+  }else if(it.type==='sticker'){
+    const s=document.createElementNS(NS,'g');s.setAttribute('transform','translate(-60 -60) scale(1.2)');s.setAttribute('fill',it.color);s.setAttribute('color',it.color);s.innerHTML=STK[it.key];g.appendChild(s);
+  }else{
+    const im=document.createElementNS(NS,'image');im.setAttribute('href',it.src);im.setAttribute('width',it.w);im.setAttribute('height',it.h);im.setAttribute('x',-it.w/2);im.setAttribute('y',-it.h/2);g.appendChild(im);
+  }
+  return g;
+}
+function draw(){layers.innerHTML='';state.items.forEach(it=>layers.appendChild(nodeFor(it)));updateSel()}
+function cur(){return state.items.find(i=>i.id===state.sel)}
+function updateSel(){
+  const it=cur();const ed=$('edit');
+  if(!it){sel.setAttribute('visibility','hidden');ed.hidden=true;return}
+  const n=layers.querySelector(`[data-id="${it.id}"]`);if(!n)return;const b=n.getBBox();
+  const w=b.width*it.s,h=b.height*it.s;
+  sel.setAttribute('x',it.x-w/2-10);sel.setAttribute('y',it.y-h/2-10);sel.setAttribute('width',w+20);sel.setAttribute('height',h+20);
+  sel.setAttribute('transform',`rotate(${it.r} ${it.x} ${it.y})`);sel.setAttribute('visibility','visible');
+  ed.hidden=false;$('size').value=it.s;$('rot').value=it.r;
+  const sw=$('swEl');if(it.type==='image'){sw.hidden=true}else{sw.hidden=false;swatches(sw,()=>it.color,c=>{it.color=c;draw()})}
+}
+function select(id){state.sel=id;updateSel()}
+
+// drag
+function pt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+let drag=null;
+svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-id]');if(!g){select(null);return}
+  const it=state.items.find(i=>i.id==g.dataset.id);select(it.id);const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};svg.setPointerCapture(e.pointerId);e.preventDefault()});
+svg.addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);drag.it.x=Math.max(60,Math.min(940,p.x-drag.dx));drag.it.y=Math.max(60,Math.min(500,p.y-drag.dy));
+  const n=layers.querySelector(`[data-id="${drag.it.id}"]`);n.setAttribute('transform',`translate(${drag.it.x} ${drag.it.y}) rotate(${drag.it.r}) scale(${drag.it.s})`);updateSel()});
+svg.addEventListener('pointerup',()=>drag=null);
+$('size').oninput=e=>{const it=cur();if(it){it.s=+e.target.value;draw()}};
+$('rot').oninput=e=>{const it=cur();if(it){it.r=+e.target.value;draw()}};
+$('del').onclick=()=>{state.items=state.items.filter(i=>i.id!==state.sel);state.sel=null;draw()};
+document.addEventListener('keydown',e=>{if((e.key==='Delete'||e.key==='Backspace')&&state.sel&&!/input/i.test(document.activeElement.tagName)){$('del').click()}});
+
+$('numAdd').onclick=()=>{const v=$('numIn').value.replace(/\D/g,'').slice(0,3);if(v)add({type:'number',value:v,color:'#FFFFFF'})};
+$('txtAdd').onclick=()=>{const v=$('txtIn').value.trim().slice(0,14);if(v)add({type:'text',value:v.toUpperCase(),color:'#FFFFFF'})};
+$('numIn').onkeydown=e=>{if(e.key==='Enter')$('numAdd').click()};$('txtIn').onkeydown=e=>{if(e.key==='Enter')$('txtAdd').click()};
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>5e6){alertBox('Imazhi është mbi 5 MB. Zgjidh një më të vogël.');return}
+  const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(220/img.width,180/img.height);add({type:'image',src:r.result,w:img.width*k,h:img.height*k})};img.src=r.result};r.readAsDataURL(f);e.target.value=''};
+function alertBox(msg){const n=document.createElement('div');n.textContent=msg;n.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#E11D48;color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;z-index:9';document.body.appendChild(n);setTimeout(()=>n.remove(),3500)}
+
+// export PNG
+async function toPNG(){
+  const prev=state.sel;select(null);
+  const clone=svg.cloneNode(true);clone.setAttribute('width',2000);clone.setAttribute('height',1120);
+  const bg=document.createElementNS(NS,'rect');bg.setAttribute('width',1000);bg.setAttribute('height',560);bg.setAttribute('fill','#120C30');clone.insertBefore(bg,clone.firstChild);
+  const brand=document.createElementNS(NS,'text');brand.textContent='Linea Mouthguard · lineaaligners.com';brand.setAttribute('x',500);brand.setAttribute('y',535);brand.setAttribute('text-anchor','middle');brand.setAttribute('fill','#C7B8FF');brand.setAttribute('font-size','22');brand.setAttribute('font-family','Arial,sans-serif');clone.appendChild(brand);
+  const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
+  const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
+  const c=document.createElement('canvas');c.width=2000;c.height=1120;c.getContext('2d').drawImage(img,0,0,2000,1120);
+  select(prev);return c.toDataURL('image/png');
+}
+$('dl').onclick=async()=>{try{const d=await toPNG();const a=document.createElement('a');a.href=d;a.download='linea-mouthguard.png';document.body.appendChild(a);a.click();a.remove()}catch(e){alertBox('Shkarkimi nuk funksionoi. Provo me një shfletues tjetër.')}};
+$('order').onclick=()=>{
+  const pn={solid:'Një ngjyrë',stripes:'Vija',dots:'Pika',fade:'Gradient',split:'Dy ngjyra'}[state.pattern];
+  const parts=state.items.map(i=>i.type==='number'?'Numri '+i.value:i.type==='text'?'Teksti "'+i.value+'"':i.type==='sticker'?'Stiker '+i.key:'Logo/imazh');
+  const msg=`Përshëndetje! Dua një Linea Mouthguard.\nNgjyra: ${state.c1}\nMotivi: ${pn}${state.pattern!=='solid'?' ('+state.c2+')':''}\nElementet: ${parts.join(', ')||'asnjë'}\n(Po ua dërgoj edhe foton e dizajnit.)`;
+  window.open('https://wa.me/38349772307?text='+encodeURIComponent(msg),'_blank','noopener');
+};
+
+swatches($('sw1'),()=>state.c1,c=>{state.c1=c;paint()});
+swatches($('sw2'),()=>state.c2,c=>{state.c2=c;paint()});
+renderPatterns();paint();
+add({type:'number',value:'10',color:'#FFFFFF',x:500,y:255});select(null);
+})();
+</script>
+</body>
+</html>
