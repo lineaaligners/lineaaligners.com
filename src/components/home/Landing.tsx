@@ -233,13 +233,9 @@ const Tag: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 /* ---------- hero ---------- */
-const ROT = { sq: ['pa tela.', 'pa metal.', 'lirshëm.', 'në 3D.'], en: ['no wires.', 'no metal.', 'freely.', 'in 3D.'] };
 const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
-  const words = ROT[lang];
-  const [w, setW] = useState(0);
   const [straight, setStraight] = useState(false);
-  useEffect(() => { const i = setInterval(() => setW(v => (v + 1) % words.length), 2200); return () => clearInterval(i); }, [words.length]);
   useEffect(() => { const i = setInterval(() => setStraight(v => !v), 2600); const s0 = setTimeout(() => setStraight(true), 1400); return () => { clearInterval(i); clearTimeout(s0); }; }, []);
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
@@ -250,13 +246,9 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
     <section id="top" ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-center">
       <motion.div style={{ opacity: fade, y: yUp }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pt-32 pb-14">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .1, duration: .8 }} className="text-[12px] font-semibold uppercase text-white/45 mb-8" style={{ letterSpacing: '.24em' }}>{t.eyebrow}</motion.div>
-        <h1 className="font-display text-white leading-[.9] tracking-[-.055em] text-[19vw] sm:text-[14vw] lg:text-[11.5rem]">
-          <span className="block overflow-hidden pb-[.06em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 }}>{lang === 'sq' ? 'Buzëqesh' : 'Smile'}</motion.span></span>
-          <span className="relative block overflow-hidden h-[1.02em]">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span key={w} className="absolute left-0 top-0 block italic font-serif-i text-[#87CEEB] whitespace-nowrap" initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '-100%', opacity: 0 }} transition={{ duration: .8, ease: EASE }}>{words[w]}</motion.span>
-            </AnimatePresence>
-          </span>
+        <h1 className="font-display text-white leading-[.92] tracking-[-.05em] text-[15vw] sm:text-[10vw] lg:text-[8rem]">
+          <span className="block overflow-hidden pb-[.06em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 }}>{lang === 'sq' ? 'Drejtoji dhëmbët,' : 'Straighten your teeth,'}</motion.span></span>
+          <span className="block overflow-hidden pb-[.08em]"><motion.span className="block italic font-serif-i text-[#87CEEB]" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .35 }}>{lang === 'sq' ? 'pa u vërejt.' : 'unnoticed.'}</motion.span></span>
         </h1>
         {/* aligning teeth */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .7, duration: 1, ease: EASE }} className="relative mt-12 flex items-end gap-[1.2vw] sm:gap-3 h-20 sm:h-24">
