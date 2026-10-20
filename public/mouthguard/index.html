@@ -70,6 +70,16 @@ input[type=text],select{flex:1;min-width:0;padding:11px 12px;border-radius:12px;
 .upload:hover{background:rgba(124,92,255,.08)}
 .note{font-size:12px;color:var(--muted);line-height:1.5;margin:0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:12px 16px;border-radius:12px;font-weight:600;z-index:9;color:#fff}
+#intro{position:fixed;inset:0;z-index:20;background:radial-gradient(60% 50% at 50% 45%,#2D2170,#0B0720);display:grid;place-items:center;transition:opacity .7s,visibility .7s}
+#intro.out{opacity:0;visibility:hidden}
+#intro .ib{text-align:center;padding:16px}
+#intro img{height:56px;filter:brightness(0) invert(1);animation:lp 1.6s ease-in-out infinite}
+@keyframes lp{50%{transform:scale(1.08);filter:brightness(0) invert(1) drop-shadow(0 0 18px #7C5CFF)}}
+#intro .bar{width:180px;height:3px;border-radius:3px;background:rgba(255,255,255,.15);margin:26px auto;overflow:hidden}
+#intro .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7C5CFF,#C7B8FF);animation:ld 2s cubic-bezier(.6,0,.2,1) forwards}
+@keyframes ld{to{width:100%}}
+#intro h2{margin:0;font-size:clamp(30px,6vw,48px);letter-spacing:-.03em;opacity:0;animation:up .8s .4s cubic-bezier(.16,1,.3,1) forwards;transform:translateY(20px)}
+#intro p{color:#B6ADDA;margin:8px 0 0;opacity:0;animation:up .8s .6s cubic-bezier(.16,1,.3,1) forwards;transform:translateY(20px)}
 :focus-visible{outline:2px solid var(--lilac);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
@@ -78,6 +88,7 @@ input[type=text],select{flex:1;min-width:0;padding:11px 12px;border-radius:12px;
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
 </head>
 <body>
+<div id="intro" role="status"><div class="ib"><img src="/linea-logo.svg" alt="Linea"><div class="bar"><i></i></div><h2>Mirë se vini</h2><p>Dizajnoni mbrojtësen tuaj të gojës</p></div></div>
 <canvas id="bgfx" aria-hidden="true"></canvas>
 <header>
   <a href="/" aria-label="Linea Aligners"><img src="/linea-logo.svg" alt="Linea"></a>
@@ -283,11 +294,11 @@ function buildGeometry(){
   const pos=[],uv=[],idx=[];
   for(let i=0;i<=NA;i++){const t=i/NA,a=arch(t),P=prof(t);
     let len=[0];for(let j=1;j<NP;j++)len.push(len[j-1]+Math.hypot(P[j][0]-P[j-1][0],P[j][1]-P[j-1][1]));const Lout=len[OUTER-1],L=len[NP-1];
-    for(let j=0;j<NP;j++){const [n,y]=P[j];pos.push(a.x+a.nx*n,y-.7,a.z+a.nz*n);
+    for(let j=0;j<NP;j++){const [n,y]=P[j];pos.push(a.x+a.nx*n,.75-y,a.z+a.nz*n);
       const v=j<OUTER?(len[j]/Lout)*(DH/TH):(DH/TH)+(len[j]-Lout)/(L-Lout)*(1-DH/TH);uv.push(t,j<OUTER?1-(DH/TH-v):1-v)}}
-  for(let i=0;i<NA;i++)for(let j=0;j<NP-1;j++){const a=i*NP+j,b=a+NP;idx.push(a,b,a+1,b,b+1,a+1)}
+  for(let i=0;i<NA;i++)for(let j=0;j<NP-1;j++){const a=i*NP+j,b=a+NP;idx.push(a,a+1,b,b,a+1,b+1)}
   // end caps
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();g.rotateY(Math.PI);
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
   return g;
 }
 function applyFinish(){if(!mat)return;const f=S.finish;
@@ -315,8 +326,8 @@ function init3D(){
   new ResizeObserver(resize).observe(cv);resize();
   $('loading').remove();
   // intro motion
-  const t0=performance.now();mesh.scale.setScalar(.01);
-  const loop=t=>{const k=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-k,4);
+  const t0=Math.max(performance.now(),2100);mesh.scale.setScalar(.01);
+  const loop=t=>{const k=Math.max(0,Math.min(1,(t-t0)/1400)),e=1-Math.pow(1-k,4);
     if(k<1){mesh.scale.setScalar(.01+.99*e);mesh.rotation.y=(1-e)*Math.PI*1.2;mesh.position.y=(1-e)*-1.5}
     else if(mode==='spin'){mesh.rotation.y+=.006}
     mesh.position.y+= k>=1?(Math.sin(t/900)*.06-mesh.position.y)*.05:0;
@@ -327,8 +338,8 @@ function init3D(){
 function norm(r){return Math.atan2(Math.sin(r),Math.cos(r))}
 function setMode(m){mode=m;document.querySelectorAll('.views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===m)));
   if(!mesh)return;mesh.rotation.y=norm(mesh.rotation.y);
-  if(m==='front')camGoal={pos:new THREE.Vector3(0,.7,8.6),ry:0};
-  if(m==='side')camGoal={pos:new THREE.Vector3(0,.7,8.6),ry:-1.1};
+  if(m==='front')camGoal={pos:new THREE.Vector3(0,.5,9.6),ry:0};
+  if(m==='side')camGoal={pos:new THREE.Vector3(0,.5,9.6),ry:-1.1};
   if(m==='top')camGoal={pos:new THREE.Vector3(0,10,4.5),ry:0};
   if(m==='spin'||m==='free')camGoal=null}
 function focusFront(){if(mode!=='front')setMode('front')}
@@ -351,7 +362,7 @@ $('order').onclick=()=>{
 symLoad.then(()=>document.fonts.load("80px 'Bebas Neue'")).catch(()=>{}).then(()=>{
   add({type:'text',value:'10',fill:'#FFFFFF',stroke:'#111827',sw:10});
   add({type:'sym',key:'shqiponja',x:TW/2-340,s:1.2});add({type:'sym',key:'mburoja',x:TW/2+340,s:1.2});
-  S.sel=null;ui();init3D();setMode('spin');
+  S.sel=null;ui();init3D();setMode('spin');setTimeout(()=>$('intro').classList.add('out'),Math.max(0,2300-performance.now()));
 });
 })();
 </script>
