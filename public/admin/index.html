@@ -1234,7 +1234,8 @@ function PdfAddDlg({onCancel,onSave,genEmail}){
     if(ci>=0){const after=tx.slice(ci+1).filter(t=>t!==caseRef&&!/^(date|name)$/i.test(t)&&!/^\d/.test(t));name=after[0]||''}
     if(!name){const m=f.name.replace(/\.pdf$/i,'').split(/[-_]/).filter(x=>x&&x!==caseRef&&!/^NAL\d+/i.test(x));name=m.join(' ')}
     if(!caseRef){const m=f.name.match(/[A-Z]{2,4}\d{5,}/);caseRef=m?m[0]:''}
-    const parts=tc(name).split(/\s+/).filter(Boolean);return{file:f.name,first:parts[0]||'',last:parts.slice(1).join(' '),caseRef,phone:'',totalAligners:20,city:'',doctor:''}};
+    let parts=tc(name).split(/\s+/).filter(Boolean);const isRef=parts.some(w=>/^ref(inement)?$/i.test(w))||/(^|[^a-z])ref([^a-z]|$)/i.test(f.name);parts=parts.filter(w=>!/^ref(inement)?$/i.test(w));
+    return{file:f.name,first:parts[0]||'',last:parts.slice(1).join(' '),caseRef:caseRef+(isRef?' (Refinement)':''),refinement:isRef,phone:'',totalAligners:20,city:'',doctor:''}};
   const pick=async e=>{const fs=[...(e.target.files||[])];if(!fs.length)return;setBusy(true);setErr('');const out=[];
     for(const f of fs){try{out.push(await parse(f))}catch(x){out.push({file:f.name,first:'',last:'',caseRef:'',phone:'',totalAligners:20,err:x.message})}}
     setRows(r=>[...r,...out]);setBusy(false);e.target.value=''};
@@ -1248,7 +1249,7 @@ function PdfAddDlg({onCancel,onSave,genEmail}){
       h('input',{type:'file',accept:'application/pdf',multiple:true,onChange:pick,className:'input',style:{marginBottom:12}}),
       busy&&h('p',{style:{fontSize:13,opacity:.7}},'Duke lexuar PDF…'),err&&h('p',{style:{color:'var(--color-danger)',fontSize:13}},err),
       rows.map((r,i)=>h('div',{key:i,className:'card',style:{padding:12,marginBottom:10,display:'grid',gap:8,gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))'}},
-        h('div',{style:{gridColumn:'1/-1',display:'flex',justifyContent:'space-between',fontSize:12,opacity:.7}},h('span',null,r.file+(r.caseRef?' · '+r.caseRef:'')+(r.err?' · '+r.err:'')),h('button',{className:'btn btn-secondary',style:{fontSize:11,padding:'2px 8px'},onClick:()=>setRows(rs=>rs.filter((_,j)=>j!==i))},'Hiqe')),
+        h('div',{style:{gridColumn:'1/-1',display:'flex',justifyContent:'space-between',fontSize:12,opacity:.7}},h('span',null,(r.refinement?'🔁 Refinement · ':'')+r.file+(r.caseRef?' · '+r.caseRef:'')+(r.err?' · '+r.err:'')),h('button',{className:'btn btn-secondary',style:{fontSize:11,padding:'2px 8px'},onClick:()=>setRows(rs=>rs.filter((_,j)=>j!==i))},'Hiqe')),
         h('div',null,L('Emri'),h('input',{className:'input',value:r.first,onChange:e=>upd(i,'first',e.target.value)})),
         h('div',null,L('Mbiemri'),h('input',{className:'input',value:r.last,onChange:e=>upd(i,'last',e.target.value)})),
         h('div',null,L('Telefoni *'),h('input',{className:'input',type:'tel',required:true,placeholder:'+383 4x xxx xxx',value:r.phone,onChange:e=>upd(i,'phone',e.target.value),style:{borderColor:r.phone.replace(/\D/g,'').length>=8?undefined:'var(--color-danger)'}})),
