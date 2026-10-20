@@ -242,6 +242,7 @@ function App(){
   const [emergs,setEmergs]=useState([]);
   const [msgs,setMsgs]=useState([]);
   const [addOpen,setAddOpen]=useState(false);
+  const [pdfAdd,setPdfAdd]=useState(false);
   const [convertLead,setConvertLead]=useState(null);
   const [casePrice,setCasePrice]=useState(()=>{try{return Number(localStorage.getItem('linea_case_price'))||0}catch(e){return 0}});
   const [editAlignerFor,setEditAlignerFor]=useState(null);
@@ -476,25 +477,31 @@ function App(){
     if(mR.data) setMsgs(mR.data.map(m=>({id:m.id,patientId:m.patient_id,from:'patient',text:m.content,hoursAgo:Math.round((new Date()-new Date(m.created_at))/(3600000))})));
     setLoading(false);toast('Refreshed');
   };
-  const addPatient=async(data)=>{
+  const addPatient=async(data,quiet)=>{
+    if(!data.email)data={...data,email:genEmail(data.first,data.last,data.caseRef)};
     const nd=new Date();nd.setDate(nd.getDate()+10);
     const {data:ins,error}=await SUPA.from('patients').insert({
       first_name:data.first,last_name:data.last,phone:data.phone,email:data.email,
       city:data.city,current_aligner:1,total_aligners:Number(data.totalAligners),
-      next_change_date:nd.toISOString().slice(0,10),status:'active',payment_paid:0,payment_total:6,doctor:data.doctor||null
+      next_change_date:nd.toISOString().slice(0,10),status:'active',payment_paid:0,payment_total:6,doctor:data.doctor||null,notes:data.caseRef?('Case: '+data.caseRef):null
     }).select().single();
-    if(error){toast('Error: '+error.message);return;}
+    if(error){toast('Error: '+error.message);return false;}
     const p={id:ins.id,first:ins.first_name,last:ins.last_name,phone:ins.phone,email:ins.email,
       city:ins.city||'',currentAligner:1,totalAligners:Number(data.totalAligners),
       nextChangeDays:10,streak:0,apptDaysAhead:7,doctor:data.doctor||'',
       status:'active',payment:{paid:0,total:6},scans:0,notes:'',emergencies:0,lastActivity:0,createdAt:ins.created_at||new Date().toISOString(),username:ins.username||'',referralCode:ins.referral_code||'',referredBy:''};
-    setPatients(prev=>[p,...prev]);setAddOpen(false);toast(data.first+' '+data.last+' added');
+    setPatients(prev=>[p,...prev]);setAddOpen(false);if(!quiet)toast(data.first+' '+data.last+' added · '+ins.email);
     if(convertLead){
       await SUPA.from('leads').update({status:'converted',notes:'patient:'+ins.id}).eq('id',convertLead.id);
       setLeads(ls=>ls.map(l=>l.id===convertLead.id?{...l,status:'converted',notes:'patient:'+ins.id}:l));
       setConvertLead(null);toast('Lead converted to patient ✓');
     }
   };
+
+  const genEmail=(first,last,caseRef)=>{const n=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ë/g,'e').replace(/ç/g,'c').replace(/[^a-z0-9]+/g,'');
+    let base=[n(first),n(last)].filter(Boolean).join('.')||'pacient';const used=new Set(patients.map(p=>(p.email||'').toLowerCase()));
+    let e=base+'@lineaaligners.com';if(used.has(e)){const c=String(caseRef||'').replace(/\D/g,'').slice(-4)||String(Date.now()).slice(-4);e=base+c+'@lineaaligners.com'}return e};
+  const PdfAddDialog=pdfAdd&&h(PdfAddDlg,{genEmail,onCancel:()=>setPdfAdd(false),onSave:async rows=>{let n=0;for(const r of rows){if(await addPatient(r,true)!==false)n++}setPdfAdd(false);toast(n+' pacientë u shtuan')}});
 
   // ── NAVIGATION ──
   const navItems=[
@@ -627,7 +634,7 @@ function App(){
       h('div',null,
         h('h1',{style:{fontSize:28,fontWeight:700,margin:0}},'Patients'),
         h('p',{style:{opacity:.6,fontSize:14,margin:'2px 0 0'}},`${filtered.length} of ${patients.length}`)),
-      h('button',{className:'btn btn-primary',onClick:()=>setAddOpen(true)},h('i',{className:'ph ph-user-plus'}),'Add patient')),
+      h('div',{style:{display:'flex',gap:8}},h('button',{className:'btn btn-secondary',onClick:()=>setPdfAdd(true)},h('i',{className:'ph ph-file-pdf'}),'Shto nga PDF'),h('button',{className:'btn btn-primary',onClick:()=>setAddOpen(true)},h('i',{className:'ph ph-user-plus'}),'Add patient'))),
     // Filters
     h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}},
       h('div',{style:{position:'relative',flex:'1 1 240px',minWidth:200}},
@@ -994,7 +1001,7 @@ function App(){
     h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PdfDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
+    Drawer,AddDlg,PdfAddDialog,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PdfDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
 }
 
 
@@ -1216,6 +1223,42 @@ function EditAlignerDlg({patient,onCancel,onSave}){
         h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-check'}),'Save'))));
 }
 
+function PdfAddDlg({onCancel,onSave,genEmail}){
+  const [rows,setRows]=useState([]);const [busy,setBusy]=useState(false);const [err,setErr]=useState('');
+  const loadLib=()=>window.pdfjsLib?Promise.resolve(window.pdfjsLib):new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res(window.pdfjsLib)};s.onerror=()=>rej(new Error('PDF reader failed to load'));document.head.appendChild(s)});
+  const tc=w=>w.toLowerCase().replace(/(^|[\s-])\S/g,m=>m.toUpperCase());
+  const parse=async f=>{const lib=await loadLib();const doc=await lib.getDocument({data:await f.arrayBuffer()}).promise;
+    const pg=await doc.getPage(1);const tx=(await pg.getTextContent()).items.map(i=>i.str.trim()).filter(Boolean);
+    let name='',caseRef='';const ci=tx.findIndex(t=>/^case\s*id$/i.test(t));
+    caseRef=(tx.find(t=>/^[A-Z]{2,4}\d{5,}$/.test(t))||'');
+    if(ci>=0){const after=tx.slice(ci+1).filter(t=>t!==caseRef&&!/^(date|name)$/i.test(t)&&!/^\d/.test(t));name=after[0]||''}
+    if(!name){const m=f.name.replace(/\.pdf$/i,'').split(/[-_]/).filter(x=>x&&x!==caseRef&&!/^NAL\d+/i.test(x));name=m.join(' ')}
+    if(!caseRef){const m=f.name.match(/[A-Z]{2,4}\d{5,}/);caseRef=m?m[0]:''}
+    const parts=tc(name).split(/\s+/).filter(Boolean);return{file:f.name,first:parts[0]||'',last:parts.slice(1).join(' '),caseRef,phone:'',totalAligners:20,city:'',doctor:''}};
+  const pick=async e=>{const fs=[...(e.target.files||[])];if(!fs.length)return;setBusy(true);setErr('');const out=[];
+    for(const f of fs){try{out.push(await parse(f))}catch(x){out.push({file:f.name,first:'',last:'',caseRef:'',phone:'',totalAligners:20,err:x.message})}}
+    setRows(r=>[...r,...out]);setBusy(false);e.target.value=''};
+  const upd=(i,k,v)=>setRows(r=>r.map((x,j)=>j===i?{...x,[k]:v}:x));
+  const ready=rows.length>0&&rows.every(r=>r.phone.replace(/\D/g,'').length>=8&&r.first);
+  const L=t=>h('label',{style:{fontSize:10,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},t);
+  return h('div',{className:'dialog-backdrop'},
+    h('div',{className:'dialog fade-up',style:{width:'min(760px,calc(100vw - 32px))',maxHeight:'88vh',overflowY:'auto'}},
+      h('h3',{style:{fontSize:18,fontWeight:700,margin:'0 0 4px'}},'Shto pacientë nga PDF'),
+      h('p',{style:{fontSize:12,opacity:.6,margin:'0 0 12px'}},'Ngarko një ose më shumë PDF të planit. Emri dhe Case ID merren vetë, emaili krijohet vetë. Vetëm numri i telefonit është i detyrueshëm.'),
+      h('input',{type:'file',accept:'application/pdf',multiple:true,onChange:pick,className:'input',style:{marginBottom:12}}),
+      busy&&h('p',{style:{fontSize:13,opacity:.7}},'Duke lexuar PDF…'),err&&h('p',{style:{color:'var(--color-danger)',fontSize:13}},err),
+      rows.map((r,i)=>h('div',{key:i,className:'card',style:{padding:12,marginBottom:10,display:'grid',gap:8,gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))'}},
+        h('div',{style:{gridColumn:'1/-1',display:'flex',justifyContent:'space-between',fontSize:12,opacity:.7}},h('span',null,r.file+(r.caseRef?' · '+r.caseRef:'')+(r.err?' · '+r.err:'')),h('button',{className:'btn btn-secondary',style:{fontSize:11,padding:'2px 8px'},onClick:()=>setRows(rs=>rs.filter((_,j)=>j!==i))},'Hiqe')),
+        h('div',null,L('Emri'),h('input',{className:'input',value:r.first,onChange:e=>upd(i,'first',e.target.value)})),
+        h('div',null,L('Mbiemri'),h('input',{className:'input',value:r.last,onChange:e=>upd(i,'last',e.target.value)})),
+        h('div',null,L('Telefoni *'),h('input',{className:'input',type:'tel',required:true,placeholder:'+383 4x xxx xxx',value:r.phone,onChange:e=>upd(i,'phone',e.target.value),style:{borderColor:r.phone.replace(/\D/g,'').length>=8?undefined:'var(--color-danger)'}})),
+        h('div',null,L('Maskerina'),h('input',{className:'input',type:'number',min:1,max:60,value:r.totalAligners,onChange:e=>upd(i,'totalAligners',e.target.value)})),
+        h('div',{style:{gridColumn:'1/-1',fontSize:12,opacity:.6}},'Email: '+genEmail(r.first,r.last,r.caseRef)))),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}},
+        h('button',{className:'btn btn-secondary',onClick:onCancel,disabled:busy},'Anulo'),
+        h('button',{className:'btn btn-primary',disabled:busy||!ready,onClick:async()=>{setBusy(true);try{await onSave(rows)}catch(x){setErr(x.message)}setBusy(false)}},h('i',{className:'ph ph-user-plus'}),'Shto '+(rows.length||'')+' pacientë'))));
+}
+
 function AddPatientDlg({onCancel,onSave,initial}){
   const [f,setF]=useState(Object.assign({first:'',last:'',phone:'',email:'',city:'',totalAligners:20,doctor:''},initial||{}));
   const submit=e=>{e.preventDefault();onSave(f)};
@@ -1223,10 +1266,10 @@ function AddPatientDlg({onCancel,onSave,initial}){
     h('form',{onSubmit:submit,className:'dialog fade-up'},
       h('h3',{style:{fontSize:18,fontWeight:700,marginBottom:16}},'Add patient'),
       h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}},
-        h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'First name'),h('input',{className:'input',required:true,value:f.first,onChange:e=>setF({...f,first:e.target.value}),style:{marginTop:4}})),
-        h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Surname'),h('input',{className:'input',required:true,value:f.last,onChange:e=>setF({...f,last:e.target.value}),style:{marginTop:4}}))),
+        h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'First name'),h('input',{className:'input',value:f.first,onChange:e=>setF({...f,first:e.target.value}),style:{marginTop:4}})),
+        h('div',null,h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Surname'),h('input',{className:'input',value:f.last,onChange:e=>setF({...f,last:e.target.value}),style:{marginTop:4}}))),
       h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Phone'),h('input',{className:'input',required:true,type:'tel',value:f.phone,onChange:e=>setF({...f,phone:e.target.value}),style:{marginTop:4}})),
-      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Email (optional)'),h('input',{className:'input',type:'email',value:f.email,onChange:e=>setF({...f,email:e.target.value}),style:{marginTop:4}})),
+      h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Email (bosh = krijohet vetë @lineaaligners.com)'),h('input',{className:'input',type:'email',value:f.email,onChange:e=>setF({...f,email:e.target.value}),style:{marginTop:4}})),
       h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'City (optional)'),h('input',{className:'input',value:f.city,onChange:e=>setF({...f,city:e.target.value}),style:{marginTop:4}})),
       h('div',{style:{marginBottom:12}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Total aligners planned'),h('input',{className:'input',required:true,type:'number',min:1,max:60,value:f.totalAligners,onChange:e=>setF({...f,totalAligners:Number(e.target.value)}),style:{marginTop:4}})),
       h('div',{style:{marginBottom:20}},h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Doctor'),
