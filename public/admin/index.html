@@ -993,7 +993,7 @@ function App(){
         h('tbody',null,allPlans.map(pl=>{const p=patients.find(x=>x.id===pl.patient_id);return h('tr',{key:pl.id,style:{cursor:p?'pointer':'default'},onClick:()=>{if(p){setTab('patients');setSelected(p)}}},
           [p?p.first+' '+p.last:'—',{draft:'Draft',published:'Published',updated:'Updated (unpublished)',revoked:'Revoked'}[pl.status],pl.published_at?new Date(pl.published_at).toLocaleDateString('en-GB'):'—',new Date(pl.updated_at).toLocaleDateString('en-GB'),pl.duration_months?pl.duration_months+' mo':'—',pl.total_aligners||'—',{active:'Active',expired:'Expired',none:'None'}[pl.link_status]]
             .map((v,i)=>h('td',{key:i,style:{padding:'10px 12px',borderBottom:'1px solid var(--color-divider)'}},v)))})))));
-  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,leads:Leads,plans:Plans,care:loading?Loader:h(CareView,{patients,waNum}),analytics:loading?Loader:Analytics,settings:Settings};
+  const views={dashboard:loading?Loader:Dashboard,patients:loading?Loader:Patients,appointments:loading?Loader:Appointments,emergencies:loading?Loader:Emergencies,messages:loading?Loader:Messages,leads:Leads,plans:Plans,care:loading?Loader:h(CareView,{patients,waNum,setPatients}),analytics:loading?Loader:Analytics,settings:Settings};
 
   return h('div',{style:{display:'flex',minHeight:'100vh'}},
     Sidebar,
@@ -1006,17 +1006,33 @@ function App(){
 
 
 const CARE_TPL=[
+  {id:'auto',label:'✨ Sipas fazës',text:'Mesazhi zgjidhet vetë për secilin pacient sipas maskerinës ku është.'},
   {id:'change',label:'Ndërro maskerinën',text:'Përshëndetje {emri}! 😊 Sot është dita për të kaluar te maskerina nr. {next} (nga {tot}). Mos harro t’i mbash 22 orë në ditë. Linea'},
   {id:'photo',label:'Dërgo foto',text:'Përshëndetje {emri}! Na dërgo këtu 3 foto të dhëmbëve (para, majtas, djathtas) me maskerinat e vendosura, që ta kontrollojmë progresin. Faleminderit! Linea'},
   {id:'check',label:'Si po shkon?',text:'Përshëndetje {emri}! Si po ndihesh me maskerinën nr. {nr}? A të rrinë mirë, a ke ndonjë dhimbje apo pyetje? Jemi këtu për ty. Linea'},
   {id:'portal',label:'Hyr në portal',text:'Përshëndetje {emri}! Të kujtojmë që në portalin Linea i ke kujtesat dhe progresin tënd: https://www.lineaaligners.com/portal/ Nëse s’po mundesh me hy, na shkruaj këtu.'},
   {id:'appt',label:'Termin kontrolli',text:'Përshëndetje {emri}! Është koha për një kontroll të shkurtër. Kur të përshtatet këtë javë? Rr. Bajram Kelmendi, Pejë. Linea'},
   {id:'retainer',label:'Retainer natën',text:'Përshëndetje {emri}! Kujtesë e vogël: retainer-i mbahet çdo natë që dhëmbët të mbeten të drejtë. 🌙 Linea'},
+  {id:'review',label:'Kërko review',text:'Përshëndetje {emri}! Na gëzon shumë buzëqeshja jote e re 😊 A do na ndihmoje me një vlerësim të shkurtër në Google? Zgjat 30 sekonda: https://www.lineaaligners.com/review Faleminderit! Linea'},
   {id:'custom',label:'Shkruaj vetë',text:'Përshëndetje {emri}! '},
 ];
-function CareView({patients,waNum}){
+const STAGE=p=>{const c=p.currentAligner||1,t=p.totalAligners||1;
+  if(p.status==='completed')return{id:'review',why:'Përfundoi trajtimin'};
+  if(c<=1)return{id:'s_first',why:'Maskerina e parë'};
+  if(c>=t)return{id:'s_end',why:'Maskerina e fundit'};
+  if(c>=t-1)return{id:'s_near',why:'Afër fundit'};
+  if(Math.abs(c-Math.round(t/2))<=0)return{id:'s_half',why:'Në gjysmë'};
+  return{id:'change',why:'Ndërrim i rregullt'}};
+const STAGE_TPL={
+  s_first:'Përshëndetje {emri}! 😊 Si po ndihesh ditët e para me maskerinat? Pak shtrëngim në fillim është normal. Nëse ke ndonjë pyetje, na shkruaj këtu. Linea',
+  s_half:'Përshëndetje {emri}! 🎉 Je në gjysmë të trajtimit, maskerina {nr} nga {tot}! Na dërgo 3 foto të dhëmbëve që ta shohim progresin. Linea',
+  s_near:'Përshëndetje {emri}! Je afër fundit, maskerina {nr} nga {tot} 🙌 Të rezervojmë termin për retainer? Na thuaj kur të përshtatet. Linea',
+  s_end:'Përshëndetje {emri}! 🎉 Arrite te maskerina e fundit! Eja për kontroll dhe retainer, që buzëqeshja të mbetet e drejtë. Kur të përshtatet? Linea'};
+function CareView({patients,waNum,setPatients}){
   const [filter,setFilter]=useState('due');
-  const [tpl,setTpl]=useState('change');
+  const [tpl,setTpl]=useState('auto');
+  const [queue,setQueue]=useState(null);
+  const [noteFor,setNoteFor]=useState(null);const [noteTxt,setNoteTxt]=useState('');
   const [q,setQ]=useState('');
   const [edit,setEdit]=useState({});
   const [log,setLog]=useState(()=>{try{return JSON.parse(localStorage.getItem('linea_care_log')||'{}')}catch(e){return {}}});
@@ -1029,8 +1045,12 @@ function CareView({patients,waNum}){
   if(q){const s=q.toLowerCase();list=list.filter(p=>(p.first+' '+p.last+' '+p.phone).toLowerCase().includes(s))}
   const fill=(t,p)=>t.replace(/\{emri\}/g,p.first).replace(/\{nr\}/g,p.currentAligner).replace(/\{next\}/g,Math.min(p.totalAligners,(p.currentAligner||0)+1)).replace(/\{tot\}/g,p.totalAligners);
   const base=CARE_TPL.find(x=>x.id===tpl);
-  const send=p=>{const txt=edit[p.id]!=null?edit[p.id]:fill(base.text,p);window.open('https://wa.me/'+waNum(p.phone)+'?text='+encodeURIComponent(txt),'_blank','noopener');
-    const n={...log,[p.id]:{d:today,t:base.label}};setLog(n);try{localStorage.setItem('linea_care_log',JSON.stringify(n))}catch(e){}};
+  const tplFor=p=>{if(tpl!=='auto')return{text:base.text,label:base.label};const st=STAGE(p);const t=STAGE_TPL[st.id]||(CARE_TPL.find(x=>x.id===st.id)||{}).text;return{text:t,label:st.why}};
+  const msgFor=p=>edit[p.id]!=null?edit[p.id]:fill(tplFor(p).text,p);
+  const saveNote=async p=>{const t=noteTxt.trim();setNoteFor(null);setNoteTxt('');if(!t)return;const line=new Date().toLocaleDateString('en-GB')+' (WhatsApp): '+t;const notes=(p.notes?p.notes+'\n':'')+line;
+    try{const{error}=await SUPA.from('patients').update({notes}).eq('id',p.id);if(error)throw error;setPatients&&setPatients(ps=>ps.map(x=>x.id===p.id?{...x,notes}:x))}catch(e){alert('Shënimi nuk u ruajt: '+(e.message||e))}};
+  const send=p=>{const txt=msgFor(p);window.open('https://wa.me/'+waNum(p.phone)+'?text='+encodeURIComponent(txt),'_blank','noopener');
+    const n={...log,[p.id]:{d:today,t:tplFor(p).label}};setLog(n);try{localStorage.setItem('linea_care_log',JSON.stringify(n))}catch(e){};setNoteFor(p.id);setNoteTxt('')};
   const chip=(id,label,count)=>h('button',{key:id,onClick:()=>setFilter(id),className:'btn '+(filter===id?'btn-primary':'btn-secondary'),style:{fontSize:12}},label+(count!=null?' · '+count:''));
   return h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
     h('div',null,h('h1',{style:{fontSize:24,fontWeight:700,margin:0}},'Customer care'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'Zgjidh mesazhin, kliko Dërgo dhe hapet WhatsApp me tekstin gati. Ti vetëm shtyp send.')),
@@ -1038,17 +1058,27 @@ function CareView({patients,waNum}){
     h('div',{className:'card',style:{padding:16,display:'flex',flexDirection:'column',gap:10}},
       h('div',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Mesazhi'),
       h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},CARE_TPL.map(t=>h('button',{key:t.id,onClick:()=>{setTpl(t.id);setEdit({})},className:'btn '+(tpl===t.id?'btn-primary':'btn-secondary'),style:{fontSize:12}},t.label))),
-      h('p',{style:{margin:0,fontSize:13,opacity:.75,lineHeight:1.5}},base.text)),
+      h('p',{style:{margin:0,fontSize:13,opacity:.75,lineHeight:1.5}},base.text),h('p',{style:{margin:0,fontSize:11,opacity:.5}},'Rreth 30–40 mesazhe në ditë janë në rregull. Dërgo vetëm pacientëve tuaj dhe mos e kopjo të njëjtin tekst te shumë njerëz pa emër.')),
     h('input',{className:'input',placeholder:'Kërko pacientin...',value:q,onChange:e=>setQ(e.target.value)}),
+    list.length>1&&!queue&&h('button',{className:'btn btn-primary',style:{alignSelf:'flex-start',background:'#25D366',borderColor:'#25D366'},onClick:()=>setQueue({ids:list.filter(p=>!(log[p.id]&&log[p.id].d===today)).map(p=>p.id),i:0})},h('i',{className:'ph ph-paper-plane-tilt'}),'Dërgo njëri pas tjetrit ('+list.filter(p=>!(log[p.id]&&log[p.id].d===today)).length+')'),
+    queue&&(()=>{const p=patients.find(x=>x.id===queue.ids[queue.i]);const done=!p;
+      return h('div',{className:'card',style:{padding:14,position:'sticky',top:8,zIndex:5,display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',border:'1px solid #25D366'}},
+        done?h('b',{style:{flex:1}},'✓ Mbarove: '+queue.ids.length+' mesazhe'):h('div',{style:{flex:1,minWidth:200}},h('div',{style:{fontSize:11,opacity:.6}},'Pacienti '+(queue.i+1)+' / '+queue.ids.length),h('b',null,p.first+' '+p.last),h('div',{style:{fontSize:12,opacity:.7,marginTop:4}},msgFor(p).slice(0,110)+'…')),
+        !done&&h('button',{className:'btn btn-primary',style:{background:'#25D366',borderColor:'#25D366'},onClick:()=>{send(p);setQueue(qq=>({...qq,i:qq.i+1}))}},'Hap WhatsApp ›'),
+        !done&&h('button',{className:'btn btn-secondary',onClick:()=>setQueue(qq=>({...qq,i:qq.i+1}))},'Kalo'),
+        h('button',{className:'btn btn-secondary',onClick:()=>setQueue(null)},done?'Mbyll':'Ndalo'))})(),
     list.length===0&&h('div',{className:'card',style:{padding:28,textAlign:'center',opacity:.6,fontSize:13}},'Asnjë pacient në këtë listë.'),
-    list.map(p=>{const txt=edit[p.id]!=null?edit[p.id]:fill(base.text,p);const L=log[p.id];const d=days(p.lastActiveAt);
+    list.map(p=>{const txt=msgFor(p);const L=log[p.id];const d=days(p.lastActiveAt);
       return h('div',{key:p.id,className:'card',style:{padding:14,display:'flex',flexDirection:'column',gap:10}},
         h('div',{style:{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap',alignItems:'center'}},
-          h('div',null,h('b',null,p.first+' '+p.last),h('p',{style:{margin:'2px 0 0',fontSize:12,opacity:.6}},[p.phone,'Maskerina '+p.currentAligner+'/'+p.totalAligners,p.nextChangeDate?'Ndërrimi: '+new Date(p.nextChangeDate).toLocaleDateString('en-GB'):null,d===null?'S’ka hy kurrë në portal':'Portali: para '+d+' ditësh'].filter(Boolean).join(' · '))),
+          h('div',null,h('b',null,p.first+' '+p.last),h('p',{style:{margin:'2px 0 0',fontSize:12,opacity:.6}},[p.phone,'Maskerina '+p.currentAligner+'/'+p.totalAligners,p.nextChangeDate?'Ndërrimi: '+new Date(p.nextChangeDate).toLocaleDateString('en-GB'):null,tpl==='auto'?'✨ '+STAGE(p).why:null,d===null?'S’ka hy kurrë në portal':'Portali: para '+d+' ditësh'].filter(Boolean).join(' · '))),
           h('div',{style:{display:'flex',gap:8,alignItems:'center'}},
             L&&h('span',{style:{fontSize:11,color:L.d===today?'#22C55E':'inherit',opacity:L.d===today?1:.55}},(L.d===today?'✓ Dërguar sot':'Dërguar '+L.d)+' · '+L.t),
             h('button',{className:'btn btn-primary',style:{fontSize:12,background:'#25D366',borderColor:'#25D366'},onClick:()=>send(p)},h('i',{className:'ph ph-whatsapp-logo'}),'Dërgo'))),
-        h('textarea',{className:'input',rows:2,value:txt,onChange:e=>setEdit({...edit,[p.id]:e.target.value}),style:{fontSize:13,resize:'vertical'}}));
+        h('textarea',{className:'input',rows:2,value:txt,onChange:e=>setEdit({...edit,[p.id]:e.target.value}),style:{fontSize:13,resize:'vertical'}}),
+        noteFor===p.id&&h('div',{style:{display:'flex',gap:8}},h('input',{className:'input',autoFocus:true,placeholder:'Shënim: çka u përgjigj pacienti? (p.sh. do vijë të hënën)',value:noteTxt,onChange:e=>setNoteTxt(e.target.value),onKeyDown:e=>{if(e.key==='Enter')saveNote(p)}}),h('button',{className:'btn btn-primary',style:{fontSize:12},onClick:()=>saveNote(p)},'Ruaj'),h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setNoteFor(null)},'Jo tani')),
+        noteFor!==p.id&&h('button',{className:'btn btn-secondary',style:{fontSize:11,alignSelf:'flex-start',padding:'4px 10px'},onClick:()=>{setNoteFor(p.id);setNoteTxt('')}},'+ Shënim'),
+        p.notes&&h('p',{style:{margin:0,fontSize:11,opacity:.55,whiteSpace:'pre-line'}},String(p.notes).split('\n').slice(-2).join('\n')));
     }));
 }
 
