@@ -392,7 +392,7 @@ function App(){
     const p=patients.find(x=>x.id===id);if(!p||p.currentAligner>=p.totalAligners)return;
     setConfirm({text:"Advance "+p.first+" "+p.last+" to aligner "+(p.currentAligner+1)+"?",fn:async()=>{
       const n=p.currentAligner+1;
-      const nd=new Date();nd.setDate(nd.getDate()+10);
+      const nd=new Date();nd.setDate(nd.getDate()+(Number(data.wearDays)||10));
       await SUPA.from('patients').update({current_aligner:n,next_change_date:nd.toISOString().slice(0,10)}).eq('id',id);
       setPatients(prev=>prev.map(x=>x.id===id?{...x,currentAligner:n,nextChangeDays:10}:x));
       toast(p.first+" advanced to aligner "+n);
@@ -1226,6 +1226,7 @@ function EditAlignerDlg({patient,onCancel,onSave}){
 function PdfAddDlg({onCancel,onSave,genEmail}){
   const [rows,setRows]=useState([]);const [busy,setBusy]=useState(false);const [err,setErr]=useState('');
   const loadLib=()=>window.pdfjsLib?Promise.resolve(window.pdfjsLib):new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res(window.pdfjsLib)};s.onerror=()=>rej(new Error('PDF reader failed to load'));document.head.appendChild(s)});
+  const loadOcr=()=>window.Tesseract?Promise.resolve(window.Tesseract):new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=()=>res(window.Tesseract);s.onerror=()=>rej(new Error('OCR failed to load'));document.head.appendChild(s)});
   const tc=w=>w.toLowerCase().replace(/(^|[\s-])\S/g,m=>m.toUpperCase());
   const parse=async f=>{const lib=await loadLib();const doc=await lib.getDocument({data:await f.arrayBuffer()}).promise;
     const pg=await doc.getPage(1);const tx=(await pg.getTextContent()).items.map(i=>i.str.trim()).filter(Boolean);
@@ -1234,8 +1235,15 @@ function PdfAddDlg({onCancel,onSave,genEmail}){
     if(ci>=0){const after=tx.slice(ci+1).filter(t=>t!==caseRef&&!/^(date|name)$/i.test(t)&&!/^\d/.test(t));name=after[0]||''}
     if(!name){const m=f.name.replace(/\.pdf$/i,'').split(/[-_]/).filter(x=>x&&x!==caseRef&&!/^NAL\d+/i.test(x));name=m.join(' ')}
     if(!caseRef){const m=f.name.match(/[A-Z]{2,4}\d{5,}/);caseRef=m?m[0]:''}
+    let total=20,wear=10,ocr=false;
+    try{let ip=2;for(let k=1;k<=Math.min(doc.numPages,4);k++){const t=(await (await doc.getPage(k)).getTextContent()).items.map(i=>i.str).join(' ');if(/instruction\s*form/i.test(t)){ip=k;break}}
+      if(doc.numPages>=ip){const pg2=await doc.getPage(ip);const vp=pg2.getViewport({scale:2.5});const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg2.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+        const o=document.createElement('canvas');const x0=vp.width*.12,y0=vp.height*.58;o.width=vp.width*.42;o.height=vp.height*.34;o.getContext('2d').drawImage(c,x0,y0,o.width,o.height,0,0,o.width,o.height);
+        const T=await loadOcr();const r=await T.recognize(o,'eng');const txt=r.data.text||'';
+        const m=txt.match(/U\s*(\d{1,2})\s*[L1I|]\s*(\d{1,2})/i);if(m){total=Math.max(+m[1],+m[2]);ocr=true}
+        const w=txt.match(/for\s*(\d{1,2})\s*day/i);if(w)wear=+w[1]}}catch(x){console.warn('OCR',x)}
     let parts=tc(name).split(/\s+/).filter(Boolean);const isRef=parts.some(w=>/^ref(inement)?$/i.test(w))||/(^|[^a-z])ref([^a-z]|$)/i.test(f.name);parts=parts.filter(w=>!/^ref(inement)?$/i.test(w));
-    return{file:f.name,first:parts[0]||'',last:parts.slice(1).join(' '),caseRef:caseRef+(isRef?' (Refinement)':''),refinement:isRef,phone:'',totalAligners:20,city:'',doctor:''}};
+    return{file:f.name,first:parts[0]||'',last:parts.slice(1).join(' '),caseRef:caseRef+(isRef?' (Refinement)':''),refinement:isRef,ocr,wearDays:wear,phone:'',totalAligners:total,city:'',doctor:''}};
   const pick=async e=>{const fs=[...(e.target.files||[])];if(!fs.length)return;setBusy(true);setErr('');const out=[];
     for(const f of fs){try{out.push(await parse(f))}catch(x){out.push({file:f.name,first:'',last:'',caseRef:'',phone:'',totalAligners:20,err:x.message})}}
     setRows(r=>[...r,...out]);setBusy(false);e.target.value=''};
@@ -1247,13 +1255,13 @@ function PdfAddDlg({onCancel,onSave,genEmail}){
       h('h3',{style:{fontSize:18,fontWeight:700,margin:'0 0 4px'}},'Shto pacientë nga PDF'),
       h('p',{style:{fontSize:12,opacity:.6,margin:'0 0 12px'}},'Ngarko një ose më shumë PDF të planit. Emri dhe Case ID merren vetë, emaili krijohet vetë. Vetëm numri i telefonit është i detyrueshëm.'),
       h('input',{type:'file',accept:'application/pdf',multiple:true,onChange:pick,className:'input',style:{marginBottom:12}}),
-      busy&&h('p',{style:{fontSize:13,opacity:.7}},'Duke lexuar PDF…'),err&&h('p',{style:{color:'var(--color-danger)',fontSize:13}},err),
+      busy&&h('p',{style:{fontSize:13,opacity:.7}},'Duke lexuar PDF dhe numrin e maskerinave… (disa sekonda)'),err&&h('p',{style:{color:'var(--color-danger)',fontSize:13}},err),
       rows.map((r,i)=>h('div',{key:i,className:'card',style:{padding:12,marginBottom:10,display:'grid',gap:8,gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))'}},
         h('div',{style:{gridColumn:'1/-1',display:'flex',justifyContent:'space-between',fontSize:12,opacity:.7}},h('span',null,(r.refinement?'🔁 Refinement · ':'')+r.file+(r.caseRef?' · '+r.caseRef:'')+(r.err?' · '+r.err:'')),h('button',{className:'btn btn-secondary',style:{fontSize:11,padding:'2px 8px'},onClick:()=>setRows(rs=>rs.filter((_,j)=>j!==i))},'Hiqe')),
         h('div',null,L('Emri'),h('input',{className:'input',value:r.first,onChange:e=>upd(i,'first',e.target.value)})),
         h('div',null,L('Mbiemri'),h('input',{className:'input',value:r.last,onChange:e=>upd(i,'last',e.target.value)})),
         h('div',null,L('Telefoni *'),h('input',{className:'input',type:'tel',required:true,placeholder:'+383 4x xxx xxx',value:r.phone,onChange:e=>upd(i,'phone',e.target.value),style:{borderColor:r.phone.replace(/\D/g,'').length>=8?undefined:'var(--color-danger)'}})),
-        h('div',null,L('Maskerina'),h('input',{className:'input',type:'number',min:1,max:60,value:r.totalAligners,onChange:e=>upd(i,'totalAligners',e.target.value)})),
+        h('div',null,L(r.ocr?'Maskerina (nga PDF ✓)':'Maskerina'),h('input',{className:'input',type:'number',min:1,max:60,value:r.totalAligners,onChange:e=>upd(i,'totalAligners',e.target.value)})),
         h('div',{style:{gridColumn:'1/-1',fontSize:12,opacity:.6}},'Email: '+genEmail(r.first,r.last,r.caseRef)))),
       h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}},
         h('button',{className:'btn btn-secondary',onClick:onCancel,disabled:busy},'Anulo'),
