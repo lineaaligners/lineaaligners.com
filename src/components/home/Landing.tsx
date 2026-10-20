@@ -233,50 +233,49 @@ const Tag: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 /* ---------- hero ---------- */
+const ROT = { sq: ['pa tela.', 'pa metal.', 'lirshëm.', 'në 3D.'], en: ['no wires.', 'no metal.', 'freely.', 'in 3D.'] };
 const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
+  const words = ROT[lang];
+  const [w, setW] = useState(0);
+  const [straight, setStraight] = useState(false);
+  useEffect(() => { const i = setInterval(() => setW(v => (v + 1) % words.length), 2200); return () => clearInterval(i); }, [words.length]);
+  useEffect(() => { const i = setInterval(() => setStraight(v => !v), 2600); const s0 = setTimeout(() => setStraight(true), 1400); return () => { clearInterval(i); clearTimeout(s0); }; }, []);
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const rot = useTransform(scrollYProgress, [0, 1], [0, 90]);
-  const lift = useTransform(scrollYProgress, [0, 1], ['0%', '-30%']);
-  const fade = useTransform(scrollYProgress, [0, .7], [1, 0]);
-  const L = (l: string, i: number, cls = '') => (
-    <span key={i} className="block overflow-hidden pb-[.08em] -mb-[.08em]"><motion.span className={'block ' + cls} initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 + i * .12 }}>{l}</motion.span></span>
-  );
+  const fade = useTransform(scrollYProgress, [0, .6], [1, 0]);
+  const yUp = useTransform(scrollYProgress, [0, 1], ['0%', '-20%']);
+  const OFF = [[-14, 10], [9, -8], [-6, 14], [12, -12], [-10, 8], [7, 12], [-12, -9], [10, 6]];
   return (
     <section id="top" ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-center">
-      <div className="absolute inset-0 grid-lines opacity-[.06]" />
-      {/* geometry */}
-      <motion.svg style={{ rotate: rot, y: lift }} viewBox="0 0 600 600" className="absolute right-[-30vw] sm:right-[-12vw] top-[8vh] w-[110vw] sm:w-[62vw] max-w-[900px] pointer-events-none" aria-hidden>
-        <motion.circle cx="300" cy="300" r="280" fill="none" stroke="rgba(135,206,235,.35)" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2.2, ease: EASE }} />
-        <motion.circle cx="300" cy="300" r="200" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="1" strokeDasharray="4 10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .6, duration: 1.2 }} />
-        <motion.path d="M120 330 Q300 120 480 330" fill="none" stroke="#4169E1" strokeWidth="10" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .5, duration: 1.6, ease: EASE }} />
-        <motion.path d="M150 350 Q300 175 450 350" fill="none" stroke="#87CEEB" strokeWidth="2" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .9, duration: 1.6, ease: EASE }} />
-        <motion.line x1="20" y1="300" x2="580" y2="300" stroke="rgba(255,255,255,.1)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .3, duration: 1.4, ease: EASE }} />
-        <motion.line x1="300" y1="20" x2="300" y2="580" stroke="rgba(255,255,255,.1)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .4, duration: 1.4, ease: EASE }} />
-        {[0, 1, 2, 3].map(i => <motion.circle key={i} cx={300 + 280 * Math.cos(i * Math.PI / 2 + .6)} cy={300 + 280 * Math.sin(i * Math.PI / 2 + .6)} r="6" fill="#87CEEB" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.4 + i * .1, type: 'spring' }} />)}
-      </motion.svg>
-      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.2, duration: 1, ease: EASE }} className="absolute right-[8vw] bottom-[10vh] w-3 h-3 rounded-full bg-[#4169E1]" />
-
-      <motion.div style={{ opacity: fade }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pt-32 pb-16">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .1, duration: .8, ease: EASE }} className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.22em] text-[#87CEEB] mb-10" style={{ letterSpacing: '.22em' }}>
-          <span className="w-10 h-px bg-[#87CEEB]" />{t.eyebrow}
-        </motion.div>
-        <h1 className="font-display text-white leading-[.88] tracking-[-.05em] text-[17vw] sm:text-[13vw] lg:text-[10.5rem]">
-          {L(t.h1a, 0)}{L(t.h1b, 1, 'text-white/35')}{L(t.h1c, 2, 'italic font-serif-i text-shimmer')}
+      <motion.div style={{ opacity: fade, y: yUp }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pt-32 pb-14">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .1, duration: .8 }} className="text-[12px] font-semibold uppercase text-white/45 mb-8" style={{ letterSpacing: '.24em' }}>{t.eyebrow}</motion.div>
+        <h1 className="font-display text-white leading-[.9] tracking-[-.055em] text-[19vw] sm:text-[14vw] lg:text-[11.5rem]">
+          <span className="block overflow-hidden pb-[.06em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 }}>{lang === 'sq' ? 'Buzëqesh' : 'Smile'}</motion.span></span>
+          <span className="relative block overflow-hidden h-[1.02em]">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.span key={w} className="absolute left-0 top-0 block italic font-serif-i text-[#87CEEB] whitespace-nowrap" initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '-100%', opacity: 0 }} transition={{ duration: .8, ease: EASE }}>{words[w]}</motion.span>
+            </AnimatePresence>
+          </span>
         </h1>
-        <div className="mt-12 grid lg:grid-cols-12 gap-8 items-end">
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .8, duration: .9, ease: EASE }} className="lg:col-span-5 text-lg text-white/65 leading-relaxed max-w-md">{t.sub}</motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .95, duration: .9, ease: EASE }} className="lg:col-span-7 flex flex-col sm:flex-row gap-3 lg:justify-end">
-            <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-[#4169E1] hover:bg-[#5A85FF] transition-colors text-white pl-6 pr-2 py-2 font-semibold whitespace-nowrap">
-              {t.b1}<span className="grid place-items-center w-10 h-10 rounded-full bg-white text-[#4169E1] group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span>
+        {/* aligning teeth */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .7, duration: 1, ease: EASE }} className="relative mt-12 flex items-end gap-[1.2vw] sm:gap-3 h-20 sm:h-24">
+          {OFF.map(([dy, r], i) => (
+            <motion.span key={i} animate={{ y: straight ? 0 : dy, rotate: straight ? 0 : r }} transition={{ type: 'spring', stiffness: 90, damping: 14, delay: i * .04 }}
+              className="block w-[7vw] max-w-[46px] h-14 sm:h-16 rounded-t-[14px] rounded-b-[22px] bg-gradient-to-b from-white to-[#C9DCFF]" />
+          ))}
+          <motion.span animate={{ opacity: straight ? 1 : 0, scaleX: straight ? 1 : .6 }} transition={{ duration: .6, ease: EASE }} className="absolute -left-2 bottom-[-10px] h-[3px] rounded-full bg-[#4169E1] origin-left" style={{ width: 'calc(8 * min(7vw,46px) + 7 * 12px + 16px)' }} />
+          <motion.span animate={{ opacity: straight ? 1 : 0 }} className="ml-4 sm:ml-6 self-center text-xs sm:text-sm text-white/50 whitespace-nowrap">{straight ? (lang === 'sq' ? 'Pas' : 'After') : ''}</motion.span>
+        </motion.div>
+        <div className="mt-14 flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-t border-white/10 pt-8">
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .9, duration: .9, ease: EASE }} className="text-lg text-white/60 leading-relaxed max-w-md">{t.sub}</motion.p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05, duration: .9, ease: EASE }} className="flex flex-col sm:flex-row gap-3">
+            <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-white text-[#06101F] pl-6 pr-2 py-2 font-semibold whitespace-nowrap">
+              {t.b1}<span className="grid place-items-center w-10 h-10 rounded-full bg-[#4169E1] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span>
             </button>
             <a href={'/assessment/' + (lang === 'en' ? '?lang=en' : '')} className="flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 transition-colors text-white px-6 py-4 font-semibold whitespace-nowrap">{t.b2}</a>
           </motion.div>
         </div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, duration: 1 }} className="mt-14 grid grid-cols-3 border-t border-white/10">
-          {t.chips.map((c, i) => <div key={c} className={'pt-6 text-sm sm:text-base text-white/70 ' + (i ? 'pl-4 sm:pl-8 border-l border-white/10' : '')}><span className="block font-display text-white text-xl sm:text-3xl tracking-tight">{c.split(' ')[0]}</span>{c.split(' ').slice(1).join(' ')}</div>)}
-        </motion.div>
       </motion.div>
     </section>
   );
