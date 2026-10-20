@@ -1,6 +1,38 @@
 {
   "rewrites": [
     {
+      "source": "/en",
+      "destination": "/en/index.html"
+    },
+    {
+      "source": "/en/",
+      "destination": "/en/index.html"
+    },
+    {
+      "source": "/ch",
+      "destination": "/ch/index.html"
+    },
+    {
+      "source": "/ch/",
+      "destination": "/ch/index.html"
+    },
+    {
+      "source": "/de",
+      "destination": "/de/index.html"
+    },
+    {
+      "source": "/de/",
+      "destination": "/de/index.html"
+    },
+    {
+      "source": "/diaspora",
+      "destination": "/diaspora/index.html"
+    },
+    {
+      "source": "/diaspora/",
+      "destination": "/diaspora/index.html"
+    },
+    {
       "source": "/portal",
       "destination": "/portal/index.html"
     },
