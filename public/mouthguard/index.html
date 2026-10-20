@@ -4,53 +4,81 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Dizajno mbrojtësen tënde | Linea Mouthguard</title>
-<meta name="description" content="Dizajno mbrojtësen e gojës (mouthguard) me ngjyrat, numrin, emrin ose logon tënde. Bërë me porosi në Pejë nga Linea.">
+<meta name="description" content="Dizajno mbrojtësen e gojës (mouthguard) në 3D: ngjyrat, numri, emri, simbolet ose logoja e ekipit. Bërë me porosi në Pejë nga Linea.">
 <link rel="icon" href="/linea-logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=Bebas+Neue&family=Anton&family=Russo+One&family=Black+Ops+One&family=Bangers&family=Permanent+Marker&family=Graduate&family=Pacifico&family=Orbitron:wght@800&display=swap">
 <style>
-:root{--bg:#0E0A24;--panel:#17113A;--panel2:#20184D;--line:rgba(255,255,255,.12);--ink:#F5F2FF;--muted:#B6ADDA;--violet:#7C5CFF;--lilac:#C7B8FF}
+:root{--bg:#0B0720;--panel:#150F36;--panel2:#1E1748;--line:rgba(255,255,255,.12);--ink:#F5F2FF;--muted:#B6ADDA;--violet:#7C5CFF;--lilac:#C7B8FF}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter Tight',system-ui,sans-serif}
-a{color:var(--lilac)}
-header{display:flex;align-items:center;justify-content:space-between;padding:18px max(16px,env(safe-area-inset-left)) 18px max(16px,env(safe-area-inset-right));max-width:1280px;margin:0 auto}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter Tight',system-ui,sans-serif;overflow-x:hidden}
+#bgfx{position:fixed;inset:0;z-index:0;pointer-events:none}
+header,.wrap{position:relative;z-index:1}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left));max-width:1320px;margin:0 auto}
 header img{height:30px;filter:brightness(0) invert(1)}
-.wrap{max-width:1280px;margin:0 auto;padding:0 16px 48px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px}
-@media(max-width:900px){.wrap{grid-template-columns:1fr}}
-h1{font-size:clamp(34px,5vw,60px);line-height:.98;letter-spacing:-.035em;margin:8px 0 10px;font-weight:700}
-h1 em{font-family:'Instrument Serif',Georgia,serif;font-weight:400;color:var(--lilac)}
-.sub{color:var(--muted);font-size:16px;max-width:620px;margin:0 0 18px}
-.stage{position:relative;background:radial-gradient(70% 60% at 50% 40%,#2A1F66 0%,#120C30 70%);border:1px solid var(--line);border-radius:28px;padding:16px;aspect-ratio:2/1;display:grid;place-items:center;overflow:hidden;touch-action:none}
-.stage svg{width:100%;height:100%}
-.views{position:absolute;left:16px;top:14px;display:flex;gap:6px}
-.hint{position:absolute;right:16px;bottom:12px;font-size:12px;color:var(--muted)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:18px;align-self:start;position:sticky;top:12px}
-@media(max-width:900px){.panel{position:static}.stage{aspect-ratio:4/3;padding:4px}}
+.wrap{max-width:1320px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 48px max(16px,env(safe-area-inset-right));display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:24px}
+@media(max-width:980px){.wrap{grid-template-columns:1fr}}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--lilac);font-weight:700;opacity:0;animation:up .8s .1s cubic-bezier(.16,1,.3,1) forwards}
+h1{font-size:clamp(36px,5.4vw,68px);line-height:.95;letter-spacing:-.04em;margin:8px 0 10px;font-weight:800}
+h1 span{display:inline-block;opacity:0;transform:translateY(40px);animation:up .9s cubic-bezier(.16,1,.3,1) forwards}
+h1 em{font-family:'Instrument Serif',Georgia,serif;font-weight:400;background:linear-gradient(100deg,#C7B8FF 20%,#fff 45%,#C7B8FF 60%,#7C5CFF 85%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:up .9s .2s cubic-bezier(.16,1,.3,1) forwards,shim 5s linear 1.2s infinite}
+@keyframes up{to{opacity:1;transform:none}}
+@keyframes shim{to{background-position:-250% 0}}
+.sub{color:var(--muted);font-size:16px;max-width:640px;margin:0 0 18px;opacity:0;animation:up .9s .45s cubic-bezier(.16,1,.3,1) forwards}
+.stage{position:relative;border-radius:30px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(80% 70% at 50% 35%,#2D2170 0%,#140D38 55%,#0B0720 100%);aspect-ratio:16/10;opacity:0;animation:up 1s .3s cubic-bezier(.16,1,.3,1) forwards}
+@media(max-width:700px){.stage{aspect-ratio:1/1}}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y}
+.views{position:absolute;left:14px;top:14px;display:flex;gap:6px;z-index:2}
+.views button,.chipbtn{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(11,7,32,.55);backdrop-filter:blur(10px);color:#fff;font:600 12px 'Inter Tight',sans-serif;cursor:pointer}
+.views button[aria-pressed="true"]{background:var(--violet);border-color:var(--violet)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px}
+.stripbox{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:14px;opacity:0;animation:up .9s .55s cubic-bezier(.16,1,.3,1) forwards}
+.stripbox h3{margin:0 0 10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lilac);display:flex;justify-content:space-between;gap:8px}
+.stripbox h3 span{color:var(--muted);letter-spacing:0;text-transform:none;font-weight:500}
+#strip{width:100%;display:block;border-radius:14px;touch-action:none;cursor:grab;background:#000}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:18px;align-self:start;position:sticky;top:12px;opacity:0;animation:up .9s .4s cubic-bezier(.16,1,.3,1) forwards}
+@media(max-width:980px){.panel{position:static}}
 .sec{display:flex;flex-direction:column;gap:10px}
 .sec h3{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lilac)}
 .sw{display:flex;flex-wrap:wrap;gap:8px}
-.sw button{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
-.sw button[aria-pressed="true"]{border-color:#fff;transform:scale(1.08)}
+.sw button{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);transition:transform .2s}
+.sw button:hover{transform:scale(1.12)}
+.sw button[aria-pressed="true"]{border-color:#fff;transform:scale(1.12)}
 .pills{display:flex;flex-wrap:wrap;gap:6px}
-.pill{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:600 13px 'Inter Tight',sans-serif;cursor:pointer}
+.pill{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:600 13px 'Inter Tight',sans-serif;cursor:pointer;transition:background .2s}
 .pill[aria-pressed="true"]{background:var(--violet);border-color:var(--violet)}
 .row{display:flex;gap:8px}
-input[type=text]{flex:1;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:500 15px 'Inter Tight',sans-serif}
-.btn{padding:11px 14px;border-radius:12px;border:0;background:var(--violet);color:#fff;font:600 14px 'Inter Tight',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+input[type=text],select{flex:1;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:500 15px 'Inter Tight',sans-serif}
+.btn{padding:11px 14px;border-radius:12px;border:0;background:var(--violet);color:#fff;font:700 14px 'Inter Tight',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,filter .2s}
+.btn:hover{filter:brightness(1.1)}.btn:active{transform:scale(.97)}
 .btn.ghost{background:var(--panel2);border:1px solid var(--line)}
 .btn.wide{width:100%;padding:14px}
-.stk{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.stk button{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;display:grid;place-items:center;padding:6px}
-.stk svg{width:100%;height:100%}
-.edit{background:var(--panel2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.syms{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.syms button{aspect-ratio:1;border-radius:14px;border:1px solid var(--line);background:radial-gradient(circle at 50% 35%,#2A2163,#17113A);cursor:pointer;display:grid;place-items:center;padding:8px;transition:transform .2s,border-color .2s}
+.syms button:hover{transform:translateY(-3px) scale(1.04);border-color:var(--lilac)}
+.syms img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+.fonts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fonts button{padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:#fff;cursor:pointer;font-size:17px;white-space:nowrap;overflow:hidden}
+.fonts button[aria-pressed="true"]{border-color:var(--lilac);background:#2A2163}
+.edit{background:var(--panel2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;animation:up .4s cubic-bezier(.16,1,.3,1)}
+.edit[hidden],.sec[hidden]{display:none!important}
 .edit label{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
 .edit input[type=range]{flex:1;accent-color:var(--violet)}
-.upload{border:1.5px dashed rgba(199,184,255,.45);border-radius:14px;padding:14px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer}
-.note{font-size:12px;color:var(--muted);line-height:1.5}
+.sub2{font-size:12px;color:var(--muted)}
+.upload{border:1.5px dashed rgba(199,184,255,.45);border-radius:14px;padding:14px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;transition:background .2s}
+.upload:hover{background:rgba(124,92,255,.08)}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin:0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:12px 16px;border-radius:12px;font-weight:600;z-index:9;color:#fff}
 :focus-visible{outline:2px solid var(--lilac);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
 </head>
 <body>
+<canvas id="bgfx" aria-hidden="true"></canvas>
 <header>
   <a href="/" aria-label="Linea Aligners"><img src="/linea-logo.svg" alt="Linea"></a>
   <a class="btn ghost" href="https://wa.me/38349772307" target="_blank" rel="noopener">WhatsApp</a>
@@ -58,187 +86,273 @@ input[type=text]{flex:1;min-width:0;padding:11px 12px;border-radius:12px;border:
 
 <div class="wrap">
   <main>
-    <div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--lilac);font-weight:600">Linea Mouthguard</div>
-    <h1>Dizajno <em>mbrojtësen</em> tënde.</h1>
-    <p class="sub">Zgjidh ngjyrat, shto numrin, emrin, stiker ose logon e ekipit. E bëjmë me masën e dhëmbëve të tu, në Pejë.</p>
+    <div class="eyebrow">Linea Mouthguard · 3D</div>
+    <h1><span>Dizajno</span> <span><em>mbrojtësen</em></span> <span style="animation-delay:.35s">tënde.</span></h1>
+    <p class="sub">Ngjyrat, numri, emri, simbolet ose logoja e ekipit. Rrotulloje në 3D dhe shihe si del, para se ta porosisësh. E bëjmë me masën e dhëmbëve të tu, në Pejë.</p>
     <div class="stage" id="stage">
-      <svg id="svg" viewBox="60 90 880 400" xmlns="http://www.w3.org/2000/svg" aria-label="Pamja e mbrojtëses">
-        <defs>
-          <clipPath id="clip"><path id="clipPath"/></clipPath>
-          <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".35" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
-          <pattern id="pStripes" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="30" height="60" id="pStripesC"/></pattern>
-          <pattern id="pDots" width="44" height="44" patternUnits="userSpaceOnUse"><circle cx="22" cy="22" r="8" id="pDotsC"/></pattern>
-          <linearGradient id="pFade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" id="pFadeA"/><stop offset="1" id="pFadeB"/></linearGradient>
-        </defs>
-        <g id="guard">
-          <path id="base" stroke="rgba(0,0,0,.35)" stroke-width="3"/>
-          <g clip-path="url(#clip)"><rect id="patt" x="0" y="0" width="1000" height="560" fill="none"/><g id="layers"></g></g>
-          <path id="teethLine" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3"/>
-          <path id="shine" fill="url(#gloss)" pointer-events="none"/>
-        </g>
-        <rect id="sel" fill="none" stroke="#C7B8FF" stroke-width="3" stroke-dasharray="10 8" visibility="hidden" pointer-events="none"/>
-      </svg>
-      <div class="hint">Tërhiq elementet me gisht ose maus</div>
+      <div class="loading" id="loading">Duke ngarkuar modelin 3D…</div>
+      <canvas id="gl" aria-label="Pamja 3D e mbrojtëses"></canvas>
+      <div class="views" role="group" aria-label="Pamja">
+        <button data-v="front" aria-pressed="false">Para</button>
+        <button data-v="side" aria-pressed="false">Anash</button>
+        <button data-v="top" aria-pressed="false">Sipër</button>
+        <button data-v="spin" aria-pressed="true">360°</button>
+      </div>
     </div>
-    <p class="note" style="margin-top:12px">Pamja është ilustrim. Mbrojtësja bëhet me porosi sipas masës së dhëmbëve, dhe dizajni final konfirmohet me ty para prodhimit.</p>
+    <div class="stripbox">
+      <h3>Pjesa e përparme <span>Tërhiq elementet këtu, ndryshimet dalin menjëherë në 3D</span></h3>
+      <canvas id="strip" width="1024" height="240" aria-label="Paneli i dizajnit"></canvas>
+    </div>
+    <p class="note" style="margin-top:12px">Pamja 3D është ilustrim. Mbrojtësja bëhet me porosi sipas masës së dhëmbëve, dhe dizajni final konfirmohet me ty para prodhimit.</p>
   </main>
 
   <aside class="panel" aria-label="Opsionet e dizajnit">
-    <div class="sec"><h3>Ngjyra kryesore</h3><div class="sw" id="sw1"></div></div>
+    <div class="sec"><h3>Ngjyra e mbrojtëses</h3><div class="sw" id="sw1"></div></div>
     <div class="sec"><h3>Motivi</h3><div class="pills" id="patterns"></div><div class="sw" id="sw2" aria-label="Ngjyra e dytë"></div></div>
-    <div class="sec"><h3>Numri</h3><div class="row"><input type="text" id="numIn" inputmode="numeric" maxlength="3" placeholder="p.sh. 23" aria-label="Numri"><button class="btn" id="numAdd">Shto</button></div></div>
-    <div class="sec"><h3>Emri ose teksti</h3><div class="row"><input type="text" id="txtIn" maxlength="14" placeholder="p.sh. ARTA" aria-label="Teksti"><button class="btn" id="txtAdd">Shto</button></div></div>
-    <div class="sec"><h3>Stikerë</h3><div class="stk" id="stickers"></div></div>
-    <div class="sec"><h3>Logo ose imazh (PNG)</h3>
-      <label class="upload" for="file">Ngarko PNG, JPG ose SVG<br><span style="font-size:11px">Më mirë PNG me sfond transparent</span></label>
+    <div class="sec"><h3>Përfundimi</h3><div class="pills" id="finish"></div></div>
+    <div class="sec"><h3>Numri ose emri</h3>
+      <div class="row"><input type="text" id="txtIn" maxlength="14" placeholder="p.sh. 10 ose ARTA" aria-label="Numri ose emri"><button class="btn" id="txtAdd">Shto</button></div>
+      <div class="fonts" id="fonts"></div>
+    </div>
+    <div class="sec"><h3>Simbole</h3><div class="syms" id="syms"></div></div>
+    <div class="sec"><h3>Logo ose imazh</h3>
+      <label class="upload" for="file">Ngarko PNG, JPG ose SVG<br><span style="font-size:11px">Më mirë PNG me sfond transparent, deri 5 MB</span></label>
       <input type="file" id="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
     </div>
     <div class="edit" id="edit" hidden>
       <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">Elementi i zgjedhur</b><button class="btn ghost" id="del" style="padding:7px 10px">Fshije</button></div>
-      <label>Madhësia <input type="range" id="size" min="0.3" max="3" step="0.01"></label>
+      <label>Madhësia <input type="range" id="size" min="0.2" max="3" step="0.01"></label>
       <label>Rrotullimi <input type="range" id="rot" min="-180" max="180" step="1"></label>
-      <div class="sw" id="swEl" aria-label="Ngjyra e elementit"></div>
+      <div id="txtOpts" class="sec" style="gap:8px">
+        <div class="sub2">Ngjyra e shkronjave</div><div class="sw" id="swFill"></div>
+        <div class="sub2">Kontura</div><div class="sw" id="swStroke"></div>
+        <label>Trashësia e konturës <input type="range" id="strokeW" min="0" max="24" step="1"></label>
+        <div class="sub2">Fonti</div><div class="fonts" id="fontsEl"></div>
+      </div>
     </div>
     <div class="sec">
       <button class="btn wide" id="order">Porosit në WhatsApp</button>
-      <button class="btn ghost wide" id="dl">Shkarko dizajnin (PNG)</button>
-      <p class="note">Pas porosisë, na dërgo në WhatsApp edhe imazhin e shkarkuar të dizajnit.</p>
+      <button class="btn ghost wide" id="dl">Shkarko foton 3D (PNG)</button>
+      <p class="note">Pas porosisë, na dërgo në WhatsApp edhe foton e shkarkuar të dizajnit.</p>
     </div>
   </aside>
 </div>
 
 <script>
 (function(){
-const NS='http://www.w3.org/2000/svg';
 const $=id=>document.getElementById(id);
-const svg=$('svg'), layers=$('layers'), sel=$('sel');
-// Mouthguard front view: smooth labial flange on top, scalloped teeth edge at the bottom
-const yb=x=>335+85*Math.sin(Math.PI*(x-90)/820);           // incisal edge baseline
-const yt=x=>215-95*Math.sin(Math.PI*(x-90)/820);           // gum flange line
-const widths=[70,74,78,84,96,104,104,96,84,78,74,70];        // molars -> incisors -> molars
-const total=widths.reduce((a,b)=>a+b,0), k=820/total;
-let xs=[90];widths.forEach(w=>xs.push(xs[xs.length-1]+w*k));
-let d=`M90 ${yt(90)+40} C90 ${yt(90)-10} 120 ${yt(150)} 160 ${yt(160)}`;
-for(let x=200;x<=840;x+=40)d+=` L${x} ${yt(x).toFixed(1)}`;
-d+=` C880 ${yt(860)} 910 ${yt(910)-10} 910 ${yt(910)+40} L910 ${yb(910)-10}`;
-let seps='';
-for(let i=xs.length-1;i>0;i--){const a=xs[i],b=xs[i-1],m=(a+b)/2;d+=` Q${m.toFixed(1)} ${(yb(m)+22).toFixed(1)} ${b.toFixed(1)} ${yb(b).toFixed(1)}`;if(i<xs.length-1)seps+=`M${a.toFixed(1)} ${(yb(a)-4).toFixed(1)} L${a.toFixed(1)} ${(yb(a)-70).toFixed(1)} `;}
-d+=' Z';
-['base','clipPath'].forEach(id=>$(id).setAttribute('d',d));
-let sh=`M140 ${yt(140)+18}`;for(let x=180;x<=860;x+=40)sh+=` L${x} ${(yt(x)+14).toFixed(1)}`;for(let x=860;x>=140;x-=40)sh+=` L${x} ${(yt(x)+52).toFixed(1)}`;
-$('shine').setAttribute('d',sh+' Z');
-$('teethLine').setAttribute('d',seps);
-const COLORS=['#111827','#FFFFFF','#E11D48','#F97316','#FACC15','#22C55E','#0EA5E9','#1D4ED8','#7C5CFF','#EC4899','#A3E635','#94A3B8','rgba(220,235,255,.55)'];
-const state={c1:'#7C5CFF',c2:'#FFFFFF',pattern:'solid',items:[],sel:null};
-let uid=0;
+const toast=(m,c='#E11D48')=>{const n=document.createElement('div');n.className='toast';n.style.background=c;n.textContent=m;document.body.appendChild(n);setTimeout(()=>n.remove(),3200)};
 
-function swatches(el,cur,on){el.innerHTML='';COLORS.forEach(c=>{const b=document.createElement('button');b.style.background=c==='rgba(220,235,255,.55)'?'linear-gradient(135deg,#e6f0ff,#9fb6d9)':c;b.setAttribute('aria-label',c==='rgba(220,235,255,.55)'?'Transparente':c);b.setAttribute('aria-pressed',String(c===cur()));b.onclick=()=>{on(c);swatches(el,cur,on)};el.appendChild(b)})}
-const PATTERNS=[['solid','Një ngjyrë'],['stripes','Vija'],['dots','Pika'],['fade','Gradient'],['split','Dy ngjyra']];
-function renderPatterns(){const el=$('patterns');el.innerHTML='';PATTERNS.forEach(([k,l])=>{const b=document.createElement('button');b.className='pill';b.textContent=l;b.setAttribute('aria-pressed',String(state.pattern===k));b.onclick=()=>{state.pattern=k;renderPatterns();paint()};el.appendChild(b)})}
-function paint(){
-  $('base').setAttribute('fill',state.c1);
-  $('pStripesC').setAttribute('fill',state.c2);$('pDotsC').setAttribute('fill',state.c2);
-  $('pFadeA').setAttribute('stop-color',state.c1);$('pFadeB').setAttribute('stop-color',state.c2);
-  const p=$('patt');
-  if(state.pattern==='solid'){p.setAttribute('fill','none');p.setAttribute('width',1000)}
-  else if(state.pattern==='stripes'){p.setAttribute('fill','url(#pStripes)');p.setAttribute('width',1000)}
-  else if(state.pattern==='dots'){p.setAttribute('fill','url(#pDots)');p.setAttribute('width',1000)}
-  else if(state.pattern==='fade'){p.setAttribute('fill','url(#pFade)');p.setAttribute('width',1000)}
-  else if(state.pattern==='split'){p.setAttribute('fill',state.c2);p.setAttribute('width',500);p.setAttribute('x',500);return}
-  p.setAttribute('x',0);
-}
+/* ---------- background particles ---------- */
+(()=>{const c=$('bgfx'),x=c.getContext('2d');let W,H,P=[];
+ const rs=()=>{W=c.width=innerWidth*devicePixelRatio;H=c.height=innerHeight*devicePixelRatio;P=Array.from({length:60},()=>({x:Math.random()*W,y:Math.random()*H,r:(Math.random()*2+.6)*devicePixelRatio,v:(Math.random()*.25+.05)*devicePixelRatio,a:Math.random()*.5+.15}))};
+ rs();addEventListener('resize',rs);
+ const g=()=>{x.clearRect(0,0,W,H);const gr=x.createRadialGradient(W*.8,0,0,W*.8,0,W*.7);gr.addColorStop(0,'rgba(124,92,255,.22)');gr.addColorStop(1,'rgba(124,92,255,0)');x.fillStyle=gr;x.fillRect(0,0,W,H);
+  P.forEach(p=>{p.y-=p.v;if(p.y<-10){p.y=H+10;p.x=Math.random()*W}x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fillStyle=`rgba(199,184,255,${p.a})`;x.fill()});if(!matchMedia('(prefers-reduced-motion:reduce)').matches)requestAnimationFrame(g)};g();})();
 
-// stickers: simple vector shapes
-const STK={
- star:'<path d="M50 6 61 38 95 38 67 58 78 92 50 71 22 92 33 58 5 38 39 38Z"/>',
- bolt:'<path d="M58 4 18 56 46 56 38 96 82 40 54 40Z"/>',
- heart:'<path d="M50 88 C10 60 6 34 22 20 C36 8 50 18 50 30 C50 18 64 8 78 20 C94 34 90 60 50 88Z"/>',
- crown:'<path d="M10 76 16 28 36 52 50 18 64 52 84 28 90 76Z"/><rect x="10" y="80" width="80" height="10" rx="3"/>',
- flame:'<path d="M50 6 C62 30 82 40 82 64 C82 84 68 96 50 96 C32 96 18 84 18 64 C18 50 28 42 34 30 C38 44 44 48 48 48 C44 32 44 18 50 6Z"/>',
- ball:'<circle cx="50" cy="50" r="42" fill="none" stroke-width="7" stroke="currentColor"/><path d="M8 50h84M50 8c-16 20-16 64 0 84M50 8c16 20 16 64 0 84" fill="none" stroke-width="6" stroke="currentColor"/>',
- eagle:'<path d="M50 30 C40 14 18 10 4 18 C18 22 26 30 30 40 C18 38 10 42 6 50 C18 48 28 50 34 56 C30 64 30 74 36 84 C40 74 46 68 50 66 C54 68 60 74 64 84 C70 74 70 64 66 56 C72 50 82 48 94 50 C90 42 82 38 70 40 C74 30 82 22 96 18 C82 10 60 14 50 30Z"/>',
- fist:'<rect x="22" y="30" width="56" height="50" rx="12"/><rect x="22" y="22" width="14" height="22" rx="6"/><rect x="38" y="18" width="14" height="24" rx="6"/><rect x="54" y="20" width="14" height="22" rx="6"/>',
- shield:'<path d="M50 6 88 20 C88 56 74 80 50 94 C26 80 12 56 12 20Z"/>',
- wave:'<path d="M4 60 C20 40 34 40 50 60 C66 80 80 80 96 60 L96 92 L4 92Z"/>',
- sk:'<path d="M50 10 C28 10 14 26 14 46 C14 60 22 68 30 72 V86 H70 V72 C78 68 86 60 86 46 C86 26 72 10 50 10Z"/><circle cx="36" cy="46" r="9" fill="#000"/><circle cx="64" cy="46" r="9" fill="#000"/>',
- tooth:'<path d="M20 22 C20 8 40 6 50 14 C60 6 80 8 80 22 C80 40 72 50 70 70 C68 88 62 94 58 94 C52 94 54 70 50 70 C46 70 48 94 42 94 C38 94 32 88 30 70 C28 50 20 40 20 22Z"/>'
+/* ---------- symbols (vector art with metallic gradients, rendered as images) ---------- */
+const GOLD='<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".45" stop-color="#F2C14E"/><stop offset="1" stop-color="#A86B12"/></linearGradient>';
+const SILV='<linearGradient id="s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9D2E3"/><stop offset="1" stop-color="#6B7790"/></linearGradient>';
+const RED='<linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5A6E"/><stop offset="1" stop-color="#A80F2B"/></linearGradient>';
+const svgw=(inner,defs='')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs>${GOLD}${SILV}${RED}${defs}</defs>${inner}</svg>`;
+const SYMBOLS={
+ shpata:svgw('<g transform="rotate(45 100 100)"><path d="M92 18 L100 6 L108 18 L108 128 L92 128Z" fill="url(#s)" stroke="#3B4256" stroke-width="3"/><path d="M100 10 L100 126" stroke="#fff" stroke-width="2" opacity=".7"/><rect x="66" y="126" width="68" height="12" rx="6" fill="url(#g)" stroke="#6B4A10" stroke-width="3"/><rect x="93" y="138" width="14" height="36" rx="5" fill="#5B3A1E" stroke="#2E1B0C" stroke-width="3"/><circle cx="100" cy="182" r="10" fill="url(#g)" stroke="#6B4A10" stroke-width="3"/></g>'),
+ shpatat:svgw(['45','-45'].map(a=>`<g transform="rotate(${a} 100 100)"><path d="M93 22 L100 10 L107 22 L107 124 L93 124Z" fill="url(#s)" stroke="#3B4256" stroke-width="3"/><rect x="70" y="122" width="60" height="11" rx="5" fill="url(#g)" stroke="#6B4A10" stroke-width="3"/><rect x="94" y="133" width="12" height="32" rx="5" fill="#5B3A1E" stroke="#2E1B0C" stroke-width="3"/><circle cx="100" cy="172" r="9" fill="url(#g)" stroke="#6B4A10" stroke-width="3"/></g>`).join('')),
+ mburoja:svgw('<path d="M100 12 L170 36 C170 104 146 152 100 186 C54 152 30 104 30 36Z" fill="url(#g)" stroke="#6B4A10" stroke-width="5"/><path d="M100 30 L154 48 C154 102 134 140 100 166 C66 140 46 102 46 48Z" fill="url(#r)"/><path d="M100 30 V166 M46 84 H154" stroke="url(#g)" stroke-width="10"/>'),
+ shqiponja:svgw('<path fill="#111" stroke="#000" stroke-width="2" d="M100 64c-6-14-4-30 8-38-2 10 2 16 8 18 4-8 14-12 22-8-6 2-10 6-10 12 10-2 18 2 22 10-8-2-14 0-18 4 14 4 30 2 44-6-2 14-14 24-28 28 12 2 22-2 30-10 0 14-12 24-26 26 10 4 20 2 26-4-4 14-18 20-32 18 6 6 14 8 22 6-8 10-22 10-32 4l-6 14 10 22-14-8-6 18-6-18-14 8 10-22-6-14c-10 6-24 6-32-4 8 2 16 0 22-6-14 2-28-4-32-18 6 6 16 8 26 4-14-2-26-12-26-26 8 8 18 12 30 10-14-4-26-14-28-28 14 8 30 10 44 6-4-4-10-6-18-4 4-8 12-12 22-10 0-6-4-10-10-12 8-4 18 0 22 8 6-2 10-8 8-18 12 8 14 24 8 38z"/><circle cx="111" cy="40" r="2.5" fill="#fff"/><circle cx="89" cy="40" r="2.5" fill="#fff"/>'),
+ kurora:svgw('<path d="M24 150 L34 60 L72 100 L100 40 L128 100 L166 60 L176 150Z" fill="url(#g)" stroke="#6B4A10" stroke-width="5" stroke-linejoin="round"/><rect x="24" y="150" width="152" height="22" rx="6" fill="url(#g)" stroke="#6B4A10" stroke-width="5"/><circle cx="100" cy="122" r="12" fill="url(#r)"/><circle cx="60" cy="128" r="8" fill="#3B82F6"/><circle cx="140" cy="128" r="8" fill="#22C55E"/>'),
+ rrufeja:svgw('<path d="M118 8 L40 112 H92 L76 192 L164 76 H110Z" fill="url(#g)" stroke="#6B4A10" stroke-width="5" stroke-linejoin="round"/>'),
+ flaka:svgw('<path d="M100 8 C122 52 170 70 170 124 C170 166 140 194 100 194 C60 194 30 166 30 124 C30 94 50 78 62 56 C68 82 80 92 90 92 C82 60 86 32 100 8Z" fill="url(#fl)"/><path d="M100 96 C112 120 136 132 136 156 C136 178 120 190 100 190 C80 190 64 178 64 156 C64 138 78 128 86 116 C90 130 96 134 100 134 C96 120 96 108 100 96Z" fill="#FFE27A"/>','<linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9A3C"/><stop offset="1" stop-color="#E5162F"/></linearGradient>'),
+ ylli:svgw('<path d="M100 10 L124 74 L192 76 L138 116 L158 182 L100 142 L42 182 L62 116 L8 76 L76 74Z" fill="url(#g)" stroke="#6B4A10" stroke-width="5" stroke-linejoin="round"/>'),
+ krahet:svgw('<g fill="url(#s)" stroke="#3B4256" stroke-width="3"><path d="M96 110 C70 70 30 60 6 70 C24 76 34 84 38 94 C22 92 10 98 4 108 C20 106 32 110 40 118 C30 122 24 132 24 144 C40 132 66 124 96 126Z"/><path d="M104 110 C130 70 170 60 194 70 C176 76 166 84 162 94 C178 92 190 98 196 108 C180 106 168 110 160 118 C170 122 176 132 176 144 C160 132 134 124 104 126Z"/></g>'),
+ kafka:svgw('<path d="M100 16 C56 16 28 46 28 86 C28 112 42 128 58 136 V164 H142 V136 C158 128 172 112 172 86 C172 46 144 16 100 16Z" fill="url(#s)" stroke="#3B4256" stroke-width="5"/><circle cx="72" cy="90" r="18" fill="#111"/><circle cx="128" cy="90" r="18" fill="#111"/><path d="M100 110 L90 130 H110Z" fill="#111"/><path d="M76 164 V186 M100 164 V186 M124 164 V186" stroke="#3B4256" stroke-width="8"/>'),
+ ujku:svgw('<path d="M40 30 L74 70 L100 60 L126 70 L160 30 L156 96 C170 120 160 150 140 166 L100 192 L60 166 C40 150 30 120 44 96Z" fill="url(#s)" stroke="#3B4256" stroke-width="5" stroke-linejoin="round"/><path d="M68 108 L88 116 L70 122Z M132 108 L112 116 L130 122Z" fill="#E5162F"/><path d="M90 150 L100 162 L110 150Z" fill="#111"/>'),
+ zemra:svgw('<path d="M100 178 C30 130 14 86 34 54 C54 24 90 32 100 58 C110 32 146 24 166 54 C186 86 170 130 100 178Z" fill="url(#r)" stroke="#6B0A1C" stroke-width="5"/><path d="M58 62 C68 52 82 54 88 64" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".6"/>'),
 };
-const stEl=$('stickers');
-Object.entries(STK).forEach(([k,d])=>{const b=document.createElement('button');b.setAttribute('aria-label','Stiker '+k);b.innerHTML=`<svg viewBox="0 0 100 100" fill="#F5F2FF" style="color:#F5F2FF">${d}</svg>`;b.onclick=()=>add({type:'sticker',key:k,color:'#FFFFFF'});stEl.appendChild(b)});
+const symImgs={};
+const symLoad=Promise.all(Object.entries(SYMBOLS).map(([k,s])=>new Promise(res=>{const im=new Image();im.onload=()=>{symImgs[k]=im;res()};im.onerror=res;im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)})));
+const symNames={shpata:'Shpata',shpatat:'Shpata të kryqëzuara',mburoja:'Mburoja',shqiponja:'Shqiponja',kurora:'Kurora',rrufeja:'Rrufeja',flaka:'Flaka',ylli:'Ylli',krahet:'Krahët',kafka:'Kafka',ujku:'Ujku',zemra:'Zemra'};
+Object.keys(SYMBOLS).forEach(k=>{const b=document.createElement('button');b.title=symNames[k];b.setAttribute('aria-label',symNames[k]);b.innerHTML=`<img alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(SYMBOLS[k])}">`;b.onclick=()=>add({type:'sym',key:k});$('syms').appendChild(b)});
 
-function add(it){it.id=++uid;const n=state.items.length;it.x=it.x??[500,330,670,500,250,750][n%6];it.y=it.y??[280,300,300,360,250,250][n%6];it.s=it.s??1;it.r=it.r??0;state.items.push(it);draw();select(it.id)}
-function nodeFor(it){
-  const g=document.createElementNS(NS,'g');g.dataset.id=it.id;g.style.cursor='move';
-  g.setAttribute('transform',`translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})`);
-  if(it.type==='number'||it.type==='text'){
-    const t=document.createElementNS(NS,'text');t.textContent=it.value;t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','central');
-    t.setAttribute('font-family',"'Inter Tight',Arial,sans-serif");t.setAttribute('font-weight','800');t.setAttribute('font-size',it.type==='number'?150:84);
-    t.setAttribute('fill',it.color);t.setAttribute('stroke','rgba(0,0,0,.35)');t.setAttribute('stroke-width','3');t.setAttribute('paint-order','stroke');
-    if(it.type==='text')t.setAttribute('letter-spacing','4');g.appendChild(t);
-  }else if(it.type==='sticker'){
-    const s=document.createElementNS(NS,'g');s.setAttribute('transform','translate(-60 -60) scale(1.2)');s.setAttribute('fill',it.color);s.setAttribute('color',it.color);s.innerHTML=STK[it.key];g.appendChild(s);
+/* ---------- state ---------- */
+const COLORS=['#111827','#FFFFFF','#E11D48','#F97316','#FACC15','#22C55E','#0EA5E9','#1D4ED8','#7C5CFF','#EC4899','#A3E635','#94A3B8','#D4AF37'];
+const FONTS=[['Bebas Neue','BEBAS'],['Anton','ANTON'],['Russo One','Russo'],['Black Ops One','Ops'],['Bangers','Bangers'],['Permanent Marker','Marker'],['Graduate','Graduate'],['Orbitron','ORBIT'],['Pacifico','Pacifico']];
+const S={c1:'#7C5CFF',c2:'#FFFFFF',pattern:'solid',finish:'gloss',font:'Bebas Neue',items:[],sel:null};
+let uid=0;
+function swatches(el,get,set){el.innerHTML='';COLORS.forEach(c=>{const b=document.createElement('button');b.style.background=c==='#D4AF37'?'linear-gradient(135deg,#FFF3B0,#D4AF37,#8A5A0E)':c;b.setAttribute('aria-label',c);b.setAttribute('aria-pressed',String(c===get()));b.onclick=()=>{set(c);swatches(el,get,set)};el.appendChild(b)})}
+function pills(el,list,get,set){el.innerHTML='';list.forEach(([k,l])=>{const b=document.createElement('button');b.className='pill';b.textContent=l;b.setAttribute('aria-pressed',String(get()===k));b.onclick=()=>{set(k);pills(el,list,get,set)};el.appendChild(b)})}
+function fontBtns(el,get,set){el.innerHTML='';FONTS.forEach(([f,l])=>{const b=document.createElement('button');b.textContent=l;b.style.fontFamily=`'${f}'`;b.setAttribute('aria-pressed',String(get()===f));b.onclick=()=>{set(f);fontBtns(el,get,set)};el.appendChild(b)})}
+
+/* ---------- texture: 2048x1024; rows 0..DESIGN_H = front wall ---------- */
+const TW=2048,TH=1024,DH=470;
+const tex=document.createElement('canvas');tex.width=TW;tex.height=TH;const tc=tex.getContext('2d');
+const strip=$('strip'),sc=strip.getContext('2d');
+function paintBase(ctx){
+  ctx.fillStyle=S.c1;ctx.fillRect(0,0,TW,TH);
+  ctx.save();
+  if(S.pattern==='stripes'){ctx.fillStyle=S.c2;ctx.translate(0,0);for(let x=-TH;x<TW+TH;x+=120){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+60,0);ctx.lineTo(x+60-TH*.6,TH);ctx.lineTo(x-TH*.6,TH);ctx.fill()}}
+  else if(S.pattern==='dots'){ctx.fillStyle=S.c2;for(let y=30;y<TH;y+=70)for(let x=(y/70%2)*35+30;x<TW;x+=70){ctx.beginPath();ctx.arc(x,y,13,0,7);ctx.fill()}}
+  else if(S.pattern==='fade'){const g=ctx.createLinearGradient(0,0,TW,0);g.addColorStop(0,S.c1);g.addColorStop(.5,S.c2);g.addColorStop(1,S.c1);ctx.fillStyle=g;ctx.fillRect(0,0,TW,TH)}
+  else if(S.pattern==='split'){ctx.fillStyle=S.c2;ctx.fillRect(TW/2,0,TW/2,TH)}
+  else if(S.pattern==='camo'){const cs=[S.c2,shade(S.c1,-30),shade(S.c2,-35)];let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};for(let i=0;i<140;i++){ctx.fillStyle=cs[i%3];ctx.beginPath();const cx=rnd()*TW,cy=rnd()*TH,r=40+rnd()*70;for(let a=0;a<6.3;a+=.7){const rr=r*(.6+rnd()*.6);ctx.lineTo(cx+Math.cos(a)*rr*1.6,cy+Math.sin(a)*rr)}ctx.fill()}}
+  else if(S.pattern==='flames'){ctx.fillStyle=S.c2;for(let x=-40;x<TW;x+=150){ctx.beginPath();ctx.moveTo(x,DH);ctx.quadraticCurveTo(x+40,DH-140,x+20,DH-260);ctx.quadraticCurveTo(x+90,DH-150,x+80,DH-330);ctx.quadraticCurveTo(x+150,DH-180,x+150,DH);ctx.fill()}}
+  ctx.restore();
+}
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=(n>>8&255)+p,b=(n&255)+p;const c=v=>Math.max(0,Math.min(255,v));return'#'+((1<<24)+(c(r)<<16)+(c(g)<<8)+c(b)).toString(16).slice(1)}
+function drawItem(ctx,it){
+  ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.r*Math.PI/180);ctx.scale(it.s,it.s);
+  if(it.type==='text'){
+    const size=it.value.length<=3?260:150;ctx.font=`${it.font==='Orbitron'?'800 ':''}${size}px '${it.font}'`;ctx.textAlign='center';ctx.textBaseline='middle';
+    if(it.sw>0){ctx.lineJoin='round';ctx.lineWidth=it.sw*2;ctx.strokeStyle=it.stroke;ctx.strokeText(it.value,0,6)}
+    if(it.fill==='#D4AF37'){const g=ctx.createLinearGradient(0,-size/2,0,size/2);g.addColorStop(0,'#FFF3B0');g.addColorStop(.5,'#F2C14E');g.addColorStop(1,'#8A5A0E');ctx.fillStyle=g}else ctx.fillStyle=it.fill;
+    ctx.fillText(it.value,0,6);
+    const m=ctx.measureText(it.value);it.bw=m.width+it.sw*2;it.bh=size*.9;
   }else{
-    const im=document.createElementNS(NS,'image');im.setAttribute('href',it.src);im.setAttribute('width',it.w);im.setAttribute('height',it.h);im.setAttribute('x',-it.w/2);im.setAttribute('y',-it.h/2);g.appendChild(im);
+    const im=it.type==='sym'?symImgs[it.key]:it.img;if(!im){ctx.restore();return}
+    const w=it.type==='sym'?220:it.w,h=it.type==='sym'?220:it.h;ctx.drawImage(im,-w/2,-h/2,w,h);it.bw=w;it.bh=h;
   }
+  ctx.restore();
+}
+function render(){
+  paintBase(tc);
+  tc.save();tc.beginPath();tc.rect(0,0,TW,DH);tc.clip();S.items.forEach(it=>drawItem(tc,it));tc.restore();
+  // strip preview: front wall only, cropped to the visible middle part of the arch
+  sc.clearRect(0,0,strip.width,strip.height);
+  sc.drawImage(tex,SX0,0,SX1-SX0,DH,0,0,strip.width,strip.height);
+  const it=S.items.find(i=>i.id===S.sel);
+  if(it){const k=strip.width/(SX1-SX0),ky=strip.height/DH;sc.save();sc.translate((it.x-SX0)*k,it.y*ky);sc.rotate(it.r*Math.PI/180);sc.setLineDash([8,6]);sc.strokeStyle='#C7B8FF';sc.lineWidth=2;const w=it.bw*it.s*k+16,h=it.bh*it.s*ky+16;sc.strokeRect(-w/2,-h/2,w,h);sc.restore()}
+  if(texture)texture.needsUpdate=true;
+}
+const SX0=TW*.18,SX1=TW*.82; // front part of the arch
+
+/* ---------- editing ---------- */
+function add(it){
+  it.id=++uid;const n=S.items.length;it.x=it.x??TW/2+[0,-300,300,-150,150][n%5];it.y=it.y??DH*.5;it.s=it.s??1;it.r=it.r??0;
+  if(it.type==='text'){it.font=it.font||S.font;it.fill=it.fill||'#FFFFFF';it.stroke=it.stroke||'#111827';it.sw=it.sw??8}
+  S.items.push(it);S.sel=it.id;pop(it);ui();focusFront();
+}
+function pop(it){const s0=it.s;const t0=performance.now();const f=t=>{const k=Math.min(1,(t-t0)/450);const e=1+Math.sin(k*Math.PI)*.25*(1-k);it.s=s0*e;render();if(k<1)requestAnimationFrame(f);else{it.s=s0;render()}};requestAnimationFrame(f)}
+function ui(){
+  const it=S.items.find(i=>i.id===S.sel);$('edit').hidden=!it;
+  if(it){$('size').value=it.s;$('rot').value=it.r;$('txtOpts').hidden=it.type!=='text';
+    if(it.type==='text'){swatches($('swFill'),()=>it.fill,c=>{it.fill=c;render()});swatches($('swStroke'),()=>it.stroke,c=>{it.stroke=c;render()});$('strokeW').value=it.sw;fontBtns($('fontsEl'),()=>it.font,f=>{it.font=f;document.fonts.load(`80px '${f}'`).then(render)})}}
+  render();
+}
+function stripPt(e){const r=strip.getBoundingClientRect();return{x:SX0+(e.clientX-r.left)/r.width*(SX1-SX0),y:(e.clientY-r.top)/r.height*DH}}
+let drag=null;
+strip.addEventListener('pointerdown',e=>{const p=stripPt(e);const hit=[...S.items].reverse().find(it=>Math.abs(p.x-it.x)<(it.bw*it.s)/2+20&&Math.abs(p.y-it.y)<(it.bh*it.s)/2+20);
+  S.sel=hit?hit.id:null;ui();if(hit){drag={it:hit,dx:p.x-hit.x,dy:p.y-hit.y};strip.setPointerCapture(e.pointerId);strip.style.cursor='grabbing';focusFront()}});
+strip.addEventListener('pointermove',e=>{if(!drag)return;const p=stripPt(e);drag.it.x=Math.max(SX0-200,Math.min(SX1+200,p.x-drag.dx));drag.it.y=Math.max(0,Math.min(DH,p.y-drag.dy));render()});
+strip.addEventListener('pointerup',()=>{drag=null;strip.style.cursor='grab'});
+$('size').oninput=e=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.s=+e.target.value;render()}};
+$('rot').oninput=e=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.r=+e.target.value;render()}};
+$('strokeW').oninput=e=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.sw=+e.target.value;render()}};
+$('del').onclick=()=>{S.items=S.items.filter(i=>i.id!==S.sel);S.sel=null;ui()};
+document.addEventListener('keydown',e=>{if((e.key==='Delete'||e.key==='Backspace')&&S.sel&&!/input|select/i.test(document.activeElement.tagName))$('del').click()});
+$('txtAdd').onclick=()=>{const v=$('txtIn').value.trim().toUpperCase().slice(0,14);if(!v)return;document.fonts.load(`80px '${S.font}'`).then(()=>add({type:'text',value:v}));$('txtIn').value=''};
+$('txtIn').onkeydown=e=>{if(e.key==='Enter')$('txtAdd').click()};
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>5e6){toast('Imazhi është mbi 5 MB. Zgjidh një më të vogël.');return}
+  const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(320/img.width,300/img.height);add({type:'img',img,w:img.width*k,h:img.height*k})};img.src=rd.result};rd.readAsDataURL(f);e.target.value=''};
+
+swatches($('sw1'),()=>S.c1,c=>{S.c1=c;render()});
+swatches($('sw2'),()=>S.c2,c=>{S.c2=c;render()});
+pills($('patterns'),[['solid','Një ngjyrë'],['stripes','Vija'],['dots','Pika'],['fade','Gradient'],['split','Dy ngjyra'],['camo','Kamuflazh'],['flames','Flakë']],()=>S.pattern,k=>{S.pattern=k;render()});
+pills($('finish'),[['gloss','Me shkëlqim'],['matte','Mat'],['clear','Transparente'],['metal','Metalike']],()=>S.finish,k=>{S.finish=k;applyFinish()});
+fontBtns($('fonts'),()=>S.font,f=>{S.font=f;document.fonts.load(`80px '${f}'`)});
+
+/* ---------- 3D ---------- */
+let texture=null,mat=null,renderer,scene,camera,controls,mesh,mode='spin',camGoal=null;
+function buildGeometry(){
+  const NA=220,R=[];
+  // arch: horseshoe; t in [0,1]
+  const arch=t=>{const p=(t-.5)*2*1.42;const x=3.15*Math.sin(p),z=2.75*Math.cos(p)-.6;const nx=Math.sin(p)/3.15,nz=Math.cos(p)/2.75;const l=Math.hypot(nx,nz);return{x,z,nx:nx/l,nz:nz/l}};
+  const front=t=>1-Math.pow(Math.abs(2*t-1),1.6); // 1 at incisors
+  // profile (n outward, y up) closed loop; first segment = outer (labial) wall top->bottom
+  const prof=t=>{const H=1.25+.5*front(t),w=.52,r=.24,th=.15,Hi=.62*H;const P=[];
+    const arc=(cx,cy,rad,a0,a1,n)=>{for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;P.push([cx+rad*Math.cos(a),cy+rad*Math.sin(a)])}};
+    P.push([w-.04,H]);for(let i=1;i<=10;i++)P.push([w,H-(H-r)*i/10]);
+    arc(w-r,r,r,0,-Math.PI/2,6);arc(-w+r,r,r,-Math.PI/2,-Math.PI,6);
+    for(let i=1;i<=4;i++)P.push([-w,r+(Hi-r)*i/4]);
+    arc(-w+th/2,Hi,th/2,Math.PI,0,5);
+    for(let i=1;i<=3;i++)P.push([-w+th,Hi-(Hi-r-th*.4)*i/3]);
+    arc(-w+r,r,r-th,-Math.PI,-Math.PI/2,5);arc(w-r,r,r-th,-Math.PI/2,0,5);
+    for(let i=1;i<=6;i++)P.push([w-th,r+(H-.06-r)*i/6]);
+    arc(w-th/2-.02,H-.06,th/2+.02,Math.PI,Math.PI*.15,4);
+    return P};
+  const P0=prof(.5),NP=P0.length,OUTER=11;
+  const pos=[],uv=[],idx=[];
+  for(let i=0;i<=NA;i++){const t=i/NA,a=arch(t),P=prof(t);
+    let len=[0];for(let j=1;j<NP;j++)len.push(len[j-1]+Math.hypot(P[j][0]-P[j-1][0],P[j][1]-P[j-1][1]));const Lout=len[OUTER-1],L=len[NP-1];
+    for(let j=0;j<NP;j++){const [n,y]=P[j];pos.push(a.x+a.nx*n,y-.7,a.z+a.nz*n);
+      const v=j<OUTER?(len[j]/Lout)*(DH/TH):(DH/TH)+(len[j]-Lout)/(L-Lout)*(1-DH/TH);uv.push(t,j<OUTER?1-(DH/TH-v):1-v)}}
+  for(let i=0;i<NA;i++)for(let j=0;j<NP-1;j++){const a=i*NP+j,b=a+NP;idx.push(a,b,a+1,b,b+1,a+1)}
+  // end caps
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();g.rotateY(Math.PI);
   return g;
 }
-function draw(){layers.innerHTML='';state.items.forEach(it=>layers.appendChild(nodeFor(it)));updateSel()}
-function cur(){return state.items.find(i=>i.id===state.sel)}
-function updateSel(){
-  const it=cur();const ed=$('edit');
-  if(!it){sel.setAttribute('visibility','hidden');ed.hidden=true;return}
-  const n=layers.querySelector(`[data-id="${it.id}"]`);if(!n)return;const b=n.getBBox();
-  const w=b.width*it.s,h=b.height*it.s;
-  sel.setAttribute('x',it.x-w/2-10);sel.setAttribute('y',it.y-h/2-10);sel.setAttribute('width',w+20);sel.setAttribute('height',h+20);
-  sel.setAttribute('transform',`rotate(${it.r} ${it.x} ${it.y})`);sel.setAttribute('visibility','visible');
-  ed.hidden=false;$('size').value=it.s;$('rot').value=it.r;
-  const sw=$('swEl');if(it.type==='image'){sw.hidden=true}else{sw.hidden=false;swatches(sw,()=>it.color,c=>{it.color=c;draw()})}
+function applyFinish(){if(!mat)return;const f=S.finish;
+  mat.roughness=f==='matte'?.75:f==='metal'?.28:.18;mat.metalness=f==='metal'?.65:0;mat.clearcoat=f==='matte'?0:1;mat.clearcoatRoughness=f==='matte'?.6:.08;
+  mat.transmission=f==='clear'?.55:0;mat.thickness=f==='clear'?.6:0;mat.opacity=1;mat.ior=1.45;mat.sheen=f==='matte'?.4:0;mat.needsUpdate=true}
+function init3D(){
+  if(!window.THREE){$('loading').textContent='Pamja 3D nuk u ngarkua. Provo një shfletues tjetër.';return}
+  const cv=$('gl');renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(2,devicePixelRatio));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.82;
+  scene=new THREE.Scene();
+  const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new THREE.RoomEnvironment(),.04).texture;
+  camera=new THREE.PerspectiveCamera(32,1,.1,100);camera.position.set(0,1.2,11);
+  controls=new THREE.OrbitControls(camera,cv);controls.enableDamping=true;controls.enablePan=false;controls.minDistance=5;controls.maxDistance=16;controls.target.set(0,0,.3);
+  controls.addEventListener('start',()=>{setMode('free')});
+  texture=new THREE.CanvasTexture(tex);texture.encoding=THREE.sRGBEncoding;texture.anisotropy=8;
+  mat=new THREE.MeshPhysicalMaterial({map:texture,side:THREE.DoubleSide,envMapIntensity:.7});applyFinish();
+  mesh=new THREE.Mesh(buildGeometry(),mat);scene.add(mesh);
+  const key=new THREE.DirectionalLight(0xffffff,1.4);key.position.set(4,6,8);scene.add(key);
+  const rim=new THREE.DirectionalLight(0xb9a6ff,1.2);rim.position.set(-6,3,-6);scene.add(rim);
+  scene.add(new THREE.HemisphereLight(0xe8e2ff,0x1a1040,.55));
+  // soft contact shadow
+  const sh=document.createElement('canvas');sh.width=sh.height=256;const sx=sh.getContext('2d');const gr=sx.createRadialGradient(128,128,10,128,128,128);gr.addColorStop(0,'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');sx.fillStyle=gr;sx.fillRect(0,0,256,256);
+  const shadow=new THREE.Mesh(new THREE.PlaneGeometry(9,6),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sh),transparent:true,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=-1.15;scene.add(shadow);
+  const resize=()=>{const r=cv.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()};
+  new ResizeObserver(resize).observe(cv);resize();
+  $('loading').remove();
+  // intro motion
+  const t0=performance.now();mesh.scale.setScalar(.01);
+  const loop=t=>{const k=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-k,4);
+    if(k<1){mesh.scale.setScalar(.01+.99*e);mesh.rotation.y=(1-e)*Math.PI*1.2;mesh.position.y=(1-e)*-1.5}
+    else if(mode==='spin'){mesh.rotation.y+=.006}
+    mesh.position.y+= k>=1?(Math.sin(t/900)*.06-mesh.position.y)*.05:0;
+    if(camGoal){camera.position.lerp(camGoal.pos,.08);mesh.rotation.y+=(camGoal.ry-mesh.rotation.y)*.08;if(camera.position.distanceTo(camGoal.pos)<.02&&Math.abs(camGoal.ry-mesh.rotation.y)<.005)camGoal=null}
+    controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)};
+  requestAnimationFrame(loop);
 }
-function select(id){state.sel=id;updateSel()}
+function norm(r){return Math.atan2(Math.sin(r),Math.cos(r))}
+function setMode(m){mode=m;document.querySelectorAll('.views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===m)));
+  if(!mesh)return;mesh.rotation.y=norm(mesh.rotation.y);
+  if(m==='front')camGoal={pos:new THREE.Vector3(0,.7,8.6),ry:0};
+  if(m==='side')camGoal={pos:new THREE.Vector3(0,.7,8.6),ry:-1.1};
+  if(m==='top')camGoal={pos:new THREE.Vector3(0,10,4.5),ry:0};
+  if(m==='spin'||m==='free')camGoal=null}
+function focusFront(){if(mode!=='front')setMode('front')}
+document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>setMode(b.dataset.v));
 
-// drag
-function pt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
-let drag=null;
-svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-id]');if(!g){select(null);return}
-  const it=state.items.find(i=>i.id==g.dataset.id);select(it.id);const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};svg.setPointerCapture(e.pointerId);e.preventDefault()});
-svg.addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);drag.it.x=Math.max(60,Math.min(940,p.x-drag.dx));drag.it.y=Math.max(60,Math.min(500,p.y-drag.dy));
-  const n=layers.querySelector(`[data-id="${drag.it.id}"]`);n.setAttribute('transform',`translate(${drag.it.x} ${drag.it.y}) rotate(${drag.it.r}) scale(${drag.it.s})`);updateSel()});
-svg.addEventListener('pointerup',()=>drag=null);
-$('size').oninput=e=>{const it=cur();if(it){it.s=+e.target.value;draw()}};
-$('rot').oninput=e=>{const it=cur();if(it){it.r=+e.target.value;draw()}};
-$('del').onclick=()=>{state.items=state.items.filter(i=>i.id!==state.sel);state.sel=null;draw()};
-document.addEventListener('keydown',e=>{if((e.key==='Delete'||e.key==='Backspace')&&state.sel&&!/input/i.test(document.activeElement.tagName)){$('del').click()}});
-
-$('numAdd').onclick=()=>{const v=$('numIn').value.replace(/\D/g,'').slice(0,3);if(v)add({type:'number',value:v,color:'#FFFFFF'})};
-$('txtAdd').onclick=()=>{const v=$('txtIn').value.trim().slice(0,14);if(v)add({type:'text',value:v.toUpperCase(),color:'#FFFFFF'})};
-$('numIn').onkeydown=e=>{if(e.key==='Enter')$('numAdd').click()};$('txtIn').onkeydown=e=>{if(e.key==='Enter')$('txtAdd').click()};
-$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>5e6){alertBox('Imazhi është mbi 5 MB. Zgjidh një më të vogël.');return}
-  const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(220/img.width,180/img.height);add({type:'image',src:r.result,w:img.width*k,h:img.height*k})};img.src=r.result};r.readAsDataURL(f);e.target.value=''};
-function alertBox(msg){const n=document.createElement('div');n.textContent=msg;n.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#E11D48;color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;z-index:9';document.body.appendChild(n);setTimeout(()=>n.remove(),3500)}
-
-// export PNG
-async function toPNG(){
-  const prev=state.sel;select(null);
-  const clone=svg.cloneNode(true);clone.setAttribute('width',1760);clone.setAttribute('height',800);
-  const bg=document.createElementNS(NS,'rect');bg.setAttribute('width',1000);bg.setAttribute('height',560);bg.setAttribute('fill','#120C30');clone.insertBefore(bg,clone.firstChild);
-  const brand=document.createElementNS(NS,'text');brand.textContent='Linea Mouthguard · lineaaligners.com';brand.setAttribute('x',500);brand.setAttribute('y',478);brand.setAttribute('text-anchor','middle');brand.setAttribute('fill','#C7B8FF');brand.setAttribute('font-size','22');brand.setAttribute('font-family','Arial,sans-serif');clone.appendChild(brand);
-  const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
-  const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
-  const c=document.createElement('canvas');c.width=1760;c.height=800;c.getContext('2d').drawImage(img,0,0,1760,800);
-  select(prev);return c.toDataURL('image/png');
-}
-$('dl').onclick=async()=>{try{const d=await toPNG();const a=document.createElement('a');a.href=d;a.download='linea-mouthguard.png';document.body.appendChild(a);a.click();a.remove()}catch(e){alertBox('Shkarkimi nuk funksionoi. Provo me një shfletues tjetër.')}};
+/* ---------- export + order ---------- */
+$('dl').onclick=()=>{if(!renderer){toast('Pamja 3D nuk është gati.');return}
+  renderer.render(scene,camera);const src=$('gl');const c=document.createElement('canvas');c.width=src.width;c.height=src.height;const x=c.getContext('2d');
+  const g=x.createRadialGradient(c.width/2,c.height*.35,0,c.width/2,c.height*.4,c.width*.7);g.addColorStop(0,'#2D2170');g.addColorStop(1,'#0B0720');x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+  x.drawImage(src,0,0);x.fillStyle='#C7B8FF';x.font=`600 ${Math.round(c.width/50)}px 'Inter Tight',Arial`;x.textAlign='center';x.fillText('Linea Mouthguard · lineaaligners.com',c.width/2,c.height-c.width/40);
+  const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='linea-mouthguard.png';document.body.appendChild(a);a.click();a.remove();toast('U shkarkua. Dërgoje në WhatsApp me porosinë.','#16A34A')};
 $('order').onclick=()=>{
-  const pn={solid:'Një ngjyrë',stripes:'Vija',dots:'Pika',fade:'Gradient',split:'Dy ngjyra'}[state.pattern];
-  const parts=state.items.map(i=>i.type==='number'?'Numri '+i.value:i.type==='text'?'Teksti "'+i.value+'"':i.type==='sticker'?'Stiker '+i.key:'Logo/imazh');
-  const msg=`Përshëndetje! Dua një Linea Mouthguard.\nNgjyra: ${state.c1}\nMotivi: ${pn}${state.pattern!=='solid'?' ('+state.c2+')':''}\nElementet: ${parts.join(', ')||'asnjë'}\n(Po ua dërgoj edhe foton e dizajnit.)`;
-  window.open('https://wa.me/38349772307?text='+encodeURIComponent(msg),'_blank','noopener');
-};
+  const pn={solid:'Një ngjyrë',stripes:'Vija',dots:'Pika',fade:'Gradient',split:'Dy ngjyra',camo:'Kamuflazh',flames:'Flakë'}[S.pattern];
+  const fn={gloss:'Me shkëlqim',matte:'Mat',clear:'Transparente',metal:'Metalike'}[S.finish];
+  const parts=S.items.map(i=>i.type==='text'?`"${i.value}" (${i.font}, ${i.fill})`:i.type==='sym'?symNames[i.key]:'Logo/imazh');
+  const msg=`Përshëndetje! Dua një Linea Mouthguard.\nNgjyra: ${S.c1}\nMotivi: ${pn}${S.pattern!=='solid'?' ('+S.c2+')':''}\nPërfundimi: ${fn}\nElementet: ${parts.join(', ')||'asnjë'}\n(Po ua dërgoj edhe foton e dizajnit.)`;
+  window.open('https://wa.me/38349772307?text='+encodeURIComponent(msg),'_blank','noopener')};
 
-swatches($('sw1'),()=>state.c1,c=>{state.c1=c;paint()});
-swatches($('sw2'),()=>state.c2,c=>{state.c2=c;paint()});
-renderPatterns();paint();
-add({type:'number',value:'10',color:'#FFFFFF',x:500,y:255});select(null);
+/* ---------- start ---------- */
+symLoad.then(()=>document.fonts.load("80px 'Bebas Neue'")).catch(()=>{}).then(()=>{
+  add({type:'text',value:'10',fill:'#FFFFFF',stroke:'#111827',sw:10});
+  add({type:'sym',key:'shqiponja',x:TW/2-340,s:1.2});add({type:'sym',key:'mburoja',x:TW/2+340,s:1.2});
+  S.sel=null;ui();init3D();setMode('spin');
+});
 })();
 </script>
 </body>
