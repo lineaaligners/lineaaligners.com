@@ -18,12 +18,13 @@ const IMG = {
   box: '/images/retainer-cleaner-box.webp',
   boxVideo: HF + 'hf_20261007_125317_217a4dbc-3b51-4760-8c2b-345ac9021b19.mp4',
   studio: '/images/linea-studio.webp',
+  smile: '/images/smile.webp', polish: '/images/lab-polish.webp', print: '/images/lab-print.webp', slicing: '/images/lab-slicing.webp',
 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const T = {
   sq: {
-    nav: [['Si funksionon', '#si'], ['Pse Linea', '#pse'], ['Çmimi', '#cmimi'], ['Pyetje', '#pyetje']],
+    nav: [['Si funksionon', '#si'], ['Pse Linea', '#pse'], ['Çmimi', '#cmimi'], ['E-shop', '#shop'], ['Pyetje', '#pyetje']],
     login: 'Hyr', cta: 'Skanim falas',
     eyebrow: 'Aligner transparentë në Pejë, Kosovë',
     h1a: 'Buzëqeshja', h1b: 'që e ke', h1c: 'merituar.',
@@ -59,12 +60,13 @@ const T = {
     rights: 'Të gjitha të drejtat e rezervuara.',
     momTag: 'Momentet', momTitle: 'Për çdo foto që ke pritur.',
     moments: [['Pa u fshehur', 'Qesh lirshëm — askush s’i sheh.'], ['Dita e diplomës', 'Buzëqeshja gati për ditën e madhe.'], ['Çdo selfie', 'Pa tela në asnjë foto.'], ['Natën', 'I heq, i pastron, i vendos prapë.'], ['E pastër si kristal', 'Plastikë mjekësore transparente.']],
-    prodTag: 'Produkt i ri', prodTitle: 'Linea Retainer Cleaner', prodDesc: 'Tableta shkumuese antibakteriale për maskerina dhe retainer. Një tabletë në ujë, disa minuta — dhe maskerinat dalin të pastra e transparente.',
-    prodPts: ['30 tableta', 'Heq njollat dhe pllakën', 'Extra Strength'], prodBtn: 'Porosit në WhatsApp',
+    shopQty: 'Sasia', shopTotal: 'Totali', shopNote: 'Porosia konfirmohet në WhatsApp', labTag: 'Laboratori', labTitle: 'Bërë me dorë, në Pejë.', lab: ['Planifikimi 3D', 'Printimi i modeleve', 'Polirimi me dorë'],
+    prodTag: 'E-shop', prodTitle: 'Linea Retainer Cleaner', prodDesc: 'Tableta shkumuese antibakteriale për maskerina dhe retainer. Një tabletë në ujë, disa minuta — dhe maskerinat dalin të pastra e transparente.',
+    prodPts: ['30 tableta', 'Heq njollat dhe pllakën', 'Extra Strength'], prodBtn: 'Porosit tani',
     stuTag: 'Bërë në Pejë', stuTitle: 'Një brand kosovar, me standard botëror.', stuDesc: 'Linea lindi në Pejë — nga ideja te plani 3D, deri te maskerina në dorën tënde. Me mbështetjen klinike të Medident Dental Clinic, që nga viti 1999.',
   },
   en: {
-    nav: [['How it works', '#si'], ['Why Linea', '#pse'], ['Pricing', '#cmimi'], ['FAQ', '#pyetje']],
+    nav: [['How it works', '#si'], ['Why Linea', '#pse'], ['Pricing', '#cmimi'], ['Shop', '#shop'], ['FAQ', '#pyetje']],
     login: 'Log in', cta: 'Free scan',
     eyebrow: 'Clear aligners in Pejë, Kosovo',
     h1a: 'The smile', h1b: 'you’ve always', h1c: 'deserved.',
@@ -100,8 +102,9 @@ const T = {
     rights: 'All rights reserved.',
     momTag: 'Moments', momTitle: 'For every photo you’ve been waiting for.',
     moments: [['No more hiding', 'Laugh freely — nobody sees them.'], ['Graduation day', 'A smile ready for the big day.'], ['Every selfie', 'No wires in any photo.'], ['At night', 'Take them out, clean, pop back in.'], ['Crystal clear', 'Transparent medical-grade plastic.']],
-    prodTag: 'New product', prodTitle: 'Linea Retainer Cleaner', prodDesc: 'Antibacterial effervescent tablets for aligners and retainers. One tablet in water, a few minutes — and your aligners come out clean and clear.',
-    prodPts: ['30 tablets', 'Removes stains & plaque', 'Extra Strength'], prodBtn: 'Order on WhatsApp',
+    shopQty: 'Quantity', shopTotal: 'Total', shopNote: 'Your order is confirmed on WhatsApp', labTag: 'The lab', labTitle: 'Made by hand, in Pejë.', lab: ['3D planning', 'Model printing', 'Hand polishing'],
+    prodTag: 'Shop', prodTitle: 'Linea Retainer Cleaner', prodDesc: 'Antibacterial effervescent tablets for aligners and retainers. One tablet in water, a few minutes — and your aligners come out clean and clear.',
+    prodPts: ['30 tablets', 'Removes stains & plaque', 'Extra Strength'], prodBtn: 'Order now',
     stuTag: 'Made in Pejë', stuTitle: 'A Kosovar brand, world-class standard.', stuDesc: 'Linea was born in Pejë — from the idea to the 3D plan, to the aligner in your hand. Clinically backed by Medident Dental Clinic since 1999.',
   },
 };
@@ -234,52 +237,45 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
+  const rot = useTransform(scrollYProgress, [0, 1], [0, 90]);
+  const lift = useTransform(scrollYProgress, [0, 1], ['0%', '-30%']);
   const fade = useTransform(scrollYProgress, [0, .7], [1, 0]);
-  const mx = useMotionValue(0), my = useMotionValue(0);
-  const sx = useSpring(mx, { stiffness: 60, damping: 20 }), sy = useSpring(my, { stiffness: 60, damping: 20 });
+  const L = (l: string, i: number, cls = '') => (
+    <span key={i} className="block overflow-hidden pb-[.08em] -mb-[.08em]"><motion.span className={'block ' + cls} initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 + i * .12 }}>{l}</motion.span></span>
+  );
   return (
-    <section id="top" ref={ref} onMouseMove={e => { mx.set((e.clientX / window.innerWidth - .5) * 30); my.set((e.clientY / window.innerHeight - .5) * 30); }}
-      className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-end">
-      <motion.div style={{ y: imgY }} className="absolute inset-0">
-        <img src={IMG.hero} alt={lang === 'sq' ? 'Çift që buzëqesh — buzëqeshje e drejtë me aligner transparentë' : 'Couple smiling — straight smile with clear aligners'} className="w-full h-full object-cover object-[70%_center] opacity-55 scale-110" fetchPriority="high" />
-      </motion.div>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#06101F]/60 via-[#06101F]/40 to-[#06101F]" />
-      <motion.div style={{ x: sx, y: sy }} className="absolute -top-40 -right-40 w-[60vw] h-[60vw] rounded-full bg-[#4169E1] blur-[140px] opacity-40 blob" />
-      <motion.div style={{ x: useTransform(sx, v => -v), y: useTransform(sy, v => -v) }} className="absolute -bottom-60 -left-40 w-[50vw] h-[50vw] rounded-full bg-[#87CEEB] blur-[160px] opacity-20 blob2" />
-      <div className="absolute inset-0 grid-lines opacity-[.07]" />
+    <section id="top" ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-center">
+      <div className="absolute inset-0 grid-lines opacity-[.06]" />
+      {/* geometry */}
+      <motion.svg style={{ rotate: rot, y: lift }} viewBox="0 0 600 600" className="absolute right-[-30vw] sm:right-[-12vw] top-[8vh] w-[110vw] sm:w-[62vw] max-w-[900px] pointer-events-none" aria-hidden>
+        <motion.circle cx="300" cy="300" r="280" fill="none" stroke="rgba(135,206,235,.35)" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2.2, ease: EASE }} />
+        <motion.circle cx="300" cy="300" r="200" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="1" strokeDasharray="4 10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .6, duration: 1.2 }} />
+        <motion.path d="M120 330 Q300 120 480 330" fill="none" stroke="#4169E1" strokeWidth="10" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .5, duration: 1.6, ease: EASE }} />
+        <motion.path d="M150 350 Q300 175 450 350" fill="none" stroke="#87CEEB" strokeWidth="2" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .9, duration: 1.6, ease: EASE }} />
+        <motion.line x1="20" y1="300" x2="580" y2="300" stroke="rgba(255,255,255,.1)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .3, duration: 1.4, ease: EASE }} />
+        <motion.line x1="300" y1="20" x2="300" y2="580" stroke="rgba(255,255,255,.1)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: .4, duration: 1.4, ease: EASE }} />
+        {[0, 1, 2, 3].map(i => <motion.circle key={i} cx={300 + 280 * Math.cos(i * Math.PI / 2 + .6)} cy={300 + 280 * Math.sin(i * Math.PI / 2 + .6)} r="6" fill="#87CEEB" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.4 + i * .1, type: 'spring' }} />)}
+      </motion.svg>
+      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.2, duration: 1, ease: EASE }} className="absolute right-[8vw] bottom-[10vh] w-3 h-3 rounded-full bg-[#4169E1]" />
 
-      <motion.div style={{ opacity: fade }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pb-14 sm:pb-20 pt-32">
-        <div className="grid lg:grid-cols-12 gap-10 items-end">
-          <div className="lg:col-span-8">
-            <h1 className="font-display text-white leading-[.92] tracking-[-.03em] text-[14vw] sm:text-[10vw] lg:text-[7.4rem]">
-            <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .3, duration: .8, ease: EASE }}
-              style={{ letterSpacing: 0, lineHeight: 1.5, fontSize: 12 }} className="flex w-fit items-center gap-3 rounded-full border border-white/15 bg-white/5 backdrop-blur px-4 py-2 text-[12px] font-medium text-white/80 mb-8">
-              <span className="relative flex w-2 h-2"><span className="absolute inset-0 rounded-full bg-[#87CEEB] animate-ping" /><span className="relative w-2 h-2 rounded-full bg-[#87CEEB]" /></span>
-              {t.eyebrow}
-            </motion.span><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}> — </span>
-
-              {[t.h1a, t.h1b].map((l, i) => (
-                <span key={i} className="block overflow-hidden pb-[.12em] -mb-[.12em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.2, ease: EASE, delay: .35 + i * .12 }}>{l}</motion.span></span>
-              ))}
-              <span className="block overflow-hidden pb-[.12em] -mb-[.12em]"><motion.span className="block italic font-serif-i text-shimmer" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.2, ease: EASE, delay: .6 }}>{t.h1c}</motion.span></span>
-            </h1>
-          </div>
-          <div className="lg:col-span-4 lg:pb-4">
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .9, duration: .9, ease: EASE }} className="text-lg text-white/75 leading-relaxed mb-8 max-w-md">{t.sub}</motion.p>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05, duration: .9, ease: EASE }} className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3">
-              <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-[#4169E1] hover:bg-[#5A85FF] transition-colors text-white pl-6 pr-2 py-2 font-semibold whitespace-nowrap shadow-[0_20px_60px_rgba(65,105,225,.45)]">
-                {t.b1}<span className="grid place-items-center w-10 h-10 rounded-full bg-white text-[#4169E1] group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span>
-              </button>
-              <a href={'/assessment/' + (lang === 'en' ? '?lang=en' : '')} className="flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 transition-colors text-white px-6 py-4 font-semibold whitespace-nowrap">{t.b2}</a>
-            </motion.div>
-          </div>
+      <motion.div style={{ opacity: fade }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pt-32 pb-16">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .1, duration: .8, ease: EASE }} className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.22em] text-[#87CEEB] mb-10" style={{ letterSpacing: '.22em' }}>
+          <span className="w-10 h-px bg-[#87CEEB]" />{t.eyebrow}
+        </motion.div>
+        <h1 className="font-display text-white leading-[.88] tracking-[-.05em] text-[17vw] sm:text-[13vw] lg:text-[10.5rem]">
+          {L(t.h1a, 0)}{L(t.h1b, 1, 'text-white/35')}{L(t.h1c, 2, 'italic font-serif-i text-shimmer')}
+        </h1>
+        <div className="mt-12 grid lg:grid-cols-12 gap-8 items-end">
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .8, duration: .9, ease: EASE }} className="lg:col-span-5 text-lg text-white/65 leading-relaxed max-w-md">{t.sub}</motion.p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .95, duration: .9, ease: EASE }} className="lg:col-span-7 flex flex-col sm:flex-row gap-3 lg:justify-end">
+            <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-[#4169E1] hover:bg-[#5A85FF] transition-colors text-white pl-6 pr-2 py-2 font-semibold whitespace-nowrap">
+              {t.b1}<span className="grid place-items-center w-10 h-10 rounded-full bg-white text-[#4169E1] group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span>
+            </button>
+            <a href={'/assessment/' + (lang === 'en' ? '?lang=en' : '')} className="flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 transition-colors text-white px-6 py-4 font-semibold whitespace-nowrap">{t.b2}</a>
+          </motion.div>
         </div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3, duration: 1 }} className="mt-14 flex flex-col md:flex-row md:items-center justify-between gap-8 border-t border-white/10 pt-8">
-          <div className="flex flex-wrap gap-2">
-            {t.chips.map(c => <span key={c} className="rounded-full bg-white/[.06] border border-white/10 px-4 py-2 text-sm text-white/80">{c}</span>)}
-          </div>
-          <div className="text-sm text-white/50">Medident Dental Clinic · {lang === 'sq' ? 'që nga' : 'since'} 1999</div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, duration: 1 }} className="mt-14 grid grid-cols-3 border-t border-white/10">
+          {t.chips.map((c, i) => <div key={c} className={'pt-6 text-sm sm:text-base text-white/70 ' + (i ? 'pl-4 sm:pl-8 border-l border-white/10' : '')}><span className="block font-display text-white text-xl sm:text-3xl tracking-tight">{c.split(' ')[0]}</span>{c.split(' ').slice(1).join(' ')}</div>)}
         </motion.div>
       </motion.div>
     </section>
@@ -359,7 +355,7 @@ const Why: React.FC<{ lang: Lang }> = ({ lang }) => {
             return (
               <Up key={title} delay={i * .06} className={big ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : wide ? 'sm:col-span-2 lg:col-span-3' : ''}>
                 <div className={`group h-full rounded-[28px] p-7 sm:p-8 flex flex-col justify-between gap-10 transition-all duration-500 hover:-translate-y-1 ${big ? 'bg-[#0B1A33] text-white min-h-[340px] overflow-hidden relative' : 'bg-white border border-[#0B1A33]/[.06] hover:shadow-[0_30px_80px_rgba(11,26,51,.12)]'}`}>
-                  {big && <img src={IMG.caseHands} alt={lang === 'sq' ? 'Kutia Linea me aligner transparent' : 'Linea case with a clear aligner'} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
+                  {big && <img src={IMG.smile} alt={lang === 'sq' ? 'Kutia Linea me aligner transparent' : 'Linea case with a clear aligner'} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
                   {big && <div className="absolute inset-0 bg-gradient-to-t from-[#0B1A33] via-[#0B1A33]/50 to-transparent" />}
                   <div className={`relative w-12 h-12 rounded-2xl grid place-items-center transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110 ${big ? 'bg-white/15 backdrop-blur' : 'bg-[#4169E1]/10 text-[#4169E1]'}`}><I className="w-6 h-6" /></div>
                   <div className="relative">
@@ -417,7 +413,7 @@ const Film: React.FC<{ lang: Lang; onPlay: () => void }> = ({ lang, onPlay }) =>
   return (
     <section ref={ref} className="bg-[#F4F6FA] pb-28 sm:pb-40 px-3 sm:px-6">
       <motion.div style={{ scale, borderRadius: radius }} className="relative overflow-hidden mx-auto max-w-[1500px] aspect-[4/5] sm:aspect-[16/8] bg-[#06101F]">
-        <img src={IMG.night} alt={lang === 'sq' ? 'Aligner në gotë uji natën' : 'Aligner in a glass of water at night'} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={IMG.polish} alt={lang === 'sq' ? 'Polirimi i maskerinës me dorë në laboratorin Linea' : 'Hand-polishing an aligner in the Linea lab'} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         {inView && <video ref={vref} src={SCAN_VIDEO_URL} muted loop playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#06101F] via-[#06101F]/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-6 sm:p-14 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -560,21 +556,20 @@ const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const y1 = useTransform(scrollYProgress, [0, 1], [80, -80]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [-40, 120]);
-  const rot = useTransform(scrollYProgress, [0, 1], [-6, 4]);
   const vref = useRef<HTMLVideoElement>(null);
   const vis = useInView(ref, { margin: '300px' });
   useEffect(() => { const v = vref.current; if (v) { if (vis) v.play().catch(() => {}); else v.pause(); } }, [vis]);
+  const [qty, setQty] = useState(1);
+  const order = () => { const m = lang === 'sq' ? `Përshëndetje! Dua të porosis Linea Retainer Cleaner.\nSasia: ${qty} kuti\nTotali: €${(qty * 4.5).toFixed(2)}\nEmri:\nAdresa:` : `Hi! I'd like to order Linea Retainer Cleaner.\nQuantity: ${qty}\nTotal: €${(qty * 4.5).toFixed(2)}\nName:\nAddress:`; window.open('https://wa.me/38349772307?text=' + encodeURIComponent(m), '_blank', 'noopener'); };
   return (
-    <section ref={ref} className="relative overflow-hidden bg-gradient-to-b from-[#0E0A24] via-[#1A1145] to-[#0E0A24] text-white py-28 sm:py-40">
+    <section id="shop" ref={ref} className="relative overflow-hidden bg-gradient-to-b from-[#0E0A24] via-[#1A1145] to-[#0E0A24] text-white py-28 sm:py-40">
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-[#7C5CFF] blur-[200px] opacity-25" />
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-16 items-center">
-        <div className="relative h-[560px] sm:h-[660px]">
+        <div className="relative h-[520px] sm:h-[580px]">
           <motion.div style={{ y: y1 }} className="absolute left-1/2 -translate-x-1/2 top-0 h-full aspect-[9/16] rounded-[36px] overflow-hidden border border-white/15 shadow-[0_60px_120px_rgba(0,0,0,.6)] bg-[#0E0A24]">
             <img src={IMG.box} alt="Linea Antibacterial Retainer Cleaner" className="absolute inset-0 w-full h-full object-cover" />
             {vis && <video ref={vref} src={IMG.boxVideo} poster={IMG.box} muted loop playsInline autoPlay preload="auto" className="absolute inset-0 w-full h-full object-cover" />}
           </motion.div>
-          <motion.img style={{ y: y2, rotate: rot }} src={IMG.tabletDrop} alt="" loading="lazy" className="hidden sm:block absolute right-0 bottom-6 w-[26%] aspect-[3/5] object-cover rounded-[24px] shadow-2xl border border-white/10" />
         </div>
         <div>
           <div className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[#B9A6FF]"><span className="w-6 h-px bg-[#B9A6FF]" />{t.prodTag}</div>
@@ -582,8 +577,47 @@ const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
           <Up delay={.15}><p className="text-white/70 text-lg mt-6 max-w-md">{t.prodDesc}</p></Up>
           <Up delay={.25}>
             <div className="flex flex-wrap gap-2 mt-8">{t.prodPts.map(x => <span key={x} className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm">{x}</span>)}</div>
-            <button onClick={openWA} className="group mt-10 flex items-center gap-4 rounded-full bg-white text-[#1A1145] pl-6 pr-2 py-2 font-semibold">{t.prodBtn}<span className="grid place-items-center w-10 h-10 rounded-full bg-[#7C5CFF] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span></button>
+            <div className="mt-10 rounded-[28px] border border-white/15 bg-white/[.04] p-6 max-w-md">
+              <div className="flex items-end justify-between"><span className="font-display text-6xl tracking-[-.04em]">€4.50</span><span className="text-white/50 text-sm pb-2">/ {lang === 'sq' ? 'kutia' : 'box'}</span></div>
+              <div className="mt-6 flex items-center justify-between">
+                <span className="text-white/60 text-sm">{t.shopQty}</span>
+                <div className="flex items-center gap-1 rounded-full border border-white/15 p-1">
+                  <button aria-label="-" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/10"><Minus className="w-4 h-4" /></button>
+                  <span className="w-8 text-center font-semibold tabular-nums">{qty}</span>
+                  <button aria-label="+" onClick={() => setQty(q => Math.min(50, q + 1))} className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/10"><Plus className="w-4 h-4" /></button>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4"><span className="text-white/60 text-sm">{t.shopTotal}</span><motion.span key={qty} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-display text-2xl tabular-nums">€{(qty * 4.5).toFixed(2)}</motion.span></div>
+              <div className="mt-3 text-xs text-white/45">{t.shopNote}</div>
+            </div>
+            <button onClick={order} className="group mt-6 flex items-center gap-4 rounded-full bg-white text-[#1A1145] pl-6 pr-2 py-2 font-semibold">{t.prodBtn}<span className="grid place-items-center w-10 h-10 rounded-full bg-[#7C5CFF] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span></button>
           </Up>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ---------- lab: real photos ---------- */
+const Lab: React.FC<{ lang: Lang }> = ({ lang }) => {
+  const t = T[lang];
+  const imgs = [IMG.slicing, IMG.print, IMG.polish];
+  return (
+    <section className="bg-[#06101F] text-white py-28 sm:py-40">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-14">
+          <div><Tag>{t.labTag}</Tag><h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em] mt-6"><Words text={t.labTitle} /></h2></div>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {imgs.map((src, i) => (
+            <Up key={i} delay={i * .1}>
+              <figure className="group relative aspect-[4/5] overflow-hidden rounded-[28px] border border-white/10">
+                <img src={src} alt={t.lab[i]} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-[1.2s]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#06101F]/85 via-transparent" />
+                <figcaption className="absolute left-5 bottom-5 right-5 flex items-center justify-between"><span className="font-display text-xl">{t.lab[i]}</span><span className="text-white/50 text-sm tabular-nums">0{i + 1}</span></figcaption>
+              </figure>
+            </Up>
+          ))}
         </div>
       </div>
     </section>
@@ -621,6 +655,7 @@ export const Landing: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin
       <Why lang={lang} />
       <How lang={lang} />
       <Film lang={lang} onPlay={onPlayVideo} />
+      <Lab lang={lang} />
       <Studio lang={lang} />
       <Product lang={lang} />
       <Pricing lang={lang} />
