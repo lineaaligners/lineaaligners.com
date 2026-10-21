@@ -1006,28 +1006,28 @@ function App(){
 
 
 const CARE_TPL=[
-  {id:'auto',label:'✨ Sipas fazës',text:'Mesazhi zgjidhet vetë për secilin pacient sipas maskerinës ku është.'},
-  {id:'change',label:'Ndërro maskerinën',text:'Përshëndetje {emri}! 😊 Sot është dita për të kaluar te maskerina nr. {next} (nga {tot}). Mos harro t’i mbash 22 orë në ditë. Linea'},
-  {id:'photo',label:'Dërgo foto',text:'Përshëndetje {emri}! Na dërgo këtu 3 foto të dhëmbëve (para, majtas, djathtas) me maskerinat e vendosura, që ta kontrollojmë progresin. Faleminderit! Linea'},
-  {id:'check',label:'Si po shkon?',text:'Përshëndetje {emri}! Si po ndihesh me maskerinën nr. {nr}? A të rrinë mirë, a ke ndonjë dhimbje apo pyetje? Jemi këtu për ty. Linea'},
-  {id:'portal',label:'Hyr në portal',text:'Përshëndetje {emri}! Të kujtojmë që në portalin Linea i ke kujtesat dhe progresin tënd: https://www.lineaaligners.com/portal/ Nëse s’po mundesh me hy, na shkruaj këtu.'},
-  {id:'appt',label:'Termin kontrolli',text:'Përshëndetje {emri}! Është koha për një kontroll të shkurtër. Kur të përshtatet këtë javë? Rr. Bajram Kelmendi, Pejë. Linea'},
-  {id:'retainer',label:'Retainer natën',text:'Përshëndetje {emri}! Kujtesë e vogël: retainer-i mbahet çdo natë që dhëmbët të mbeten të drejtë. 🌙 Linea'},
-  {id:'review',label:'Kërko review',text:'Përshëndetje {emri}! Na gëzon shumë buzëqeshja jote e re 😊 A do na ndihmoje me një vlerësim të shkurtër në Google? Zgjat 30 sekonda: https://www.lineaaligners.com/review Faleminderit! Linea'},
+  {id:'auto',label:'✨ Sipas fazës',text:'Për secilin pacient zgjidhet vetë mesazhi i duhur, sipas maskerinës ku është.'},
+  {id:'change',label:'Ndërro maskerinën',text:'Përshëndetje {emri} 👋 Sot e ke radhën për maskerinën nr. {next} (nga {tot}). Mbaji 22 orë në ditë dhe hiqi vetëm kur ha. Ekipi Linea'},
+  {id:'photo',label:'Dërgo foto',text:'Përshëndetje {emri}! Na i dërgo këtu 3 foto të dhëmbëve me maskerinat e vendosura: përpara, majtas dhe djathtas. Kështu e kontrollojmë progresin pa pasur nevojë me ardh. Faleminderit! Ekipi Linea'},
+  {id:'check',label:'Si po shkon?',text:'Përshëndetje {emri}! Si po të shkon me maskerinën nr. {nr}? A të rri mirë, a të shtrëngon apo të vret diku? Na shkruaj për çdo gjë, jemi këtu. Ekipi Linea'},
+  {id:'portal',label:'Hyr në portal',text:'Përshëndetje {emri}! Në portalin Linea e ke kujtesën për ndërrim, progresin dhe mesazhet me ne: https://www.lineaaligners.com/portal/ Nëse s’po mund të hysh, na shkruaj këtu dhe ta rregullojmë. Ekipi Linea'},
+  {id:'appt',label:'Termin kontrolli',text:'Përshëndetje {emri}! Ka ardhur koha për një kontroll të shkurtër, zgjat 10 minuta. Cila ditë të përshtatet këtë javë? Rr. Bajram Kelmendi, Pejë. Ekipi Linea'},
+  {id:'retainer',label:'Retainer natën',text:'Përshëndetje {emri}! Një kujtesë e vogël: retainer-in mbaje çdo natë, që dhëmbët të mbeten ashtu siç janë tani 🌙 Ekipi Linea'},
+  {id:'review',label:'Kërko review',text:'Përshëndetje {emri}! Na gëzon shumë buzëqeshja jote e re 😊 Nëse je e kënaqur me Linea, a na lë një vlerësim të shkurtër në Google? Zgjat 30 sekonda: https://www.lineaaligners.com/review Faleminderit! Ekipi Linea'},
   {id:'custom',label:'Shkruaj vetë',text:'Përshëndetje {emri}! '},
 ];
 const STAGE=p=>{const c=p.currentAligner||1,t=p.totalAligners||1;
-  if(p.status==='completed')return{id:'review',why:'Përfundoi trajtimin'};
+  if(p.status==='completed')return{id:'review',why:'E përfundoi trajtimin'};
   if(c<=1)return{id:'s_first',why:'Maskerina e parë'};
   if(c>=t)return{id:'s_end',why:'Maskerina e fundit'};
   if(c>=t-1)return{id:'s_near',why:'Afër fundit'};
-  if(Math.abs(c-Math.round(t/2))<=0)return{id:'s_half',why:'Në gjysmë'};
+  if(c===Math.round(t/2))return{id:'s_half',why:'Në gjysmë të trajtimit'};
   return{id:'change',why:'Ndërrim i rregullt'}};
 const STAGE_TPL={
-  s_first:'Përshëndetje {emri}! 😊 Si po ndihesh ditët e para me maskerinat? Pak shtrëngim në fillim është normal. Nëse ke ndonjë pyetje, na shkruaj këtu. Linea',
-  s_half:'Përshëndetje {emri}! 🎉 Je në gjysmë të trajtimit, maskerina {nr} nga {tot}! Na dërgo 3 foto të dhëmbëve që ta shohim progresin. Linea',
-  s_near:'Përshëndetje {emri}! Je afër fundit, maskerina {nr} nga {tot} 🙌 Të rezervojmë termin për retainer? Na thuaj kur të përshtatet. Linea',
-  s_end:'Përshëndetje {emri}! 🎉 Arrite te maskerina e fundit! Eja për kontroll dhe retainer, që buzëqeshja të mbetet e drejtë. Kur të përshtatet? Linea'};
+  s_first:'Përshëndetje {emri} 👋 Si po kalon ditët e para me maskerinat? Pak shtrëngim në fillim është normal dhe kalon për 2–3 ditë. Për çdo pyetje na shkruaj këtu. Ekipi Linea',
+  s_half:'Përshëndetje {emri} 🎉 Je në gjysmë të rrugës: maskerina {nr} nga {tot}! Na dërgo 3 foto të dhëmbëve (përpara, majtas, djathtas) që ta shohim progresin. Ekipi Linea',
+  s_near:'Përshëndetje {emri} 🙌 Je shumë afër fundit, maskerina {nr} nga {tot}. Ta lëmë terminin për retainer? Na thuaj cila ditë të përshtatet. Ekipi Linea',
+  s_end:'Përshëndetje {emri} 🎉 Arrite te maskerina e fundit! Eja për një kontroll dhe për retainer-in, që buzëqeshja të mbetet e drejtë. Kur të përshtatet? Ekipi Linea'};
 function CareView({patients,waNum,setPatients}){
   const [filter,setFilter]=useState('due');
   const [tpl,setTpl]=useState('auto');
@@ -1053,17 +1053,17 @@ function CareView({patients,waNum,setPatients}){
     const n={...log,[p.id]:{d:today,t:tplFor(p).label}};setLog(n);try{localStorage.setItem('linea_care_log',JSON.stringify(n))}catch(e){};setNoteFor(p.id);setNoteTxt('')};
   const chip=(id,label,count)=>h('button',{key:id,onClick:()=>setFilter(id),className:'btn '+(filter===id?'btn-primary':'btn-secondary'),style:{fontSize:12}},label+(count!=null?' · '+count:''));
   return h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
-    h('div',null,h('h1',{style:{fontSize:24,fontWeight:700,margin:0}},'Customer care'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'Zgjidh mesazhin, kliko Dërgo dhe hapet WhatsApp me tekstin gati. Ti vetëm shtyp send.')),
-    h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},chip('due','Ndërrim sot/nesër',act.filter(due).length),chip('inactive','S’kanë hy në portal 5+ ditë',act.filter(inactive).length),chip('all','Të gjithë',act.length)),
+    h('div',null,h('h1',{style:{fontSize:24,fontWeight:700,margin:0}},'Customer care'),h('p',{style:{opacity:.6,fontSize:13,margin:'4px 0 0'}},'Zgjidh mesazhin dhe kliko Dërgo. WhatsApp hapet me tekstin gati, ti vetëm shtyp send.')),
+    h('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},chip('due','Ndërrim sot/nesër',act.filter(due).length),chip('inactive','Pa hyrë në portal 5+ ditë',act.filter(inactive).length),chip('all','Të gjithë',act.length)),
     h('div',{className:'card',style:{padding:16,display:'flex',flexDirection:'column',gap:10}},
       h('div',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Mesazhi'),
       h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},CARE_TPL.map(t=>h('button',{key:t.id,onClick:()=>{setTpl(t.id);setEdit({})},className:'btn '+(tpl===t.id?'btn-primary':'btn-secondary'),style:{fontSize:12}},t.label))),
-      h('p',{style:{margin:0,fontSize:13,opacity:.75,lineHeight:1.5}},base.text),h('p',{style:{margin:0,fontSize:11,opacity:.5}},'Rreth 30–40 mesazhe në ditë janë në rregull. Dërgo vetëm pacientëve tuaj dhe mos e kopjo të njëjtin tekst te shumë njerëz pa emër.')),
+      h('p',{style:{margin:0,fontSize:13,opacity:.75,lineHeight:1.5}},base.text),h('p',{style:{margin:0,fontSize:11,opacity:.5}},'Deri në 30–40 mesazhe në ditë s’ka problem. Shkruaju vetëm pacientëve tanë, gjithmonë me emrin e tyre.')),
     h('input',{className:'input',placeholder:'Kërko pacientin...',value:q,onChange:e=>setQ(e.target.value)}),
     list.length>1&&!queue&&h('button',{className:'btn btn-primary',style:{alignSelf:'flex-start',background:'#25D366',borderColor:'#25D366'},onClick:()=>setQueue({ids:list.filter(p=>!(log[p.id]&&log[p.id].d===today)).map(p=>p.id),i:0})},h('i',{className:'ph ph-paper-plane-tilt'}),'Dërgo njëri pas tjetrit ('+list.filter(p=>!(log[p.id]&&log[p.id].d===today)).length+')'),
     queue&&(()=>{const p=patients.find(x=>x.id===queue.ids[queue.i]);const done=!p;
       return h('div',{className:'card',style:{padding:14,position:'sticky',top:8,zIndex:5,display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',border:'1px solid #25D366'}},
-        done?h('b',{style:{flex:1}},'✓ Mbarove: '+queue.ids.length+' mesazhe'):h('div',{style:{flex:1,minWidth:200}},h('div',{style:{fontSize:11,opacity:.6}},'Pacienti '+(queue.i+1)+' / '+queue.ids.length),h('b',null,p.first+' '+p.last),h('div',{style:{fontSize:12,opacity:.7,marginTop:4}},msgFor(p).slice(0,110)+'…')),
+        done?h('b',{style:{flex:1}},'✓ Mbarove: '+queue.ids.length+' mesazhe'):h('div',{style:{flex:1,minWidth:200}},h('div',{style:{fontSize:11,opacity:.6}},'Pacienti '+(queue.i+1)+' / '+queue.ids.length),h('b',null,p.first+' '+p.last),h('div',{style:{fontSize:12,opacity:.7,marginTop:4}},msgFor(p))),
         !done&&h('button',{className:'btn btn-primary',style:{background:'#25D366',borderColor:'#25D366'},onClick:()=>{send(p);setQueue(qq=>({...qq,i:qq.i+1}))}},'Hap WhatsApp ›'),
         !done&&h('button',{className:'btn btn-secondary',onClick:()=>setQueue(qq=>({...qq,i:qq.i+1}))},'Kalo'),
         h('button',{className:'btn btn-secondary',onClick:()=>setQueue(null)},done?'Mbyll':'Ndalo'))})(),
@@ -1071,7 +1071,7 @@ function CareView({patients,waNum,setPatients}){
     list.map(p=>{const txt=msgFor(p);const L=log[p.id];const d=days(p.lastActiveAt);
       return h('div',{key:p.id,className:'card',style:{padding:14,display:'flex',flexDirection:'column',gap:10}},
         h('div',{style:{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap',alignItems:'center'}},
-          h('div',null,h('b',null,p.first+' '+p.last),h('p',{style:{margin:'2px 0 0',fontSize:12,opacity:.6}},[p.phone,'Maskerina '+p.currentAligner+'/'+p.totalAligners,p.nextChangeDate?'Ndërrimi: '+new Date(p.nextChangeDate).toLocaleDateString('en-GB'):null,tpl==='auto'?'✨ '+STAGE(p).why:null,d===null?'S’ka hy kurrë në portal':'Portali: para '+d+' ditësh'].filter(Boolean).join(' · '))),
+          h('div',null,h('b',null,p.first+' '+p.last),h('p',{style:{margin:'2px 0 0',fontSize:12,opacity:.6}},[p.phone,'Maskerina '+p.currentAligner+'/'+p.totalAligners,p.nextChangeDate?'Ndërrimi: '+new Date(p.nextChangeDate).toLocaleDateString('en-GB'):null,tpl==='auto'?'✨ '+STAGE(p).why:null,d===null?'S’ka hyrë asnjëherë në portal':'Portali: para '+d+' ditësh'].filter(Boolean).join(' · '))),
           h('div',{style:{display:'flex',gap:8,alignItems:'center'}},
             L&&h('span',{style:{fontSize:11,color:L.d===today?'#22C55E':'inherit',opacity:L.d===today?1:.55}},(L.d===today?'✓ Dërguar sot':'Dërguar '+L.d)+' · '+L.t),
             h('button',{className:'btn btn-primary',style:{fontSize:12,background:'#25D366',borderColor:'#25D366'},onClick:()=>send(p)},h('i',{className:'ph ph-whatsapp-logo'}),'Dërgo'))),
