@@ -14,6 +14,13 @@
 <title>Linea Aligners — Admin Portal</title>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
+.bnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:95;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--color-surface) 85%,transparent);backdrop-filter:blur(20px);border-top:1px solid var(--color-divider)}
+.bnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:inherit;opacity:.55;font:600 10px inherit;font-family:inherit;padding:4px 0;cursor:pointer;position:relative}
+.bnav button.on{opacity:1;color:var(--color-accent-300)}
+.bnav i{font-size:22px}
+.bnav b{position:absolute;top:0;right:22%;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:#fff;font-size:10px;line-height:16px;padding:0 4px}
+.sb-backdrop{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.5)}
+
 :root{
   --color-bg:#0b1220;--color-surface:#141d33;--color-text:#e9e9ed;
   --color-divider:color-mix(in srgb,#e9e9ed 14%,transparent);
@@ -50,9 +57,12 @@ body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-t
 .fade-up{animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both}
 .gold-glow{box-shadow:0 0 30px rgba(255,215,0,.15)}
 @media(max-width:900px){
-  .sidebar{transform:translateX(-100%);position:fixed !important;z-index:100}
+  .sidebar{transform:translateX(-100%);position:fixed !important;z-index:100;height:100dvh !important;overflow-y:auto;padding-top:calc(20px + env(safe-area-inset-top)) !important;padding-bottom:calc(20px + env(safe-area-inset-bottom)) !important}
   .sidebar.open{transform:translateX(0)}
-  .main-shift{margin-left:0 !important}
+  .main-shift{margin-left:0 !important;padding:calc(68px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom)) !important}
+  .sidebar-toggle,.menu-btn{top:calc(12px + env(safe-area-inset-top)) !important;left:16px !important}
+  .bnav{display:flex !important}
+  .sb-backdrop{display:block !important}
   .col2{grid-template-columns:1fr !important}
   .stats-grid{grid-template-columns:repeat(2,1fr) !important}
   .patient-table{font-size:12px}
@@ -998,7 +1008,9 @@ function App(){
   return h('div',{style:{display:'flex',minHeight:'100vh'}},
     Sidebar,
     // Mobile menu button
-    h('button',{onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
+    sidebarOpen&&h('div',{className:'sb-backdrop',onClick:()=>setSidebar(false)}),
+    h('nav',{className:'bnav'},[['dashboard','ph-house','Home'],['patients','ph-users','Pacientët'],['care','ph-whatsapp-logo','Care'],['leads','ph-user-plus','Leads'],['messages','ph-chat-circle','Mesazhe']].map(([id,ic,l])=>{const n=navItems.find(x=>x.id===id)||{};return h('button',{key:id,className:tab===id?'on':'',onClick:()=>{setTab(id);setSelected(null);setSidebar(false);window.scrollTo(0,0)}},h('i',{className:'ph '+ic}),l,(n.badge&&id!=='patients')?h('b',null,n.badge>99?'99+':n.badge):null)})),
+    h('button',{className:'menu-btn',onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
     Drawer,AddDlg,PdfAddDialog,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PdfDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
