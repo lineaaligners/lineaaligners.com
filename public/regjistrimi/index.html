@@ -181,6 +181,9 @@ tbody tr:hover td{background:rgba(255,255,255,0.03);color:var(--text)}
 .inv-row.total-row{background:#1e1b4b;color:#fff;font-size:14px;font-weight:600}
 .inv-foot{margin-top:42px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center}
 
+.arbk-drop{display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:16px;border:1.5px dashed rgba(129,140,248,.45);border-radius:14px;cursor:pointer;color:var(--text);font-size:13px;transition:background .2s}
+.arbk-drop:hover{background:rgba(99,102,241,.08)}
+.arbk-drop.busy{opacity:.6;pointer-events:none}
 /* TOAST */
 .toast{position:fixed;bottom:26px;right:26px;background:rgba(10,11,28,0.96);border:1px solid var(--glass-b2);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;z-index:400;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
 
@@ -399,6 +402,9 @@ async function lineaDb(){
     <div class="card">
       <div class="card-hd"><div><div class="card-title">Regjistro Shitje</div><div class="card-sub">Plotëso të dhënat e shitjes</div></div></div>
       <div class="form-body">
+        <label class="arbk-drop" id="arbk-drop"><input type="file" accept="image/*" id="arbk-file" hidden onchange="lexoArbk(this.files[0]);this.value=''">
+          <span style="font-size:22px">📷</span><span><b>Lexo nga ARBK</b><br><span style="font-size:11px;color:var(--text3)">Ngarko screenshot-in e biznesit nga arbk.rks-gov.net, plotësohen vetë emri, NUI, telefoni e adresa</span></span></label>
+        <div id="arbk-msg" class="msg-txt" style="margin:-6px 0 12px"></div>
         <div class="form-grid">
           <div class="field"><label>Blerësi</label><input type="text" id="s-bleresi" placeholder="Barnatorja Rosmani" list="bleresi-list" autocomplete="off" oninput="autoNui()"><datalist id="bleresi-list"></datalist></div>
           <div class="field"><label>Nr. Unik i Biznesit <span style="color:var(--text3);font-size:10px">(NUI/NF)</span></label><input type="text" id="s-nui" placeholder="811234567" list="nui-list" autocomplete="off"><datalist id="nui-list"></datalist></div>
@@ -1152,6 +1158,45 @@ function hap(id){document.getElementById(id).classList.add("open")}
 function mbylle(id){document.getElementById(id).classList.remove("open")}
 function toast(txt){document.getElementById("toast-txt").textContent=txt;const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
 init();
+</script>
+<script>
+function arbkOcrLib(){return window.Tesseract?Promise.resolve(window.Tesseract):new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=()=>res(window.Tesseract);sc.onerror=()=>rej(new Error('OCR nuk u ngarkua'));document.head.appendChild(sc)})}
+function arbkParse(lines,txt){
+  // lines: [{text,bbox:{x0,y0,x1,y1}}] — pair each label with the value on the same row (ARBK is a 2-column table)
+  lines=(lines||[]).map(l=>({t:String(l.text||'').replace(/\s+/g,' ').trim(),b:l.bbox})).filter(l=>l.t);
+  const LBL={name:/emri\s*i\s*biznes|business\s*name/i,trade:/emri\s*tregtar|trade\s*name/i,nui:/nu\w{0,3}\s*unik|\bNUI\b|unique\s*ident/i,nf:/fiskal|fiscal/i,tel:/telefon|phone/i,adr:/adres|address/i,kom:/komun|municip/i};
+  const isLabel=t=>Object.values(LBL).some(r=>r.test(t))||/lloji|lioji|numri\s*i\s*biznes|nu\w{0,3}\s*i\s*biznes|data\s*e|statusi|kapital|pronar|aktivitet|e-?mail/i.test(t);
+  const out={};
+  for(const [k,re] of Object.entries(LBL)){
+    const lab=lines.find(l=>re.test(l.t));if(!lab)continue;
+    // value on same line after the label
+    const m=lab.t.match(re);let rest=lab.t.slice(m.index+m[0].length).replace(/^[A-Za-zëçËÇé]*/,'').replace(/^[\s:.\-–|]+/,'').trim();
+    if(rest.length>1&&!isLabel(rest)){out[k]=rest;continue}
+    if(lab.b){const cy=(lab.b.y0+lab.b.y1)/2,h=(lab.b.y1-lab.b.y0)||12;
+      const cand=lines.filter(l=>l!==lab&&l.b&&l.b.x0>lab.b.x1-5&&Math.abs((l.b.y0+l.b.y1)/2-cy)<h*0.8&&!isLabel(l.t)).sort((x,y)=>x.b.x0-y.b.x0);
+      if(cand.length){out[k]=cand.map(c=>c.t).join(' ');continue}}
+  }
+  // fallback: text-only (column-wise OCR): labels in order, then values in same order
+  if(!out.name&&txt){const T=txt.split(/\n+/).map(x=>x.trim()).filter(Boolean);const labs=T.filter(isLabel),vals=T.filter(x=>!isLabel(x)&&!/^t[eé]\s*dh[eé]nat/i.test(x));
+    const off=vals.length-labs.length;labs.forEach((l,i)=>{for(const [k,re] of Object.entries(LBL))if(re.test(l)&&!out[k]&&vals[i+Math.max(0,off)])out[k]=vals[i+Math.max(0,off)]})}
+  const all=(txt||'')+' '+Object.values(out).join(' ');
+  let nui=((out.nui||'').match(/\d{8,10}/)||[])[0]||((all.match(/\b(8\d{8})\b/)||[])[1])||'';
+  const nf=((out.nf||'').match(/\d{6,10}/)||[])[0]||'';
+  const tel=((out.tel||'').match(/\+?\d[\d\s\/-]{6,}\d/)||[''])[0].trim();
+  const name=(out.name||out.trade||'').replace(/["“”]/g,'').trim();
+  const fx=v=>String(v||'').replace(/é/g,'ë').replace(/É/g,'Ë').trim();
+  return{name:fx(name),nui:nui||nf,tel,adr:fx(out.adr),komuna:fx(out.kom)}}
+async function lexoArbk(f){if(!f)return;const d=document.getElementById('arbk-drop'),m=document.getElementById('arbk-msg');
+  d.classList.add('busy');m.style.color='';m.textContent='Duke lexuar screenshot-in… (disa sekonda)';
+  try{const T=await arbkOcrLib();const r=await T.recognize(f,'eng');const x=arbkParse(r.data.lines||[],r.data.text||'');
+    const set=(id,v)=>{if(v){const el=document.getElementById(id);el.value=v;el.dispatchEvent(new Event('input'));el.style.borderColor='rgba(16,185,129,.6)';setTimeout(()=>el.style.borderColor='',2500)}};
+    set('s-bleresi',x.name);set('s-nui',x.nui);set('s-tel',x.tel);
+    const extra=[x.adr,x.komuna].filter(Boolean).join(', ');if(extra){const sh=document.getElementById('s-shenime');if(!sh.value.includes(extra))sh.value=(sh.value?sh.value+'\n':'')+'Adresa: '+extra}
+    const n=(x.name||'').toLowerCase();const k=document.getElementById('s-kanali');if(/barnator|farmac|pharm/.test(n))k.value='barnatore';else if(/klinik|ordinanc|dental|stomatolog/.test(n))k.value='klinika';
+    const got=[x.name&&'emri',x.nui&&'NUI',x.tel&&'telefoni',extra&&'adresa'].filter(Boolean);
+    if(got.length){m.style.color='var(--green)';m.textContent='✓ U plotësua: '+got.join(', ')+'. Kontrolloji para se t’i ruash.'}else{m.style.color='var(--red)';m.textContent='Nuk po i lexoj të dhënat. Provo screenshot më të qartë, vetëm pjesën me të dhënat e biznesit.'}
+  }catch(e){m.style.color='var(--red)';m.textContent='Gabim: '+e.message}
+  d.classList.remove('busy')}
 </script>
 </body>
 </html>
