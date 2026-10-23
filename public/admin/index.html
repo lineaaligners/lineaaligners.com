@@ -933,7 +933,7 @@ function App(){
   const AddDlg=addOpen&&h(AddPatientDlg,{key:convertLead?convertLead.id:'new',initial:convertLead?(()=>{const ps=String(convertLead.name||'').trim().split(/\s+/);return{first:ps[0]||'',last:ps.slice(1).join(' '),phone:convertLead.phone||'',city:convertLead.city||''}})():null,onCancel:()=>{setAddOpen(false);setConvertLead(null)},onSave:addPatient});
   const editingPatient=editAlignerFor&&patients.find(x=>x.id===editAlignerFor);
   const EditAlignerDialog=editingPatient&&h(EditAlignerDlg,{patient:editingPatient,onCancel:()=>setEditAlignerFor(null),onSave:n=>setAlignerTo(editingPatient.id,n)});
-  const EditPatientDialog=editPatientFor&&selected&&h(EditPatientDlg,{patient:selected,onCancel:()=>setEditPatientFor(false),onSave:data=>updatePatient(selected.id,data)});
+  const EditPatientDialog=editPatientFor&&selected&&h(EditPatientDlg,{patient:selected,onLogin:()=>{setEditPatientFor(false);makeLogin(selected)},onCancel:()=>setEditPatientFor(false),onSave:data=>updatePatient(selected.id,data)});
   const sendPush=async(payload,okMsg)=>{
     try{
       const{data:{session}}=await SUPA.auth.getSession();
@@ -1225,7 +1225,7 @@ function PushDlg({target,onCancel,onSend}){
         h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-paper-plane-tilt'}),'Send'))));
 }
 
-function EditPatientDlg({patient,onCancel,onSave}){
+function EditPatientDlg({patient,onCancel,onSave,onLogin}){
   const [f,setF]=useState({
     first:patient.first,last:patient.last,phone:patient.phone,email:patient.email||'',
     city:patient.city||'',currentAligner:patient.currentAligner,totalAligners:patient.totalAligners,
@@ -1263,6 +1263,7 @@ function EditPatientDlg({patient,onCancel,onSave}){
       h('div',{style:{marginBottom:20}},
         h('label',{style:{fontSize:11,opacity:.6,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}},'Clinical notes'),
         h('textarea',{className:'input',value:f.notes,onChange:e=>set('notes',e.target.value),rows:3,style:{marginTop:4,resize:'vertical',fontFamily:'inherit'}})),
+      onLogin&&h('button',{type:'button',className:'btn btn-secondary',style:{width:'100%',justifyContent:'center',marginBottom:12,borderColor:'#25D366'},onClick:onLogin},h('i',{className:'ph ph-key'}),patient.userId?'🔑 Fjalëkalim i ri për portalin':'🔑 Krijo hyrjen në portal (fjalëkalim)'),
       h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
         h('button',{type:'button',className:'btn btn-secondary',onClick:onCancel},'Cancel'),
         h('button',{type:'submit',className:'btn btn-primary'},h('i',{className:'ph ph-check'}),'Save changes'))));
