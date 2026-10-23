@@ -266,6 +266,12 @@ function App(){
   const [planHist,setPlanHist]=useState(null);
   const [pdfDlg,setPdfDlg]=useState(false);
   const [allPlans,setAllPlans]=useState([]);
+  const [loginInfo,setLoginInfo]=useState(null);
+  const makeLogin=async p=>{if(p.userId&&!confirm('Të krijohet fjalëkalim i ri për '+p.first+'? I vjetri nuk do të punojë më.'))return;
+    try{const{data:{session}}=await SUPA.auth.getSession();const r=await fetch('/api/patient-login',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session&&session.access_token)},body:JSON.stringify({patient_id:p.id})});
+      const j=await r.json().catch(()=>({error:'server_error'}));if(!r.ok)throw new Error(j.error);
+      setPatients(ps=>ps.map(x=>x.id===p.id?{...x,userId:'yes',email:j.email,username:j.username}:x));setSelected(s=>s&&s.id===p.id?{...s,userId:'yes',email:j.email,username:j.username}:s);setLoginInfo({...j,first:p.first,phone:p.phone})}
+    catch(e){toast('Gabim: '+e.message)}};
   const planApi=async(payload)=>{
     const{data:{session}}=await SUPA.auth.getSession();
     const r=await fetch('/api/treatment-plans',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session&&session.access_token)},body:JSON.stringify(payload)});
@@ -304,7 +310,7 @@ function App(){
         SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
       ]);
       if(pR.data) setPatients(pR.data.map(p=>({
-        id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
+        id:p.id,userId:p.user_id||null,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
         currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
         nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
         nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,createdAt:p.created_at||null,
@@ -474,7 +480,7 @@ function App(){
       SUPA.from('messages').select('*').is('read_at',null).order('created_at',{ascending:false})
     ]);
     if(pR.data) setPatients(pR.data.map(p=>({
-      id:p.id,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
+      id:p.id,userId:p.user_id||null,first:p.first_name,last:p.last_name,phone:p.phone,email:p.email,city:p.city||'',username:p.username||'',referralCode:p.referral_code||'',referredBy:p.referred_by||'',
       currentAligner:p.current_aligner||1,totalAligners:p.total_aligners||1,
       nextChangeDays:p.next_change_date?Math.max(0,Math.round((new Date(p.next_change_date)-new Date())/(86400000))):5,
         nextChangeDate:p.next_change_date||null,lastActiveAt:p.last_active_at||null,createdAt:p.created_at||null,
@@ -511,6 +517,18 @@ function App(){
   const genEmail=(first,last,caseRef)=>{const n=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ë/g,'e').replace(/ç/g,'c').replace(/[^a-z0-9]+/g,'');
     let base=[n(first),n(last)].filter(Boolean).join('.')||'pacient';const used=new Set(patients.map(p=>(p.email||'').toLowerCase()));
     let e=base+'@lineaaligners.com';if(used.has(e)){const c=String(caseRef||'').replace(/\D/g,'').slice(-4)||String(Date.now()).slice(-4);e=base+c+'@lineaaligners.com'}return e};
+  const LoginDlg=loginInfo&&h('div',{className:'dialog-backdrop',onClick:e=>{if(e.target===e.currentTarget)setLoginInfo(null)}},
+    h('div',{className:'dialog fade-up',style:{width:'min(420px,calc(100vw - 32px))'}},
+      h('h3',{style:{fontSize:18,fontWeight:700,margin:'0 0 12px'}},'Hyrja në portal për '+loginInfo.first),
+      h('div',{className:'card',style:{padding:14,fontSize:14,lineHeight:1.9}},
+        h('div',null,'Linku: ',h('b',null,'lineaaligners.com/portal')),
+        h('div',null,'Hyn me: ',h('b',null,loginInfo.phone||loginInfo.username)),
+        h('div',null,'Fjalëkalimi: ',h('b',{style:{fontSize:18,letterSpacing:'.05em'}},loginInfo.password))),
+      h('p',{style:{fontSize:12,opacity:.6,margin:'10px 0'}},'Fjalëkalimi shfaqet vetëm tani. Dërgoja pacientit në WhatsApp.'),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end',flexWrap:'wrap'}},
+        h('button',{className:'btn btn-secondary',onClick:()=>{try{navigator.clipboard.writeText(loginInfo.password)}catch(e){};toast('U kopjua')}},'Kopjo'),
+        h('a',{className:'btn btn-primary',style:{background:'#25D366',borderColor:'#25D366'},target:'_blank',rel:'noopener noreferrer',href:'https://wa.me/'+waNum(loginInfo.phone)+'?text='+encodeURIComponent('Përshëndetje '+loginInfo.first+'! 👋 Llogaria jote në portalin Linea është gati.\n\nHyr këtu: https://www.lineaaligners.com/portal/\nTelefoni: '+loginInfo.phone+'\nFjalëkalimi: '+loginInfo.password+'\n\nAty i ke kujtesat për ndërrimin e maskerinave, progresin dhe mesazhet me ne. Ekipi Linea')},h('i',{className:'ph ph-whatsapp-logo'}),'Dërgo në WhatsApp'),
+        h('button',{className:'btn btn-secondary',onClick:()=>setLoginInfo(null)},'Mbyll'))));
   const PdfAddDialog=pdfAdd&&h(PdfAddDlg,{genEmail,onCancel:()=>setPdfAdd(false),onSave:async rows=>{let n=0;for(const r of rows){if(await addPatient(r,true)!==false)n++}setPdfAdd(false);toast(n+' pacientë u shtuan')}});
 
   // ── NAVIGATION ──
@@ -826,6 +844,7 @@ function App(){
           h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditAlignerFor(selected.id)},h('i',{className:'ph ph-hash'}),'Set aligner #'),
           h('a',{href:`https://wa.me/${selected.phone.replace(/\D/g,'')}`,target:'_blank',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-whatsapp-logo',style:{color:'#25D366'}}),'WhatsApp'),
           h('a',{href:`tel:${selected.phone}`,className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-phone'}),'Call'),
+          h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>makeLogin(selected)},h('i',{className:'ph ph-key'}),selected.userId?'Fjalëkalim i ri':'Krijo hyrjen në portal'),
           h('button',{className:'btn btn-secondary',style:{fontSize:12},onClick:()=>setEditPatientFor(true)},h('i',{className:'ph ph-pencil-simple'}),'Edit details'),
           selected.treatmentLink&&h('a',{href:selected.treatmentLink,target:'_blank',rel:'noopener noreferrer',className:'btn btn-secondary',style:{fontSize:12}},h('i',{className:'ph ph-link'}),'View treatment plan'),
           h('button',{className:'btn btn-gold',style:{fontSize:12},onClick:()=>setLetterFor(selected.id)},h('i',{className:'ph ph-envelope-simple'}),'Send letter'),
@@ -1013,7 +1032,7 @@ function App(){
     h('button',{className:'menu-btn',onClick:()=>setSidebar(!sidebarOpen),style:{display:sidebarOpen?'none':'flex',position:'fixed',top:16,left:16,zIndex:90,width:40,height:40,borderRadius:8,background:'var(--color-surface)',border:'1px solid var(--color-divider)',color:'var(--color-text)',cursor:'pointer',alignItems:'center',justifyContent:'center'},className:'sidebar-toggle'},
       h('i',{className:'ph ph-list',style:{fontSize:20}})),
     h('main',{className:'main-shift',style:{flex:1,padding:'32px 24px 60px',maxWidth:'100%',overflow:'auto'}},views[tab]),
-    Drawer,AddDlg,PdfAddDialog,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PdfDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
+    Drawer,AddDlg,PdfAddDialog,LoginDlg,EditAlignerDialog,EditPatientDialog,LetterDialog,PushDialog,PlanDialog,PdfDialog,PlanPreviewDlg,PlanHistDlg,ConfirmDlg,Toasts);
 }
 
 
