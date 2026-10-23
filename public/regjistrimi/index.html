@@ -410,12 +410,13 @@ async function lineaDb(){
           <div class="field"><label>Nr. Unik i Biznesit <span style="color:var(--text3);font-size:10px">(NUI/NF)</span></label><input type="text" id="s-nui" placeholder="811234567" list="nui-list" autocomplete="off"><datalist id="nui-list"></datalist></div>
           <div class="field"><label>Telefoni <span style="color:var(--text3);font-size:10px">(për WhatsApp)</span></label><input type="text" id="s-tel" placeholder="+38344123456" list="tel-list" autocomplete="off"><datalist id="tel-list"></datalist></div>
           <div class="field"><label>Kanali</label><select id="s-kanali"><option value="barnatore">Barnatore</option><option value="klinika">Klinikë</option><option value="online">Online</option><option value="tjeter">Tjetër</option></select></div>
-          <div class="field"><label>Sasia (kuti)</label><input type="number" id="s-sasia" placeholder="0" min="1"></div>
+          <div class="field"><label>Sasia (kuti)</label><input type="number" id="s-sasia" placeholder="0" min="1" oninput="llogaritTvsh()"></div>
           <div class="field"><label>Çmimi / kuti (€) <button class="lock-btn" id="lock-btn" onclick="hapModalCmim()" title="Ndrysho çmimin">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
           </button></label><input type="number" id="s-cmimi" value="4.00" step="0.01" min="0" readonly></div>
-          <div class="field"><label>Rabat % <span style="color:var(--text3);font-size:10px">(opsionale)</span></label><input type="number" id="s-rabat" placeholder="0" min="0" max="100" step="0.5" oninput="llogaritRabat()"></div>
+          <div class="field"><label>Rabat % <span style="color:var(--text3);font-size:10px">(opsionale)</span></label><input type="number" id="s-rabat" placeholder="0" min="0" max="100" step="0.5" oninput="llogaritRabat();llogaritTvsh()"></div>
           <div class="field" id="rabat-wrap" style="display:none"><label>Çmimi pas Rabatit</label><div class="rabat-badge" id="rabat-preview"></div></div>
+          <div class="field"><label>TVSH 18%</label><label style="display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid var(--border2);border-radius:10px;font-size:13px;color:var(--text);cursor:pointer"><input type="checkbox" id="s-tvsh" checked onchange="llogaritTvsh()" style="width:16px;height:16px;accent-color:#6366f1">Çmimi përfshin TVSH</label><div class="msg-txt" id="tvsh-preview" style="margin-top:2px"></div></div>
           <div class="field"><label>Data</label><input type="date" id="s-data"></div>
           <div class="field"><label>Statusi i Pagesës</label><select id="s-pagese"><option value="paguar">Paguar</option><option value="pa-paguar">Pa Paguar</option></select></div>
           <div class="field"><label>Shënime</label><input type="text" id="s-shenime" placeholder="opsionale"></div>
@@ -1063,7 +1064,7 @@ async function shtoShitje(){
   msg.textContent="Duke ruajtur…";msg.style.color="var(--text3)";
   const id=editing?_editSaleId:"s-"+Date.now();
   const ekzistues=editing?shitjet.find(s=>s.id===id):null;
-  const rec={bleresi:bler,nui,telefoni:tel,kanali:kan,sasia:sas,cmimi:cmi,cmimiBase:cb,rabat:rab,data:dat,pagese:pgs,shenime:shen,krijuar:ekzistues?ekzistues.krijuar:Date.now(),nr:ekzistues?ekzistues.nr:shitjet.length+1};
+  const rec={bleresi:bler,nui,telefoni:tel,kanali:kan,sasia:sas,cmimi:cmi,cmimiBase:cb,rabat:rab,tvshPerfshire:document.getElementById("s-tvsh").checked,data:dat,pagese:pgs,shenime:shen,krijuar:ekzistues?ekzistues.krijuar:Date.now(),nr:ekzistues?ekzistues.nr:shitjet.length+1};
   try{
     await db.doc("shitjet/"+id).set(rec);
     if(editing){shitjet=shitjet.map(s=>s.id===id?{id,...rec}:s);shtoLog("editim",`Shitje: ${bler} → ${sas} kuti, €${cmi.toFixed(2)}`);}
@@ -1088,7 +1089,7 @@ function editoShitje(s){
   document.getElementById("s-tel").value=s.telefoni||"";
   document.getElementById("s-kanali").value=s.kanali||"barnatore";
   document.getElementById("s-sasia").value=s.sasia||"";
-  document.getElementById("s-rabat").value=s.rabat||"";
+  document.getElementById("s-rabat").value=s.rabat||"";document.getElementById("s-tvsh").checked=s.tvshPerfshire!==false;llogaritTvsh();
   document.getElementById("s-data").value=s.data||"";
   document.getElementById("s-pagese").value=s.pagese||"paguar";
   document.getElementById("s-shenime").value=s.shenime||"";
@@ -1096,7 +1097,7 @@ function editoShitje(s){
   ci.value=Number(s.cmimiBase||s.cmimi||4).toFixed(2);ci.readOnly=false;
   ci.style.background="rgba(99,102,241,0.08)";ci.style.borderColor="rgba(99,102,241,0.4)";ci.style.color="var(--text)";
   document.getElementById("lock-btn").innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V9a4 4 0 0 1 7.2-2.4"/></svg>';
-  llogaritRabat();
+  llogaritRabat();llogaritTvsh();
   document.getElementById("s-submit-btn").textContent="Ruaj Ndryshimet";
   document.getElementById("s-cancel-btn").style.display="inline-flex";
   showPage("shitje");
@@ -1122,8 +1123,10 @@ function hapFshiSh(id){_fShId=id;document.getElementById("mfs-pass").value="";do
 async function konfirmoFshiSh(){const v=document.getElementById("mfs-pass").value,msg=document.getElementById("mfs-msg");if(v!=="linea"){msg.textContent="Passwordi gabim.";document.getElementById("mfs-pass").value="";document.getElementById("mfs-pass").focus();return;}try{const rek=shpenzimet.find(s=>s.id===_fShId);await db.doc("shpenzimet/"+_fShId).delete();shpenzimet=shpenzimet.filter(s=>s.id!==_fShId);if(rek)shtoLog("fshirje",`Shpenzim: ${rek.pershkrimi||""} — €${Number(rek.shuma||0).toFixed(2)}`);_fShId=null;mbylle("m-fshi-sh");rifreskoShpenzimet();rifreskoDashboard();rifreskoRaportet();toast("Shpenzimi u fshi");}catch(e){msg.textContent="Gabim.";}}
 
 function hapModalCmim(){document.getElementById("mc-pass").value="";document.getElementById("mc-msg").textContent="";document.getElementById("mc-new-wrap").style.display="none";hap("m-cmimi");setTimeout(()=>document.getElementById("mc-pass").focus(),120);}
-function konfirmoCmim(){const pass=document.getElementById("mc-pass").value,msg=document.getElementById("mc-msg"),nw=document.getElementById("mc-new-wrap");if(pass!=="linea"){msg.textContent="Passwordi gabim.";document.getElementById("mc-pass").value="";document.getElementById("mc-pass").focus();return;}if(nw.style.display==="none"){nw.style.display="flex";nw.style.flexDirection="column";nw.style.gap="6px";document.getElementById("mc-new").value=document.getElementById("s-cmimi").value;msg.textContent="";setTimeout(()=>document.getElementById("mc-new").focus(),80);return;}const v=parseFloat(document.getElementById("mc-new").value);if(!v||v<=0){msg.textContent="Vendos çmim valid.";return;}const ci=document.getElementById("s-cmimi");ci.value=v.toFixed(2);ci.readOnly=false;ci.style.background="rgba(99,102,241,0.08)";ci.style.borderColor="rgba(99,102,241,0.4)";ci.style.color="var(--text)";document.getElementById("lock-btn").innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V9a4 4 0 0 1 7.2-2.4"/></svg>';llogaritRabat();mbylle("m-cmimi");toast("Çmimi u ndryshua në €"+v.toFixed(2));}
+function konfirmoCmim(){const pass=document.getElementById("mc-pass").value,msg=document.getElementById("mc-msg"),nw=document.getElementById("mc-new-wrap");if(pass!=="linea"){msg.textContent="Passwordi gabim.";document.getElementById("mc-pass").value="";document.getElementById("mc-pass").focus();return;}if(nw.style.display==="none"){nw.style.display="flex";nw.style.flexDirection="column";nw.style.gap="6px";document.getElementById("mc-new").value=document.getElementById("s-cmimi").value;msg.textContent="";setTimeout(()=>document.getElementById("mc-new").focus(),80);return;}const v=parseFloat(document.getElementById("mc-new").value);if(!v||v<=0){msg.textContent="Vendos çmim valid.";return;}const ci=document.getElementById("s-cmimi");ci.value=v.toFixed(2);ci.readOnly=false;ci.style.background="rgba(99,102,241,0.08)";ci.style.borderColor="rgba(99,102,241,0.4)";ci.style.color="var(--text)";document.getElementById("lock-btn").innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V9a4 4 0 0 1 7.2-2.4"/></svg>';llogaritRabat();llogaritTvsh();mbylle("m-cmimi");toast("Çmimi u ndryshua në €"+v.toFixed(2));}
 
+function llogaritTvsh(){const c=parseFloat(document.getElementById("s-cmimi").value)||0,r=parseFloat(document.getElementById("s-rabat").value)||0,q=parseInt(document.getElementById("s-sasia").value)||1,inc=document.getElementById("s-tvsh").checked,p=c*(1-r/100),tot=p*q;
+  const net=inc?tot/1.18:tot,t=net*.18,gross=net+t;document.getElementById("tvsh-preview").textContent=`${q} kuti · Pa TVSH €${net.toFixed(2)} + TVSH €${t.toFixed(2)} = €${gross.toFixed(2)}`}
 function llogaritRabat(){const c=parseFloat(document.getElementById("s-cmimi").value)||4,r=parseFloat(document.getElementById("s-rabat").value)||0,w=document.getElementById("rabat-wrap");if(r>0){w.style.display="flex";w.style.flexDirection="column";w.style.gap="6px";document.getElementById("rabat-preview").textContent="€"+(c*(1-r/100)).toFixed(2)+" (−"+r+"%)"}else{w.style.display="none";}}
 
 function dergoRikujtese(s){
@@ -1137,9 +1140,9 @@ function dergoRikujtese(s){
 
 function genFatura(s){
   const nr=String(s.nr||1).padStart(4,"0"),cb=Number(s.cmimiBase||s.cmimi),rb=Number(s.rabat||0),cp=Number(s.cmimi),sa=Number(s.sasia);
-  const gross=(cb*sa).toFixed(2),zb=(cb*sa-cp*sa).toFixed(2),sub=(cp*sa).toFixed(2),tvsh=(Number(sub)*.18).toFixed(2),tot=(Number(sub)*1.18).toFixed(2);
+  const inc=s.tvshPerfshire!==false,k=inc?1/1.18:1,gross=(cb*sa*k).toFixed(2),zb=((cb*sa-cp*sa)*k).toFixed(2),sub=(cp*sa*k).toFixed(2),tvsh=(Number(sub)*.18).toFixed(2),tot=(Number(sub)*1.18).toFixed(2);
   const rabatRows=rb>0?`<div class="inv-row rabat-row"><span>Rabat ${rb}%</span><span>−€${zb}</span></div><div class="inv-row"><span>Pas rabatit</span><span>€${sub}</span></div>`:"";
-  document.getElementById("inv-content").innerHTML=`<div class="inv-top"><div><img class="inv-logo-img" src="${LOGO}" alt="Linea"><div class="inv-logo-sub">Retainer Cleaner</div></div><div style="text-align:right"><div class="inv-nr">Faturë Nr. ${nr}</div><div class="inv-date-txt">Data: ${s.data||new Date().toISOString().split("T")[0]}</div></div></div><div class="inv-parties"><div><div class="inv-plabel">Nga</div><div class="inv-pname">Linea G.N. SH.P.K.</div><div class="inv-pdetail">Pejë, Kosovë<br>NUI: 811234567<br>Tel: +383 49 772 307<br>lineaaligners.com</div></div><div><div class="inv-plabel">Për</div><div class="inv-pname">${s.bleresi||""}</div><div class="inv-pdetail">${s.nui?`NUI: ${s.nui}<br>`:""}${s.shenime||"&nbsp;"}</div></div></div><table class="inv-tbl"><thead><tr><th>Përshkrimi</th><th>Sasia</th><th>Çmimi/njësi</th><th>Totali</th></tr></thead><tbody><tr><td><strong>Linea Retainer Cleaner</strong><br><span style="font-size:11px;color:#999">32 tableta eferveshente antibakteriale / kuti</span></td><td>${sa} kuti</td><td>€${cb.toFixed(2)}</td><td>€${gross}</td></tr></tbody></table><div class="inv-totals"><div class="inv-totals-box"><div class="inv-row"><span>Nëntotali</span><span>€${gross}</span></div>${rabatRows}<div class="inv-row"><span>TVSH 18%</span><span>€${tvsh}</span></div><div class="inv-row total-row"><span>Totali</span><span>€${tot}</span></div></div></div><div class="inv-foot">Faleminderit për bashkëpunimin · lineaaligners.com · info@lineaaligners.com</div>`;
+  document.getElementById("inv-content").innerHTML=`<div class="inv-top"><div><img class="inv-logo-img" src="${LOGO}" alt="Linea"><div class="inv-logo-sub">Retainer Cleaner</div></div><div style="text-align:right"><div class="inv-nr">Faturë Nr. ${nr}</div><div class="inv-date-txt">Data: ${s.data||new Date().toISOString().split("T")[0]}</div></div></div><div class="inv-parties"><div><div class="inv-plabel">Nga</div><div class="inv-pname">Linea G.N. SH.P.K.</div><div class="inv-pdetail">Pejë, Kosovë<br>NUI: 812224236<br>Rr. Bajram Kelmendi, Pejë<br>Tel: +383 49 772 307<br>lineaaligners.com</div></div><div><div class="inv-plabel">Për</div><div class="inv-pname">${s.bleresi||""}</div><div class="inv-pdetail">${s.nui?`NUI: ${s.nui}<br>`:""}${s.shenime||"&nbsp;"}</div></div></div><table class="inv-tbl"><thead><tr><th>Përshkrimi</th><th>Sasia</th><th>Çmimi/njësi</th><th>Totali</th></tr></thead><tbody><tr><td><strong>Linea Retainer Cleaner</strong><br><span style="font-size:11px;color:#999">32 tableta eferveshente antibakteriale / kuti</span></td><td>${sa} kuti</td><td>€${(cb*k).toFixed(2)}</td><td>€${gross}</td></tr></tbody></table><div class="inv-totals"><div class="inv-totals-box"><div class="inv-row"><span>Nëntotali</span><span>€${gross}</span></div>${rabatRows}<div class="inv-row"><span>TVSH 18%</span><span>€${tvsh}</span></div><div class="inv-row total-row"><span>Totali</span><span>€${tot}</span></div></div></div><div class="inv-foot">Faleminderit për bashkëpunimin · lineaaligners.com · info@lineaaligners.com</div>`;
   hap("m-fatura");
 }
 
@@ -1197,6 +1200,7 @@ async function lexoArbk(f){if(!f)return;const d=document.getElementById('arbk-dr
     if(got.length){m.style.color='var(--green)';m.textContent='✓ U plotësua: '+got.join(', ')+'. Kontrolloji para se t’i ruash.'}else{m.style.color='var(--red)';m.textContent='Nuk po i lexoj të dhënat. Provo screenshot më të qartë, vetëm pjesën me të dhënat e biznesit.'}
   }catch(e){m.style.color='var(--red)';m.textContent='Gabim: '+e.message}
   d.classList.remove('busy')}
+setTimeout(()=>{try{llogaritTvsh()}catch(e){}},2500);
 </script>
 </body>
 </html>
