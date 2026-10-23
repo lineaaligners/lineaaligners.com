@@ -184,6 +184,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.03);color:var(--text)}
 .arbk-drop{display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:16px;border:1.5px dashed rgba(129,140,248,.45);border-radius:14px;cursor:pointer;color:var(--text);font-size:13px;transition:background .2s}
 .arbk-drop:hover{background:rgba(99,102,241,.08)}
 .arbk-drop.busy{opacity:.6;pointer-events:none}
+.field input[type=checkbox]{-webkit-appearance:checkbox;appearance:auto;padding:0;border:0;background:none;box-shadow:none;width:20px;height:20px;flex:none;cursor:pointer}
 /* TOAST */
 .toast{position:fixed;bottom:26px;right:26px;background:rgba(10,11,28,0.96);border:1px solid var(--glass-b2);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;z-index:400;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
 
@@ -1189,9 +1190,13 @@ function arbkParse(lines,txt){
   const name=(out.name||out.trade||'').replace(/["“”]/g,'').trim();
   const fx=v=>String(v||'').replace(/é/g,'ë').replace(/É/g,'Ë').trim();
   return{name:fx(name),nui:nui||nf,tel,adr:fx(out.adr),komuna:fx(out.kom)}}
+async function arbkPrep(f){const url=URL.createObjectURL(f);const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
+  const sc=Math.max(1,Math.min(3,2000/im.width));const c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);
+  const d=x.getImageData(0,0,c.width,c.height),a=d.data;let sum=0;for(let i=0;i<a.length;i+=4){const g=.299*a[i]+.587*a[i+1]+.114*a[i+2];a[i]=a[i+1]=a[i+2]=g;sum+=g}
+  const dark=sum/(a.length/4)<128;for(let i=0;i<a.length;i+=4){let g=a[i];if(dark)g=255-g;g=g>165?255:g<90?0:g;a[i]=a[i+1]=a[i+2]=g}x.putImageData(d,0,0);URL.revokeObjectURL(url);return c}
 async function lexoArbk(f){if(!f)return;const d=document.getElementById('arbk-drop'),m=document.getElementById('arbk-msg');
   d.classList.add('busy');m.style.color='';m.textContent='Duke lexuar screenshot-in… (disa sekonda)';
-  try{const T=await arbkOcrLib();const r=await T.recognize(f,'eng');const x=arbkParse(r.data.lines||[],r.data.text||'');
+  try{const T=await arbkOcrLib();const img=await arbkPrep(f);const r=await T.recognize(img,'sqi+eng',{});const x=arbkParse(r.data.lines||[],r.data.text||'');
     const set=(id,v)=>{if(v){const el=document.getElementById(id);el.value=v;el.dispatchEvent(new Event('input'));el.style.borderColor='rgba(16,185,129,.6)';setTimeout(()=>el.style.borderColor='',2500)}};
     set('s-bleresi',x.name);set('s-nui',x.nui);set('s-tel',x.tel);
     const extra=[x.adr,x.komuna].filter(Boolean).join(', ');if(extra){const sh=document.getElementById('s-shenime');if(!sh.value.includes(extra))sh.value=(sh.value?sh.value+'\n':'')+'Adresa: '+extra}
