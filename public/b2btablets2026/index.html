@@ -158,7 +158,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 .rutina .r4{grid-column:span 2;aspect-ratio:16/8}
 
 /* ---------- 07 JOURNEY ---------- */
-.journey{position:relative;z-index:2;height:300vh}
+.journey{position:relative;z-index:2;height:340vh}
 .stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;padding-left:var(--gut);padding-right:var(--gut-r)}
 .stage-in{width:100%;max-width:1200px;margin:0 auto;display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:center}
 .j-copy{display:flex;flex-direction:column;gap:20px;min-width:0}
@@ -166,15 +166,16 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 .j-copy h2 em{font-weight:500;color:var(--lav)}
 .j-rail{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .j-rail span{flex:1;padding:12px 0;font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);position:relative;transition:color .4s}
-.j-rail span::after{content:"";position:absolute;left:0;bottom:-1px;height:2px;width:0;background:var(--gold);transition:width .5s}
-.j-rail span.on{color:var(--white)}.j-rail span.on::after{width:70%}
+.j-rail{position:relative}
+.j-rail::after{content:"";position:absolute;left:0;bottom:-1px;height:2px;width:var(--jp,0%);background:linear-gradient(90deg,var(--lilac),var(--gold))}
+.j-rail span.on{color:var(--white)}
 .j-texts{position:relative;min-height:8.6em}
-.j-text{position:absolute;inset:0 0 auto 0;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(16px);transition:opacity .5s,transform .5s}
+.j-text{position:absolute;inset:0 0 auto 0;display:flex;flex-direction:column;gap:10px;opacity:0;will-change:opacity,transform}
 .j-text.on{opacity:1;transform:none}
 .j-text h3{font-size:clamp(1.8rem,3.4vw,2.6rem);font-style:italic;font-weight:500}
 .j-text p{color:var(--lav);max-width:40ch}
 .j-vis{position:relative;width:100%;max-width:600px;justify-self:center;aspect-ratio:4/5;max-height:80vh}
-.scene{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity .7s;box-shadow:0 50px 100px -30px rgba(0,0,0,.9)}
+.scene{position:absolute;inset:0;overflow:hidden;opacity:0;will-change:opacity,transform;box-shadow:0 50px 100px -30px rgba(0,0,0,.9)}
 .scene.on{opacity:1}
 .prod{position:absolute;width:30%;aspect-ratio:344/568;background:url(/b2btablets2026/m/box.jpg) center/cover;border-radius:3px;box-shadow:0 22px 34px -12px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.12);will-change:transform}
 .s-ph{background:url(/b2btablets2026/m/shelf.jpg) center/cover}
@@ -289,11 +290,86 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 .foot{margin-top:72px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;color:var(--muted)}
 .foot .logo{width:110px}
 
+
+/* ---------- EARNINGS (calculator) ---------- */
+.earn{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(32px,6vw,80px);align-items:start}
+.ctrls{display:flex;flex-direction:column;gap:30px}
+.ctrl{display:flex;flex-direction:column;gap:12px}
+.ctrl-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ctrl-top label{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--lav)}
+.ctrl-top output{font-family:var(--display);font-size:2.4rem;font-weight:700;line-height:1;color:var(--white);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--gold) var(--fill,50%),var(--line) var(--fill,50%))}
+input[type=range]::-moz-range-track{height:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:2px;background:var(--gold)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:4px solid var(--gold);margin-top:-10px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--white);border:4px solid var(--gold)}
+input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.ctrl small{color:var(--muted);font-size:.85rem}
+.outs{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.out{padding:20px 14px 18px 0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.out+.out{padding-left:16px;border-left:1px solid var(--line)}
+.out span{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.out b{font-family:var(--display);font-size:clamp(1.9rem,3.4vw,2.8rem);font-weight:700;line-height:1;color:var(--white);font-variant-numeric:tabular-nums}
+.out.big b{color:var(--gold)}
+.chart{margin-top:8px}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .axis{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.chart .val{font-family:var(--display);font-size:15px;font-weight:700;fill:var(--white)}
+.chart-cap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--lav);margin-bottom:10px}
+.note{margin-top:18px;color:var(--muted);font-size:.85rem;max-width:60ch}
+
+/* ---------- BENEFITS (annotated pack) ---------- */
+.anno{display:grid;grid-template-columns:1fr minmax(220px,300px) 1fr;gap:clamp(20px,4vw,56px);align-items:center}
+.anno-pack{position:relative;justify-self:center;width:100%}
+.anno-pack img{width:100%;aspect-ratio:344/568;object-fit:cover;box-shadow:0 60px 100px -40px rgba(0,0,0,.95),0 0 120px -10px rgba(155,156,240,.35);animation:floaty 6s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-12px) rotate(1deg)}}
+.anno-col{display:flex;flex-direction:column;gap:clamp(28px,4vw,48px)}
+.anno-col.l{text-align:right}
+.bn{display:flex;flex-direction:column;gap:6px;position:relative}
+.bn h3{font-size:clamp(1.6rem,2.6vw,2.2rem);font-weight:600}
+.bn h3 em{font-weight:500;color:var(--lav)}
+.bn p{color:var(--lav);font-size:.98rem}
+.bn .src{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.anno-col.l .bn::after,.anno-col.r .bn::before{content:"";position:absolute;top:.9em;width:clamp(14px,3vw,44px);height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+.anno-col.l .bn::after{right:calc(-1 * clamp(20px,4vw,56px));transform:scaleX(-1)}
+.anno-col.r .bn::before{left:calc(-1 * clamp(20px,4vw,56px))}
+.sells{margin-top:clamp(64px,9vw,110px);display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.sell{padding:28px 24px 8px 0;display:flex;flex-direction:column;gap:8px}
+.sell+.sell{padding-left:24px;border-left:1px solid var(--line)}
+.sell b{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--gold)}
+.sell h4{font-size:1.7rem;font-weight:600}
+.sell p{color:var(--lav)}
+
+/* ---------- SWOT ---------- */
+.swot{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;position:relative}
+.swot::before,.swot::after{content:"";position:absolute;background:var(--line-d)}
+.swot::before{left:50%;top:0;bottom:0;width:1px}
+.swot::after{top:50%;left:0;right:0;height:1px}
+.q{padding:clamp(24px,4vw,44px);display:flex;flex-direction:column;gap:14px;position:relative}
+.q .ql{display:flex;align-items:baseline;gap:14px}
+.q .ql b{font-family:var(--display);font-size:clamp(3.4rem,6vw,5rem);font-weight:700;line-height:.8}
+.q .ql span{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase}
+.q ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.q li{padding-left:22px;position:relative;color:var(--ink-d)}
+.q li::before{content:"";position:absolute;left:0;top:.62em;width:10px;height:2px}
+.q.s .ql b,.q.o .ql b{color:var(--violet)} .q.s li::before,.q.o li::before{background:var(--violet)}
+.q.w .ql b,.q.t .ql b{color:#9A8FB8} .q.w li::before,.q.t li::before{background:#9A8FB8}
+.q .ans{margin-top:4px;font-size:.88rem;color:var(--muted-d);border-left:2px solid var(--gold);padding-left:12px}
+.q.s{background:linear-gradient(135deg,rgba(78,79,158,.09),transparent 70%)}
+
 /* reveal: only elements below the fold at load are hidden */
 .pending{opacity:0;transform:translateY(40px)}
 .shown{opacity:1;transform:none;transition:opacity 1s cubic-bezier(.16,.8,.2,1),transform 1s cubic-bezier(.16,.8,.2,1)}
 
 @media (max-width:960px){
+  .earn{grid-template-columns:1fr}
+  .anno{grid-template-columns:1fr 1fr}
+  .anno-pack{grid-column:1/-1;grid-row:1;max-width:240px}
+  .anno-col.l{text-align:left}
+  .anno-col.l .bn::after,.anno-col.r .bn::before{display:none}
+  .sells{grid-template-columns:1fr}
+  .sell+.sell{padding-left:0;border-left:0;border-top:1px solid var(--line)}
   .hero{grid-template-columns:1fr;background:var(--night)}
   .hero-r{order:-1;height:72vh;height:72svh}
   .hero-r .vs::after{background:linear-gradient(0deg,var(--night) 0%,rgba(9,10,31,0) 40%)}
@@ -312,7 +388,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   .rutina .r4{grid-column:1/-1;aspect-ratio:16/10}
   .reason{grid-template-columns:auto 1fr;gap:6px 24px}
   .reason p{grid-column:2}
-  .journey{height:320vh}
+  .journey{height:360vh}
   .stage-in{gap:18px;align-content:center}
   .j-copy{gap:12px}
   .j-copy h2{font-size:2.1rem}
@@ -323,6 +399,12 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   .close-row{grid-template-columns:1fr}
 }
 @media (max-width:560px){
+  .anno{grid-template-columns:1fr}
+  .swot{grid-template-columns:1fr}
+  .swot::before{display:none}.swot::after{display:none}
+  .q+.q{border-top:1px solid var(--line-d)}
+  .outs{grid-template-columns:1fr 1fr}
+  .out.big{grid-column:1/-1;padding-left:0!important;border-left:0!important;border-top:1px solid var(--line)}
   .ch-head{grid-template-columns:1fr;gap:10px}
   .ch-head .label{grid-column:1}
   .films{grid-template-columns:1fr}
@@ -395,10 +477,42 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   </div>
 </section>
 
+
+<!-- EARNINGS -->
+<section class="chapter dark" aria-labelledby="h-earn">
+  <div class="w">
+    <div class="ch-head reveal"><span class="ch-no">02</span><h2 id="h-earn">Sa <em>fitoni ju</em></h2><span class="label">Llogaritni vetë</span></div>
+    <div class="earn">
+      <div class="ctrls reveal">
+        <div class="ctrl">
+          <div class="ctrl-top"><label for="shelf">Çmimi juaj në raft</label><output id="o-shelf">€5.90</output></div>
+          <input type="range" id="shelf" min="4.50" max="7.90" step="0.10" value="5.90">
+          <small>Me TVSH. Çmimin e vendosni ju.</small>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-top"><label for="qty">Kuti të shitura në muaj</label><output id="o-qty">30</output></div>
+          <input type="range" id="qty" min="5" max="150" step="5" value="30">
+          <small>Një pacient që e përdor çdo ditë blen 1 kuti në muaj.</small>
+        </div>
+        <div class="outs">
+          <div class="out"><span>Fitim / kuti</span><b id="r-box">€1.95</b></div>
+          <div class="out"><span>Fitim / muaj</span><b id="r-mo">€58</b></div>
+          <div class="out big"><span>Fitim / vit</span><b id="r-yr">€702</b></div>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="chart-cap"><span>Fitimi i grumbulluar, 12 muaj</span><span id="r-marg">Marzh 39%</span></div>
+        <div class="chart"><svg id="earnchart" viewBox="0 0 640 360" role="img" aria-label="Fitimi i grumbulluar i farmacisë muaj pas muaji"></svg></div>
+        <p class="note">Llogaritur pa TVSH, me supozimin që farmacia e zbret TVSH-në: blini me €3.60 (€3.05 pa TVSH), shitni me çmimin që zgjidhni ju. Shifrat janë shembull, jo garanci shitjesh.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- 04 PRODUCT -->
 <section class="chapter dark" aria-labelledby="h-box">
   <div class="w">
-    <div class="ch-head reveal"><span class="ch-no">02</span><h2 id="h-box">Një kuti, <em>pesë blistera</em></h2></div>
+    <div class="ch-head reveal"><span class="ch-no">03</span><h2 id="h-box">Një kuti, <em>pesë blistera</em></h2></div>
     <div class="product">
       <div class="box reveal">
         <div class="box-top"><span class="label">Linea · 30 tableta</span><span class="left" id="left">30<small>mbetur</small></span></div>
@@ -419,9 +533,33 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   </div>
 </section>
 
+
+<!-- BENEFITS -->
+<section class="chapter dark" style="padding-top:0" aria-labelledby="h-ben">
+  <div class="w">
+    <div class="ch-head reveal"><span class="ch-no">04</span><h2 id="h-ben">Çka bën <em>një tabletë</em></h2><span class="label">Benefitet e produktit</span></div>
+    <div class="anno">
+      <div class="anno-col l">
+        <div class="bn reveal"><span class="src">Shkruar në kuti</span><h3>Vret <em>99.9%</em></h3><p>të baktereve më të zakonshme në aparat.</p></div>
+        <div class="bn reveal"><span class="src">Shkruar në kuti</span><h3>Heq <em>njollat</em> dhe pllakën</h3><p>Nga sipërfaqja e aparatit, pa furçë.</p></div>
+      </div>
+      <div class="anno-pack reveal"><img src="/b2btablets2026/m/box.jpg" alt="Kutia Linea Antibacterial Retainer Cleaner, 30 tableta, Extra Strength"></div>
+      <div class="anno-col r">
+        <div class="bn reveal"><span class="src">Shkruar në kuti</span><h3>Shkëlqen <em>aparatin</em></h3><p>Për alignerë, retainerë, aparate të lëvizshme dhe proteza.</p></div>
+        <div class="bn reveal"><span class="src">Shkruar në kuti</span><h3><em>Extra</em> Strength</h3><p>Një tabletë, 10–15 minuta, pa matje dhe pa përzierje.</p></div>
+      </div>
+    </div>
+    <div class="sells">
+      <div class="sell reveal"><b>PSE SHITET · 1</b><h4>Përdoret çdo ditë</h4><p>Nuk është blerje e njëhershme. 30 tableta mbarojnë në 30 ditë dhe pacienti kthehet.</p></div>
+      <div class="sell reveal"><b>PSE SHITET · 2</b><h4>E rekomandon dentisti</h4><p>Pacienti vjen me recetë në dorë, nuk keni nevojë ta bindni.</p></div>
+      <div class="sell reveal"><b>PSE SHITET · 3</b><h4>Provohet me blister</h4><p>6 tableta për provë ulin pengesën e blerjes së parë.</p></div>
+    </div>
+  </div>
+</section>
+
 <!-- 05 FILMS -->
 <section class="chapter" style="padding-bottom:clamp(88px,12vw,150px)" aria-labelledby="h-films">
-  <div class="w"><div class="ch-head reveal"><span class="ch-no">03</span><h2 id="h-films">Hapet. Shkumëzon. <em>Pastron.</em></h2><span class="label">Si funksionon</span></div></div>
+  <div class="w"><div class="ch-head reveal"><span class="ch-no">05</span><h2 id="h-films">Hapet. Shkumëzon. <em>Pastron.</em></h2><span class="label">Si funksionon</span></div></div>
   <div class="films">
     <figure class="film reveal"><span class="k">1 · Kutia</span><div class="vs"><video data-src="/b2btablets2026/m/v-box.mp4" poster="/b2btablets2026/m/p-box.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Kutia Linea hapet, 30 tableta brenda"></video></div><figcaption><b>Hapet</b><span>30 tableta</span></figcaption></figure>
     <figure class="film reveal"><span class="k">2 · Uji</span><div class="vs"><video data-src="/b2btablets2026/m/v-float.mp4" poster="/b2btablets2026/m/p-float.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Tableta lëshon flluska në ujë"></video></div><figcaption><b>Shkumëzon</b><span>10–15 minuta</span></figcaption></figure>
@@ -432,7 +570,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 <!-- 06 RUTINA -->
 <section class="chapter mist" aria-labelledby="h-rut">
   <div class="w">
-    <div class="ch-head reveal"><span class="ch-no">04</span><h2 id="h-rut">Pjesë e <em>rutinës</em></h2><span class="label">Në shtëpi, në rrugë, kudo</span></div>
+    <div class="ch-head reveal"><span class="ch-no">06</span><h2 id="h-rut">Pjesë e <em>rutinës</em></h2><span class="label">Në shtëpi, në rrugë, kudo</span></div>
     <div class="rutina">
       <figure class="ph r1 reveal"><img class="px" src="/b2btablets2026/m/nightstand.jpg" alt="Kutia Linea mbi tavolinën e natës pranë llambës dhe një gote uji" loading="lazy"><figcaption>Para gjumit</figcaption></figure>
       <figure class="ph r2 reveal"><img class="px" src="/b2btablets2026/m/bathroom.jpg" alt="Kutia Linea mbi banakun e banjës pranë furçës së dhëmbëve" loading="lazy"><figcaption>Rutina e mëngjesit</figcaption></figure>
@@ -447,7 +585,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   <div class="stage">
     <div class="stage-in">
       <div class="j-copy">
-        <span class="label gold">05 · Ku shitet</span>
+        <span class="label gold">07 · Ku shitet</span>
         <h2 id="h-j">Në barnatore <em>dhe online</em></h2>
         <div class="j-rail"><span data-i="0" class="on">Barnatore</span><span data-i="1">E-shop</span></div>
         <div class="j-texts">
@@ -475,7 +613,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 <!-- 08 CYCLE -->
 <section class="chapter dark" aria-labelledby="h-cycle">
   <div class="w">
-    <div class="ch-head reveal"><span class="ch-no">06</span><h2 id="h-cycle">30 ditë, pastaj <em>kuti e re</em></h2><span class="label">Si blihet çdo muaj</span></div>
+    <div class="ch-head reveal"><span class="ch-no">08</span><h2 id="h-cycle">30 ditë, pastaj <em>kuti e re</em></h2><span class="label">Si blihet çdo muaj</span></div>
     <div class="cycle">
       <div class="ring-wrap reveal" role="img" aria-label="Rrethi i 30 ditëve: një tabletë çdo ditë, në ditën 30 pacienti blen kuti të re">
         <svg viewBox="0 0 400 400" id="ring"></svg>
@@ -493,7 +631,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 <!-- 09 REASONS -->
 <section class="chapter dark" style="padding-top:0" aria-labelledby="h-why">
   <div class="w">
-    <div class="ch-head reveal"><span class="ch-no">07</span><h2 id="h-why">Shitet vetë, <em>çdo muaj</em></h2><span class="label">Pse ta mbani në raft</span></div>
+    <div class="ch-head reveal"><span class="ch-no">09</span><h2 id="h-why">Shitet vetë, <em>çdo muaj</em></h2><span class="label">Pse ta mbani në raft</span></div>
     <div class="reasons">
       <div class="reason reveal"><span class="stat count" data-to="0">0</span><h3>Konkurrentë</h3><p>Nuk ka produkt tjetër të kësaj kategorie në tregun e Kosovës.</p></div>
       <div class="reason reveal"><span class="stat count" data-to="18">18</span><h3>Klinika</h3><p>Punojnë me Linea Aligners dhe ua dërgojnë pacientët me recetë.</p></div>
@@ -503,10 +641,38 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
   </div>
 </section>
 
+
+<!-- SWOT -->
+<section class="chapter light" aria-labelledby="h-swot">
+  <div class="w">
+    <div class="ch-head reveal"><span class="ch-no">10</span><h2 id="h-swot">Analiza <em>SWOT</em></h2><span class="label">Pikat e forta dhe rreziqet, hapur</span></div>
+    <div class="swot reveal">
+      <div class="q s"><div class="ql"><b>S</b><span>Pikat e forta</span></div><ul>
+        <li>Asnjë konkurrent në këtë kategori në Kosovë</li>
+        <li>18 klinika e rekomandojnë me recetë</li>
+        <li>Blerje e përsëritur çdo muaj, 12 kuti në vit për pacient</li>
+        <li>Shitet edhe me blister, pa rrezik për klientin</li>
+        <li>Kuti e vogël 9.5 × 15 cm, zë pak vend</li></ul></div>
+      <div class="q w"><div class="ql"><b>W</b><span>Pikat e dobëta</span></div><ul>
+        <li>Produkt i ri, emri ende nuk njihet nga blerësit</li>
+        <li>Kërkon pak shpjegim në banak herën e parë</li></ul>
+        <p class="ans">Si e zgjidhim: receta e dentistit dhe videot e produktit e bëjnë shpjegimin në vend tuajin.</p></div>
+      <div class="q o"><div class="ql"><b>O</b><span>Mundësitë</span></div><ul>
+        <li>Gjithnjë më shumë njerëz trajtohen me alignerë dhe retainerë</li>
+        <li>Pacientët me proteza të lëvizshme janë blerës të njëjtë</li>
+        <li>Farmacia që e ka e para mban klientin</li></ul></div>
+      <div class="q t"><div class="ql"><b>T</b><span>Rreziqet</span></div><ul>
+        <li>Mund të hyjnë tableta më të lira nga importi</li>
+        <li>Disa pacientë e pastrojnë aparatin vetëm me ujë ose pastë</li></ul>
+        <p class="ans">Si e zgjidhim: rekomandimi i dentistit e lidh pacientin me Linea, jo me çmimin më të ulët.</p></div>
+    </div>
+  </div>
+</section>
+
 <!-- 10 PAD -->
 <section class="chapter mist" aria-labelledby="h-pad">
   <div class="w">
-    <div class="ch-head reveal"><span class="ch-no">08</span><h2 id="h-pad">Pacienti vjen me <em>recetë në dorë</em></h2><span class="label">Receta e dentistit</span></div>
+    <div class="ch-head reveal"><span class="ch-no">11</span><h2 id="h-pad">Pacienti vjen me <em>recetë në dorë</em></h2><span class="label">Receta e dentistit</span></div>
     <div class="padz">
       <div class="intro reveal">
         <p>Këtë formular ua shpërndajmë klinikave. Dentisti e plotëson gjatë vizitës, pacienti e sjell te ju.</p>
@@ -532,7 +698,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 <section class="close" aria-labelledby="h-close">
   <div class="vs"><video data-src="/b2btablets2026/m/v-clean.mp4" poster="/b2btablets2026/m/p-clean.jpg" muted loop playsinline autoplay preload="metadata" aria-hidden="true"></video></div>
   <div class="w">
-    <div class="ch-head reveal"><span class="ch-no">09</span><h2 style="font-size:clamp(2.2rem,4.6vw,3.6rem)">Filloni pa <em>rrezik</em></h2><span class="label">Kushtet</span></div>
+    <div class="ch-head reveal"><span class="ch-no">12</span><h2 style="font-size:clamp(2.2rem,4.6vw,3.6rem)">Filloni pa <em>rrezik</em></h2><span class="label">Kushtet</span></div>
     <div class="terms">
       <div class="term reveal"><b>Pa minimum</b><span>për porosinë e parë</span></div>
       <div class="term reveal"><b>30 ditë</b><span>afati i pagesës</span></div>
@@ -615,16 +781,49 @@ if(!reduce){var running=false,rio=new IntersectionObserver(function(es){es.forEa
 var jr=document.getElementById('journey'),scenes=jr.querySelectorAll('.scene'),texts=jr.querySelectorAll('.j-text'),rails=jr.querySelectorAll('.j-rail span');
 var pr=[document.getElementById('pr0'),null,document.getElementById('pr2')],cartb=document.getElementById('cartb'),addb=document.getElementById('addb'),curEl=document.getElementById('cur'),lastI=-1;
 function ease(k){return 1-Math.pow(1-k,3)}
+function sstep(a,b,x){var k=Math.min(1,Math.max(0,(x-a)/(b-a)));return k*k*(3-2*k)}
+var railEl=jr.querySelector('.j-rail');
 function jtick(){var r=jr.getBoundingClientRect(),span=Math.max(1,r.height-innerHeight),p=reduce?.999:Math.min(1,Math.max(0,-r.top/span));
-  var f=p*2,i=Math.min(1,Math.floor(f)),t=Math.min(1,f-i);
-  if(i!==lastI){lastI=i;[scenes,texts,rails].forEach(function(L){L.forEach(function(x){x.classList.toggle('on',+x.dataset.i===i)})})}
-  var k=ease(Math.min(1,t/.55));
-  if(i===0)pr[0].style.transform='translate('+(1-k)*-260+'%,'+(1-k)*-40+'%) rotate('+(1-k)*-24+'deg) scale('+(.8+.2*k)+')';
-  if(i===1){pr[2].style.transform='translateY('+(1-k)*30+'%) scale('+(.7+.3*k)+')';pr[2].style.opacity=k;
-    var c=Math.min(1,Math.max(0,(t-.45)/.35)),done=t>.82,a=addb.getBoundingClientRect(),s=jr.querySelector('.s-es').getBoundingClientRect();
-    var tx=a.left-s.left+a.width*.55,ty=a.top-s.top+a.height*.55,ec=ease(c);
-    curEl.style.transform='translate('+(s.width*.15+(tx-s.width*.15)*ec)+'px,'+(s.height*.95+(ty-s.height*.95)*ec)+'px)';
-    addb.classList.toggle('done',done);addb.textContent=done?'Në shportë ✓':'Shto në shportë';cartb.classList.toggle('on',done)}}
+  var f=p*2,b=sstep(.78,1.22,f);
+  railEl.style.setProperty('--jp',(p*100)+'%');
+  scenes[0].style.opacity=1-b;scenes[0].style.transform='scale('+(1+.06*b)+')';
+  scenes[1].style.opacity=b;scenes[1].style.transform='scale('+(1.06-.06*b)+')';
+  texts[0].style.opacity=1-sstep(.78,1.02,f);texts[0].style.transform='translateY('+(-18*b)+'px)';
+  texts[1].style.opacity=sstep(.98,1.22,f);texts[1].style.transform='translateY('+(18*(1-b))+'px)';
+  rails[0].classList.toggle('on',b<.5);rails[1].classList.toggle('on',b>=.5);
+  var k0=ease(Math.min(1,f/.6));
+  pr[0].style.transform='translate('+(1-k0)*-260+'%,'+((1-k0)*-40-b*30)+'%) rotate('+(1-k0)*-24+'deg) scale('+(.8+.2*k0)+')';
+  var t1=Math.min(1,Math.max(0,f-1)),k1=ease(Math.min(1,Math.max(0,(f-.9)/.6)));
+  pr[2].style.transform='translateY('+(1-k1)*30+'%) scale('+(.7+.3*k1)+')';pr[2].style.opacity=k1;
+  var c=Math.min(1,Math.max(0,(t1-.45)/.35)),done=t1>.82,a=addb.getBoundingClientRect(),s=jr.querySelector('.s-es').getBoundingClientRect();
+  var tx=a.left-s.left+a.width*.55,ty=a.top-s.top+a.height*.55,ec=ease(c);
+  curEl.style.transform='translate('+(s.width*.15+(tx-s.width*.15)*ec)+'px,'+(s.height*.95+(ty-s.height*.95)*ec)+'px)';curEl.style.opacity=b;
+  addb.classList.toggle('done',done);addb.textContent=done?'Në shportë ✓':'Shto në shportë';cartb.classList.toggle('on',done)}
+
+/* ---- earnings calculator ---- */
+var shelf=document.getElementById('shelf'),qty=document.getElementById('qty'),ech=document.getElementById('earnchart'),BUY=3.60,VAT=1.18,bars=[],lbls=[],grid=[];
+function eur(x,d){return '€'+x.toFixed(d==null?0:d)}
+(function(){var W=640,H=360,L=46,B=36,T=24,cw=(W-L-10)/12;
+  for(var g=0;g<5;g++){var y=T+(H-T-B)*g/4;grid.push([mk('line',{x1:L,x2:W,y1:y,y2:y,stroke:'rgba(201,202,251,.12)'}),mk('text',{x:L-8,y:y+4,'text-anchor':'end','class':'axis'})])}
+  for(var i=0;i<12;i++){var x=L+cw*i+cw*.18;bars.push(mk('rect',{x:x,width:cw*.64,y:H-B,height:0,rx:2,fill:i===11?'#D4AA57':'#9B9CF0','fill-opacity':i===11?1:.35+.05*i}));
+    mk('text',{x:x+cw*.32,y:H-B+20,'text-anchor':'middle','class':'axis'}).textContent='M'+(i+1)}
+  lbls.push(mk('text',{'text-anchor':'middle','class':'val'}));
+  function mk(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);ech.appendChild(e);return e}
+  ech._geo={W:W,H:H,L:L,B:B,T:T,cw:cw}})();
+function nice(v){var p=Math.pow(10,Math.floor(Math.log10(v))),m=v/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p}
+var shown=false;
+function calc(){var sp=+shelf.value,q=+qty.value,m=(sp-BUY)/VAT,mo=m*q,yr=mo*12,marg=(sp-BUY)/sp*100;
+  document.getElementById('o-shelf').textContent=eur(sp,2);document.getElementById('o-qty').textContent=q;
+  document.getElementById('r-box').textContent=eur(m,2);document.getElementById('r-mo').textContent=eur(mo);document.getElementById('r-yr').textContent=eur(yr);
+  document.getElementById('r-marg').textContent='Marzh '+Math.round(marg)+'%';
+  [shelf,qty].forEach(function(s){s.style.setProperty('--fill',((s.value-s.min)/(s.max-s.min)*100)+'%')});
+  var g=ech._geo,top=nice(Math.max(yr,1)),ph=g.H-g.T-g.B;
+  grid.forEach(function(gr,i){gr[1].textContent='€'+Math.round(top*(4-i)/4)});
+  bars.forEach(function(b,i){var v=shown?mo*(i+1):0,h=ph*v/top;b.setAttribute('height',Math.max(0,h));b.setAttribute('y',g.H-g.B-h)});
+  var last=bars[11];lbls[0].setAttribute('x',+last.getAttribute('x')+g.cw*.32);lbls[0].setAttribute('y',g.H-g.B-ph*(shown?yr:0)/top-10);lbls[0].textContent=shown?eur(yr):''}
+shelf.addEventListener('input',calc);qty.addEventListener('input',calc);
+if(reduce){shown=true;calc()}else{calc();bars.forEach(function(b,i){b.style.transition='height .9s cubic-bezier(.16,.8,.2,1) '+(i*60)+'ms, y .9s cubic-bezier(.16,.8,.2,1) '+(i*60)+'ms'});
+  new IntersectionObserver(function(es,o){es.forEach(function(e){if(e.isIntersecting){shown=true;calc();setTimeout(function(){bars.forEach(function(b){b.style.transition='height .25s, y .25s'})},1700);o.disconnect()}})},{threshold:.35}).observe(ech)}
 
 /* ---- one scroll loop ---- */
 var ticking=false;function onScroll(){if(ticking)return;ticking=true;requestAnimationFrame(function(){ticking=false;mtick();ptick();jtick()})}
