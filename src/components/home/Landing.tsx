@@ -517,7 +517,7 @@ const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
     <section id="shop" ref={ref} className="relative overflow-hidden bg-gradient-to-b from-[#0E0A24] via-[#1A1145] to-[#0E0A24] text-white py-28 sm:py-40">
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-16 items-center">
         <div className="relative h-[520px] sm:h-[580px]">
-          <motion.div style={{ y: y1 }} className="absolute left-1/2 -translate-x-1/2 top-0 h-full aspect-[9/16] rounded-[36px] overflow-hidden border border-white/15 bg-[#0E0A24]">
+          <motion.div style={{ x: '-50%', y: y1 }} className="absolute left-1/2 top-0 h-full aspect-[9/16] rounded-[36px] overflow-hidden border border-white/15 bg-[#0E0A24]">
             <img src={IMG.box} alt="Linea Antibacterial Retainer Cleaner" className="absolute inset-0 w-full h-full object-cover" />
           </motion.div>
         </div>
