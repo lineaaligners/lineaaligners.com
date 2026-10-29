@@ -24,7 +24,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 const T = {
   sq: {
-    nav: [['Si funksionon', '#si'], ['Pse Linea', '#pse'], ['Çmimi', '#cmimi'], ['E-shop', '#shop'], ['Pyetje', '#pyetje']],
+    nav: [['Si funksionon', '#si'], ['Pse Linea', '#pse'], ['Laboratori', '#lab'], ['Çmimi', '#cmimi'], ['E-shop', '#shop'], ['Pyetje', '#pyetje']],
     login: 'Hyr', cta: 'Skanim falas',
     eyebrow: 'Aligner transparentë në Pejë, Kosovë',
     h1a: 'Buzëqeshja', h1b: 'që e ke', h1c: 'merituar.',
@@ -66,7 +66,7 @@ const T = {
     stuTag: 'Bërë në Pejë', stuTitle: 'Një brand kosovar, me standard botëror.', stuDesc: 'Linea lindi në Pejë — nga ideja te plani 3D, deri te maskerina në dorën tënde. Me mbështetjen klinike të Medident Dental Clinic, që nga viti 1999.',
   },
   en: {
-    nav: [['How it works', '#si'], ['Why Linea', '#pse'], ['Pricing', '#cmimi'], ['Shop', '#shop'], ['FAQ', '#pyetje']],
+    nav: [['How it works', '#si'], ['Why Linea', '#pse'], ['The lab', '#lab'], ['Pricing', '#cmimi'], ['Shop', '#shop'], ['FAQ', '#pyetje']],
     login: 'Log in', cta: 'Free scan',
     eyebrow: 'Clear aligners in Pejë, Kosovo',
     h1a: 'The smile', h1b: 'you’ve always', h1c: 'deserved.',
@@ -233,6 +233,26 @@ const Tag: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 /* ---------- hero ---------- */
+/* ---------- real lab footage (muted, inline, respects reduced motion & data saver) ---------- */
+const LabVideo: React.FC<{ className?: string; label?: string }> = ({ className, label }) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  const vis = useInView(ref, { margin: '200px' });
+  const [still, setStill] = useState(false);
+  useEffect(() => {
+    const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const save = (navigator as any).connection?.saveData;
+    setStill(!!(rm || save));
+  }, []);
+  useEffect(() => { const v = ref.current; if (!v || still) return; if (vis) v.play().catch(() => {}); else v.pause(); }, [vis, still]);
+  const small = typeof window !== 'undefined' && window.innerWidth < 700;
+  return (
+    <div className={'relative overflow-hidden bg-black ' + (className || '')}>
+      {still ? <img src="/images/posters/lab-loop.jpg" alt={label || ''} className="absolute inset-0 w-full h-full object-cover" />
+        : <video ref={ref} src={small ? '/videos/laboratory/lab-loop-540.mp4' : '/videos/laboratory/lab-loop-960.mp4'} poster="/images/posters/lab-loop.jpg" muted loop playsInline preload="metadata" aria-label={label} className="absolute inset-0 w-full h-full object-cover" />}
+    </div>
+  );
+};
+
 const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   const [straight, setStraight] = useState(false);
@@ -244,9 +264,14 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
   const OFF = [[-14, 10], [9, -8], [-6, 14], [12, -12], [-10, 8], [7, 12], [-12, -9], [10, 6]];
   return (
     <section id="top" ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-center">
+      <motion.div initial={{ opacity: 0, clipPath: 'inset(12% 12% 12% 12% round 28px)' }} animate={{ opacity: 1, clipPath: 'inset(0% 0% 0% 0% round 28px)' }} transition={{ delay: .5, duration: 1.4, ease: EASE }}
+        style={{ y: yUp }} className="hidden lg:block absolute right-[max(2rem,calc((100vw-80rem)/2+2rem))] top-[18vh] w-[30vw] max-w-[440px] aspect-square z-0">
+        <LabVideo className="w-full h-full rounded-[28px]" label={lang === 'sq' ? 'Laboratori Linea në Pejë: planifikim, printim, polirim' : 'The Linea lab in Pejë: planning, printing, polishing'} />
+        <div className="absolute left-4 bottom-4 text-[11px] uppercase text-white/80 bg-black/40 backdrop-blur px-3 py-1.5 rounded-full" style={{ letterSpacing: '.18em' }}>{lang === 'sq' ? 'Laboratori ynë · Pejë' : 'Our lab · Pejë'}</div>
+      </motion.div>
       <motion.div style={{ opacity: fade, y: yUp }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pt-32 pb-14">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .1, duration: .8 }} className="text-[12px] font-semibold uppercase text-white/45 mb-8" style={{ letterSpacing: '.24em' }}>{t.eyebrow}</motion.div>
-        <h1 className="font-display text-white leading-[.92] tracking-[-.05em] text-[15vw] sm:text-[10vw] lg:text-[8rem]">
+        <h1 className="font-display text-white leading-[.92] tracking-[-.05em] text-[15vw] sm:text-[10vw] lg:text-[6.6rem] lg:max-w-[60%]">
           <span className="block overflow-hidden pb-[.06em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 }}>{lang === 'sq' ? 'Drejtoji dhëmbët,' : 'Straighten your teeth,'}</motion.span></span>
           <span className="block overflow-hidden pb-[.08em]"><motion.span className="block italic font-serif-i text-[#87CEEB]" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .35 }}>{lang === 'sq' ? 'pa u vërejt.' : 'unnoticed.'}</motion.span></span>
         </h1>
@@ -258,6 +283,10 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
           ))}
           <motion.span animate={{ opacity: straight ? 1 : 0, scaleX: straight ? 1 : .6 }} transition={{ duration: .6, ease: EASE }} className="absolute -left-2 bottom-[-10px] h-[3px] rounded-full bg-[#4169E1] origin-left" style={{ width: 'calc(8 * min(7vw,46px) + 7 * 12px + 16px)' }} />
           <motion.span animate={{ opacity: straight ? 1 : 0 }} className="ml-4 sm:ml-6 self-center text-xs sm:text-sm text-white/50 whitespace-nowrap">{straight ? (lang === 'sq' ? 'Pas' : 'After') : ''}</motion.span>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .9, duration: 1, ease: EASE }} className="lg:hidden mt-10 relative">
+          <LabVideo className="w-full aspect-[16/10] rounded-[22px]" label={lang === 'sq' ? 'Laboratori Linea në Pejë' : 'The Linea lab in Pejë'} />
+          <div className="absolute left-3 bottom-3 text-[10px] uppercase text-white/80 bg-black/40 px-3 py-1.5 rounded-full" style={{ letterSpacing: '.18em' }}>{lang === 'sq' ? 'Laboratori ynë · Pejë' : 'Our lab · Pejë'}</div>
         </motion.div>
         <div className="mt-14 flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-t border-white/10 pt-8">
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .9, duration: .9, ease: EASE }} className="text-lg text-white/60 leading-relaxed max-w-md">{t.sub}</motion.p>
@@ -318,6 +347,7 @@ const Transformation: React.FC<{ lang: Lang }> = ({ lang }) => {
             <div className="relative rounded-[36px] border border-white/10 bg-gradient-to-b from-white/[.07] to-white/[.02] p-6 sm:p-10">
               <Teeth p={p} className="w-full h-auto" />
               <div className="mt-6 flex justify-between text-[11px] uppercase tracking-[.2em] text-white/40"><span>{lang === 'sq' ? 'Para' : 'Before'}</span><span>{lang === 'sq' ? 'Pas' : 'After'}</span></div>
+              <p className="mt-4 text-xs text-white/40">{lang === 'sq' ? 'Ilustrim. Plani yt i vërtetë 3D del pas skanimit.' : 'Illustration. Your real 3D plan comes after the scan.'}</p>
             </div>
           </div>
         </div>
@@ -346,7 +376,7 @@ const Why: React.FC<{ lang: Lang }> = ({ lang }) => {
             return (
               <Up key={title} delay={i * .06} className={big ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : wide ? 'sm:col-span-2 lg:col-span-3' : ''}>
                 <div className={`group h-full rounded-[28px] p-7 sm:p-8 flex flex-col justify-between gap-10 transition-all duration-500 hover:-translate-y-1 ${big ? 'bg-[#0B1A33] text-white min-h-[340px] overflow-hidden relative' : 'bg-white border border-[#0B1A33]/[.06] hover:shadow-[0_30px_80px_rgba(11,26,51,.12)]'}`}>
-                  {big && <img src={IMG.smile} alt={lang === 'sq' ? 'Kutia Linea me aligner transparent' : 'Linea case with a clear aligner'} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
+                  {big && <img src={IMG.print} alt={lang === 'sq' ? 'Modelet e dhëmbëve të printuara në 3D në laboratorin Linea' : '3D-printed dental models in the Linea lab'} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
                   {big && <div className="absolute inset-0 bg-gradient-to-t from-[#0B1A33] via-[#0B1A33]/50 to-transparent" />}
                   <div className={`relative w-12 h-12 rounded-2xl grid place-items-center transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110 ${big ? 'bg-white/15 backdrop-blur' : 'bg-[#4169E1]/10 text-[#4169E1]'}`}><I className="w-6 h-6" /></div>
                   <div className="relative">
@@ -594,7 +624,7 @@ const Lab: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   const imgs = [IMG.slicing, IMG.print, IMG.polish];
   return (
-    <section className="bg-[#06101F] text-white py-28 sm:py-40">
+    <section id="lab" className="bg-[#06101F] text-white py-28 sm:py-40 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-14">
           <div><Tag>{t.labTag}</Tag><h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em] mt-6"><Words text={t.labTitle} /></h2></div>

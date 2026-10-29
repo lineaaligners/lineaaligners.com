@@ -1,0 +1,11 @@
+{
+  "laboratory/lab-loop-960.mp4": {"source": "Real Linea lab footage (phone video, Oct 2026): 3D slicing, model printing, hand polishing. Captions cropped out.", "used_in": ["hero (desktop)"], "poster": "/images/posters/lab-loop.jpg"},
+  "laboratory/lab-loop-540.mp4": {"source": "Same footage, mobile size", "used_in": ["hero (mobile)"]},
+  "_needed": [
+    "hero/aligner-macro.mp4 — real macro of a Linea aligner on a dark background (4K, 5–8 s)",
+    "process/scan.mp4 — the intraoral scanner in use at the studio (no patient face)",
+    "process/plan.mp4 — screen recording of a real OnyxCeph plan (no patient name)",
+    "product/box-hands.mp4 — the real Linea box being opened",
+    "lifestyle/ — only with signed patient consent"
+  ]
+}
