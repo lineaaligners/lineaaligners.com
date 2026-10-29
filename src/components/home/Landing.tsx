@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence, useInView } from 'motion/react';
-import { ArrowUpRight, Plus, Minus, Menu, X, Phone, MapPin, MessageCircle, ScanLine, Sparkles, Eye, Clock, ShieldCheck, Wallet } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { WHATSAPP_URL, SCAN_VIDEO_URL, FAQS_CONTENT } from '../../constants';
 
 type Lang = 'en' | 'sq';
@@ -109,7 +109,6 @@ const T = {
   },
 };
 
-const ICONS: Record<string, any> = { eye: Eye, spark: Sparkles, scan: ScanLine, clock: Clock, shield: ShieldCheck, wallet: Wallet };
 const openWA = () => { const w = window.open(WHATSAPP_URL, '_blank', 'noopener,noreferrer'); if (!w) window.location.href = WHATSAPP_URL; };
 
 /* ---------- animated teeth graphic: crooked -> aligned driven by a 0..1 value ---------- */
@@ -127,7 +126,7 @@ const Header: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin?: boole
       <motion.div style={{ scaleX: bar }} className="absolute top-0 left-0 right-0 h-[2px] origin-left bg-gradient-to-r from-[#87CEEB] via-[#4169E1] to-[#87CEEB]" />
       <div className={`mx-auto transition-all duration-500 ${solid ? 'mt-3 max-w-6xl px-3' : 'mt-0 max-w-7xl px-4 sm:px-8'}`}>
         <motion.nav initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .8, ease: EASE }}
-          className={`flex items-center justify-between transition-all duration-500 ${solid ? 'rounded-full bg-[#0B1A33]/95 border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,.35)] pl-5 pr-2 py-2' : 'py-6'}`}>
+          className={`flex items-center justify-between transition-all duration-500 ${solid ? 'rounded-full bg-[#0B1A33]/95 border border-white/10 pl-5 pr-2 py-2' : 'py-6'}`}>
           <a href="#top" className="flex items-center gap-2" aria-label="Linea Aligners">
             <img src="/linea-logo.svg" alt="Linea" className={`brightness-0 invert transition-all duration-500 ${solid ? 'h-7' : 'h-9'}`} />
           </a>
@@ -146,9 +145,9 @@ const Header: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin?: boole
             </div>
             {isAdmin && <button onClick={onAdmin} className="hidden md:block px-3 py-2 text-[12px] font-semibold text-amber-300/90 hover:text-amber-200">Admin</button>}
             <a href="/portal/" className="hidden md:block px-4 py-2 text-[14px] font-medium text-white/80 hover:text-white">{t.login}</a>
-            <button onClick={openWA} className="group relative overflow-hidden rounded-full bg-white text-[#0B1A33] pl-5 pr-2 py-2 text-[14px] font-semibold flex items-center gap-2">
+            <button onClick={openWA} className="group relative overflow-hidden rounded-full bg-white text-[#0B1A33] px-5 py-2.5 text-[14px] font-semibold flex items-center gap-2">
               <span className="relative z-10">{t.cta}</span>
-              <span className="relative z-10 grid place-items-center w-7 h-7 rounded-full bg-[#0B1A33] text-white group-hover:rotate-45 transition-transform duration-300"><ArrowUpRight className="w-4 h-4" /></span>
+              
             </button>
             <button className="lg:hidden w-10 h-10 grid place-items-center rounded-full border border-white/15 text-white" onClick={() => setOpen(true)} aria-label="Menu"><Menu className="w-5 h-5" /></button>
           </div>
@@ -242,8 +241,8 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
         <div className="mt-14 flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-t border-white/10 pt-8">
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .9, duration: .9, ease: EASE }} className="text-lg text-white/60 leading-relaxed max-w-md">{t.sub}</motion.p>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05, duration: .9, ease: EASE }} className="flex flex-col sm:flex-row gap-3">
-            <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-white text-[#06101F] pl-6 pr-2 py-2 font-semibold whitespace-nowrap">
-              {t.b1}<span className="grid place-items-center w-10 h-10 rounded-full bg-[#4169E1] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span>
+            <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-white text-[#06101F] px-7 py-4 font-semibold whitespace-nowrap">
+              {t.b1}
             </button>
             <a href={'/assessment/' + (lang === 'en' ? '?lang=en' : '')} className="flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 transition-colors text-white px-6 py-4 font-semibold whitespace-nowrap">{t.b2}</a>
           </motion.div>
@@ -262,7 +261,7 @@ const Marquee: React.FC<{ lang: Lang }> = ({ lang }) => {
       <div className="marquee flex w-max gap-10">
         {[0, 1].map(k => (
           <div key={k} className="flex gap-10 shrink-0" aria-hidden={k === 1}>
-            {row.map((w, i) => <span key={i} className="flex items-center gap-10 font-display text-3xl sm:text-4xl text-white whitespace-nowrap">{w}<span className="w-3 h-3 rounded-full bg-white/60" /></span>)}
+            {row.map((w, i) => <span key={i} className="flex items-center gap-10 font-display text-3xl sm:text-4xl text-white whitespace-nowrap">{w}<span className="text-white/40">/</span></span>)}
           </div>
         ))}
       </div>
@@ -285,7 +284,7 @@ const Transformation: React.FC<{ lang: Lang }> = ({ lang }) => {
   return (
     <section ref={ref} className="relative h-[200vh] bg-[#06101F]" aria-label={t.trTag}>
       <div className="sticky top-0 h-[100svh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 radial-glow" />
+        
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 w-full grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           <div>
             <Tag>{t.trTag}</Tag>
@@ -307,38 +306,28 @@ const Transformation: React.FC<{ lang: Lang }> = ({ lang }) => {
   );
 };
 
-/* ---------- why / bento ---------- */
+/* ---------- why: editorial list ---------- */
 const Why: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   return (
-    <section id="pse" className="relative bg-[#F4F6FA] text-[#0B1A33] py-28 sm:py-40 rounded-t-[40px] sm:rounded-t-[64px] -mt-10 z-10">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
-          <div>
-            <div className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[#4169E1]"><span className="w-6 h-px bg-[#4169E1]" />{t.whyTag}</div>
-            <h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em] mt-6"><Words text={t.whyTitle} /><br /><Words text={t.whyTitle2} className="italic font-serif-i text-[#4169E1]" delay={.2} /></h2>
-          </div>
-          <p className="text-[#0B1A33]/60 text-lg max-w-sm">{t.whyIntro}</p>
+    <section id="pse" className="relative bg-[#F4F6FA] text-[#0B1A33] py-28 sm:py-40 scroll-mt-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-12 gap-14 lg:gap-20">
+        <div className="lg:col-span-5 lg:sticky lg:top-28 self-start">
+          <div className="text-[12px] font-semibold uppercase text-[#4169E1]" style={{ letterSpacing: '.22em' }}>{t.whyTag}</div>
+          <h2 className="font-display text-5xl sm:text-6xl leading-[.98] tracking-[-.03em] mt-6"><Words text={t.whyTitle} /><br /><Words text={t.whyTitle2} className="italic font-serif-i text-[#4169E1]" delay={.2} /></h2>
+          <p className="text-[#0B1A33]/60 text-lg mt-8 max-w-md">{t.whyIntro}</p>
+          <Up delay={.1}><img src={IMG.print} alt={lang === 'sq' ? 'Modelet e dhëmbëve të printuara në 3D në laboratorin Linea' : '3D-printed dental models in the Linea lab'} loading="lazy" className="mt-10 w-full aspect-[4/3] object-cover rounded-[6px]" /></Up>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {t.why.map(([title, desc, ic], i) => {
-            const I = ICONS[ic];
-            const big = i === 0; const wide = i === 5;
-            return (
-              <Up key={title} delay={i * .06} className={big ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : wide ? 'sm:col-span-2 lg:col-span-3' : ''}>
-                <div className={`group h-full rounded-[28px] p-7 sm:p-8 flex flex-col justify-between gap-10 transition-all duration-500 hover:-translate-y-1 ${big ? 'bg-[#0B1A33] text-white min-h-[340px] overflow-hidden relative' : 'bg-white border border-[#0B1A33]/[.06] hover:shadow-[0_30px_80px_rgba(11,26,51,.12)]'}`}>
-                  {big && <img src={IMG.print} alt={lang === 'sq' ? 'Modelet e dhëmbëve të printuara në 3D në laboratorin Linea' : '3D-printed dental models in the Linea lab'} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-[1.5s]" />}
-                  {big && <div className="absolute inset-0 bg-gradient-to-t from-[#0B1A33] via-[#0B1A33]/50 to-transparent" />}
-                  <div className={`relative w-12 h-12 rounded-2xl grid place-items-center transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110 ${big ? 'bg-white/15 backdrop-blur' : 'bg-[#4169E1]/10 text-[#4169E1]'}`}><I className="w-6 h-6" /></div>
-                  <div className="relative">
-                    <h3 className={`font-display tracking-[-.02em] mb-2 ${big ? 'text-4xl' : 'text-2xl'}`}>{title}</h3>
-                    <p className={big ? 'text-white/75' : 'text-[#0B1A33]/60'}>{desc}</p>
-                  </div>
-                </div>
-              </Up>
-            );
-          })}
-        </div>
+        <ol className="lg:col-span-7 border-t border-[#0B1A33]/15">
+          {t.why.map(([title, desc], i) => (
+            <Up key={title} delay={i * .04}>
+              <li className="grid grid-cols-[3.5rem_1fr] sm:grid-cols-[5rem_1fr] gap-4 py-9 border-b border-[#0B1A33]/15">
+                <span className="text-sm tabular-nums text-[#0B1A33]/40 pt-2">{String(i + 1).padStart(2, '0')}</span>
+                <div><h3 className="font-display text-2xl sm:text-3xl tracking-[-.02em]">{title}</h3><p className="text-[#0B1A33]/60 mt-2 max-w-lg">{desc}</p></div>
+              </li>
+            </Up>
+          ))}
+        </ol>
       </div>
     </section>
   );
@@ -356,11 +345,11 @@ const How: React.FC<{ lang: Lang }> = ({ lang }) => {
         <div className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[#4169E1]"><span className="w-6 h-px bg-[#4169E1]" />{t.howTag}</div>
         <h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em] mt-6 mb-16"><Words text={t.howTitle} /></h2>
         <div ref={ref} className="relative grid md:grid-cols-3 gap-6">
-          <div className="hidden md:block absolute top-[38px] left-0 right-0 h-px bg-[#0B1A33]/10"><motion.div style={{ width: line }} className="h-full bg-[#4169E1]" /></div>
+          <div className="hidden md:block absolute top-0 left-0 right-0 h-px bg-[#0B1A33]/10"><motion.div style={{ width: line }} className="h-full bg-[#4169E1]" /></div>
           {t.how.map(([title, desc], i) => (
             <Up key={title} delay={i * .12}>
               <div className="relative">
-                <div className="w-[76px] h-[76px] rounded-full bg-[#0B1A33] text-white grid place-items-center font-display text-2xl mb-8 relative z-10 ring-8 ring-[#F4F6FA]">0{i + 1}</div>
+                <div className="text-sm tabular-nums text-[#4169E1] pt-6 mb-6 relative z-10">0{i + 1}</div>
                 <h3 className="font-display text-3xl tracking-[-.02em] mb-3">{title}</h3>
                 <p className="text-[#0B1A33]/60 text-lg leading-relaxed">{desc}</p>
               </div>
@@ -395,7 +384,7 @@ const Film: React.FC<{ lang: Lang; onPlay: () => void }> = ({ lang, onPlay }) =>
           </div>
           <button onClick={onPlay} className="group flex items-center gap-4 text-white shrink-0">
             <span className="relative w-20 h-20 rounded-full bg-white text-[#0B1A33] grid place-items-center">
-              <span className="absolute inset-0 rounded-full border border-white animate-ping opacity-40" />
+              
               <svg viewBox="0 0 24 24" className="w-6 h-6 ml-1 fill-current"><path d="M8 5v14l11-7z" /></svg>
             </span>
             <span className="font-semibold">{t.play}</span>
@@ -411,7 +400,6 @@ const Pricing: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   return (
     <section id="cmimi" className="relative bg-[#06101F] text-white py-28 sm:py-40 overflow-hidden">
-      <div className="absolute -right-40 top-20 w-[700px] h-[700px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(65,105,225,.25), transparent 70%)' }} />
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-14 items-center">
         <div>
           <Tag>{t.priceTag}</Tag>
@@ -419,19 +407,12 @@ const Pricing: React.FC<{ lang: Lang }> = ({ lang }) => {
           <Up delay={.2}><p className="text-white/65 text-lg mt-6 max-w-md">{t.priceDesc}</p></Up>
         </div>
         <Up>
-          <div className="rounded-[32px] border border-white/10 bg-white/[.04] p-3">
-            <div className="rounded-[26px] bg-gradient-to-br from-[#4169E1] to-[#1D3F8F] p-8 mb-3 relative overflow-hidden">
-              <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full border border-white/20" />
-              <div className="absolute -right-2 -top-2 w-32 h-32 rounded-full border border-white/20" />
-              <div className="text-white/70 text-sm">{lang === 'sq' ? 'Interes' : 'Interest'}</div>
-              <div className="font-display text-8xl leading-none mt-2">0%</div>
-            </div>
-            <div className="px-5 py-2">
-              {t.priceRows.map(([k, v]) => (
-                <div key={k} className="flex justify-between py-4 border-b border-white/[.07] last:border-0"><span className="text-white/55">{k}</span><span className="font-semibold">{v}</span></div>
-              ))}
-            </div>
-            <button onClick={openWA} className="w-full mt-2 rounded-[22px] bg-white text-[#0B1A33] font-semibold py-5 flex items-center justify-center gap-2 hover:bg-[#87CEEB] transition-colors">{t.priceBtn}<ArrowUpRight className="w-5 h-5" /></button>
+          <div className="border-t border-white/15">
+            <div className="flex items-baseline justify-between py-8 border-b border-white/15"><span className="text-white/55">{lang === 'sq' ? 'Pagesë me këste' : 'Installments'}</span><span className="font-display text-6xl leading-none">0%<span className="text-lg text-white/55 ml-2">{lang === 'sq' ? 'interes' : 'interest'}</span></span></div>
+            {t.priceRows.map(([k, v]) => (
+              <div key={k} className="flex justify-between py-5 border-b border-white/15"><span className="text-white/55">{k}</span><span className="font-semibold">{v}</span></div>
+            ))}
+            <button onClick={openWA} className="mt-8 rounded-full bg-white text-[#0B1A33] font-semibold px-8 py-4 hover:bg-[#E6ECFA] transition-colors">{t.priceBtn}</button>
           </div>
         </Up>
       </div>
@@ -456,7 +437,7 @@ const Faq: React.FC<{ lang: Lang }> = ({ lang }) => {
             <div key={i}>
               <button onClick={() => setOpen(open === i ? null : i)} className="w-full flex justify-between items-center gap-6 py-6 text-left" aria-expanded={open === i}>
                 <span className="text-lg sm:text-xl font-medium">{f.question}</span>
-                <span className={`shrink-0 w-10 h-10 rounded-full grid place-items-center border transition-colors ${open === i ? 'bg-white text-[#0B1A33] border-white' : 'border-white/20'}`}>{open === i ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}</span>
+                <span className={`shrink-0 w-10 h-10 rounded-full grid place-items-center border transition-colors ${open === i ? 'bg-white text-[#0B1A33] border-white' : 'border-white/20'}`}>{open === i ? <span aria-hidden>−</span> : <span aria-hidden>+</span>}</span>
               </button>
               <AnimatePresence initial={false}>
                 {open === i && (
@@ -481,18 +462,18 @@ const BigFooter: React.FC<{ lang: Lang }> = ({ lang }) => {
   const y = useTransform(scrollYProgress, [0, 1], ['40%', '0%']);
   const ls = useTransform(scrollYProgress, [0, 1], ['0.2em', '-0.04em']);
   return (
-    <footer ref={ref} id="footer" className="relative bg-[#4169E1] text-white overflow-hidden rounded-t-[40px] sm:rounded-t-[64px]">
+    <footer ref={ref} id="footer" className="relative bg-[#4169E1] text-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-20 sm:pt-28">
         <div className="grid lg:grid-cols-12 gap-12 pb-16 border-b border-white/20">
           <div className="lg:col-span-6">
             <h2 className="font-display text-5xl sm:text-7xl leading-[.95] tracking-[-.03em]">{t.endA}<br /><span className="italic font-serif-i">{t.endB}</span></h2>
             <p className="text-white/80 text-lg mt-6 max-w-md">{t.endDesc}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
-              <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-white text-[#0B1A33] pl-6 pr-2 py-2 font-semibold">
-                <span className="flex items-center gap-2"><MessageCircle className="w-5 h-5 text-[#25D366]" />WhatsApp</span>
-                <span className="grid place-items-center w-10 h-10 rounded-full bg-[#0B1A33] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span>
+              <button onClick={openWA} className="group flex items-center justify-between gap-4 rounded-full bg-white text-[#0B1A33] px-7 py-4 font-semibold">
+                <span className="flex items-center gap-2">WhatsApp</span>
+                
               </button>
-              <a href="tel:+38349772307" className="flex items-center justify-center gap-2 rounded-full border border-white/40 hover:bg-white/10 px-6 py-4 font-semibold"><Phone className="w-4 h-4" />+383 49 772 307</a>
+              <a href="tel:+38349772307" className="flex items-center justify-center gap-2 rounded-full border border-white/40 hover:bg-white/10 px-6 py-4 font-semibold">+383 49 772 307</a>
             </div>
           </div>
           <div className="lg:col-span-6 grid grid-cols-2 sm:grid-cols-3 gap-8">
@@ -504,7 +485,7 @@ const BigFooter: React.FC<{ lang: Lang }> = ({ lang }) => {
             ))}
             <div className="col-span-2 sm:col-span-1">
               <div className="text-[12px] uppercase tracking-[.2em] text-white/60 mb-4">{t.fContact}</div>
-              <a href="https://maps.google.com/?q=Medident+Dental+Clinic+Peja" target="_blank" rel="noopener noreferrer" className="flex gap-2 hover:opacity-70"><MapPin className="w-4 h-4 mt-1 shrink-0" />{t.fAddr}</a>
+              <a href="https://maps.google.com/?q=Medident+Dental+Clinic+Peja" target="_blank" rel="noopener noreferrer" className="flex gap-2 hover:opacity-70">{t.fAddr}</a>
               <p className="text-white/70 text-sm mt-3">{t.fClinic}</p>
             </div>
           </div>
@@ -534,10 +515,9 @@ const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
   const order = () => { const m = lang === 'sq' ? `Përshëndetje! Dua të porosis Linea Retainer Cleaner.\nSasia: ${qty} kuti\nTotali: €${(qty * 4.5).toFixed(2)}\nEmri:\nAdresa:` : `Hi! I'd like to order Linea Retainer Cleaner.\nQuantity: ${qty}\nTotal: €${(qty * 4.5).toFixed(2)}\nName:\nAddress:`; window.open('https://wa.me/38349772307?text=' + encodeURIComponent(m), '_blank', 'noopener'); };
   return (
     <section id="shop" ref={ref} className="relative overflow-hidden bg-gradient-to-b from-[#0E0A24] via-[#1A1145] to-[#0E0A24] text-white py-28 sm:py-40">
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(45% 45% at 50% 50%, rgba(124,92,255,.22), transparent 75%)' }} />
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-16 items-center">
         <div className="relative h-[520px] sm:h-[580px]">
-          <motion.div style={{ y: y1 }} className="absolute left-1/2 -translate-x-1/2 top-0 h-full aspect-[9/16] rounded-[36px] overflow-hidden border border-white/15 shadow-[0_60px_120px_rgba(0,0,0,.6)] bg-[#0E0A24]">
+          <motion.div style={{ y: y1 }} className="absolute left-1/2 -translate-x-1/2 top-0 h-full aspect-[9/16] rounded-[36px] overflow-hidden border border-white/15 bg-[#0E0A24]">
             <img src={IMG.box} alt="Linea Antibacterial Retainer Cleaner" className="absolute inset-0 w-full h-full object-cover" />
           </motion.div>
         </div>
@@ -552,15 +532,15 @@ const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
               <div className="mt-6 flex items-center justify-between">
                 <span className="text-white/60 text-sm">{t.shopQty}</span>
                 <div className="flex items-center gap-1 rounded-full border border-white/15 p-1">
-                  <button aria-label="-" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/10"><Minus className="w-4 h-4" /></button>
+                  <button aria-label="-" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/10"><span aria-hidden>−</span></button>
                   <span className="w-8 text-center font-semibold tabular-nums">{qty}</span>
-                  <button aria-label="+" onClick={() => setQty(q => Math.min(50, q + 1))} className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/10"><Plus className="w-4 h-4" /></button>
+                  <button aria-label="+" onClick={() => setQty(q => Math.min(50, q + 1))} className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/10"><span aria-hidden>+</span></button>
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4"><span className="text-white/60 text-sm">{t.shopTotal}</span><motion.span key={qty} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-display text-2xl tabular-nums">€{(qty * 4.5).toFixed(2)}</motion.span></div>
               <div className="mt-3 text-xs text-white/45">{t.shopNote}</div>
             </div>
-            <button onClick={order} className="group mt-6 flex items-center gap-4 rounded-full bg-white text-[#1A1145] pl-6 pr-2 py-2 font-semibold">{t.prodBtn}<span className="grid place-items-center w-10 h-10 rounded-full bg-[#7C5CFF] text-white group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-5 h-5" /></span></button>
+            <button onClick={order} className="group mt-6 flex items-center gap-4 rounded-full bg-white text-[#1A1145] px-7 py-4 font-semibold">{t.prodBtn}</button>
           </Up>
         </div>
       </div>
@@ -620,7 +600,6 @@ export const Landing: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin
     <Header lang={lang} setLang={setLang} isAdmin={isAdmin} onAdmin={onAdmin} />
     <main id="main-content">
       <Hero lang={lang} />
-      <Marquee lang={lang} />
       <Transformation lang={lang} />
       <Why lang={lang} />
       <How lang={lang} />
@@ -642,7 +621,6 @@ const CSS = `
 .landing .text-shimmer{background:linear-gradient(100deg,#87CEEB 20%,#fff 40%,#87CEEB 60%,#4169E1 80%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 6s linear infinite}
 @keyframes shimmer{to{background-position:-250% 0}}
 .landing .grid-lines{background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%)}
-.landing .radial-glow{background:radial-gradient(ellipse 60% 50% at 70% 50%,rgba(65,105,225,.25),transparent 70%)}
 .landing .marquee{animation:marquee 30s linear infinite}
 @keyframes marquee{to{transform:translateX(-50%)}}
 html{scroll-behavior:smooth}

@@ -149,7 +149,6 @@ const App: React.FC = () => {
     return (
       <>
         <Landing lang={language} setLang={setLanguage} isAdmin={isAdmin} onAdmin={toggleAdminMode} onPlayVideo={() => setIsVideoModalOpen(true)} />
-        <React.Suspense fallback={null}><AIAssistant language={language} /></React.Suspense>
         <VideoModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} videoUrl={SCAN_VIDEO_URL} />
       </>
     );
