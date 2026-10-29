@@ -113,43 +113,6 @@ const ICONS: Record<string, any> = { eye: Eye, spark: Sparkles, scan: ScanLine, 
 const openWA = () => { const w = window.open(WHATSAPP_URL, '_blank', 'noopener,noreferrer'); if (!w) window.location.href = WHATSAPP_URL; };
 
 /* ---------- animated teeth graphic: crooked -> aligned driven by a 0..1 value ---------- */
-const OFFS = [[-10, 14], [8, -12], [-6, 18], [12, -16], [-4, 10], [10, 16], [-12, -10], [6, 12]]; // [dy, rotate] per tooth (crooked state)
-const Teeth: React.FC<{ p: any; className?: string }> = ({ p, className }) => {
-  const xs = [30, 92, 150, 202, 254, 306, 364, 426];
-  const ws = [52, 56, 50, 48, 48, 50, 56, 52];
-  return (
-    <svg viewBox="0 0 480 220" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#c9dcff" /></linearGradient>
-        <linearGradient id="ag" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#87CEEB" stopOpacity=".0" /><stop offset=".5" stopColor="#87CEEB" stopOpacity=".55" /><stop offset="1" stopColor="#87CEEB" stopOpacity="0" /></linearGradient>
-      </defs>
-      {xs.map((x, i) => <Tooth key={i} p={p} x={x} w={ws[i]} dy={OFFS[i][0]} rot={OFFS[i][1]} />)}
-      <AlignerShell p={p} />
-    </svg>
-  );
-};
-const Tooth: React.FC<{ p: any; x: number; w: number; dy: number; rot: number }> = ({ p, x, w, dy, rot }) => {
-  const y = useTransform(p, [0, 1], [dy, 0]);
-  const r = useTransform(p, [0, 1], [rot, 0]);
-  const h = 120;
-  const d = `M${-w / 2},${-h / 2 + 18} Q${-w / 2},${-h / 2} ${-w / 4},${-h / 2} L${w / 4},${-h / 2} Q${w / 2},${-h / 2} ${w / 2},${-h / 2 + 18} L${w / 2 - 6},${h / 2 - 22} Q${w / 2 - 10},${h / 2} ${0},${h / 2} Q${-w / 2 + 10},${h / 2} ${-w / 2 + 6},${h / 2 - 22} Z`;
-  return (
-    <motion.g style={{ x: x + w / 2 - 4, y: useTransform(y, v => 110 + v), rotate: r }}>
-      <path d={d} fill="url(#tg)" stroke="#ffffff" strokeOpacity=".6" />
-      <path d={`M${-w / 4},${-h / 2 + 10} q${w / 6},-4 ${w / 3},0`} stroke="#4169E1" strokeOpacity=".25" strokeWidth="3" fill="none" strokeLinecap="round" />
-    </motion.g>
-  );
-};
-const AlignerShell: React.FC<{ p: any }> = ({ p }) => {
-  const o = useTransform(p, [0.55, 1], [0, 1]);
-  const y = useTransform(p, [0.55, 1], [-30, 0]);
-  return (
-    <motion.g style={{ opacity: o, y }}>
-      <rect x="22" y="44" width="440" height="132" rx="40" fill="url(#ag)" opacity=".35" />
-      <rect x="22" y="44" width="440" height="132" rx="40" fill="none" stroke="#87CEEB" strokeOpacity=".7" strokeWidth="2" strokeDasharray="6 8" />
-    </motion.g>
-  );
-};
 
 /* ---------- header ---------- */
 const Header: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin?: boolean; onAdmin?: () => void }> = ({ lang, setLang, isAdmin, onAdmin }) => {
@@ -164,7 +127,7 @@ const Header: React.FC<{ lang: Lang; setLang: (l: Lang) => void; isAdmin?: boole
       <motion.div style={{ scaleX: bar }} className="absolute top-0 left-0 right-0 h-[2px] origin-left bg-gradient-to-r from-[#87CEEB] via-[#4169E1] to-[#87CEEB]" />
       <div className={`mx-auto transition-all duration-500 ${solid ? 'mt-3 max-w-6xl px-3' : 'mt-0 max-w-7xl px-4 sm:px-8'}`}>
         <motion.nav initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .8, ease: EASE }}
-          className={`flex items-center justify-between transition-all duration-500 ${solid ? 'rounded-full bg-[#0B1A33]/70 backdrop-blur-xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,.35)] pl-5 pr-2 py-2' : 'py-6'}`}>
+          className={`flex items-center justify-between transition-all duration-500 ${solid ? 'rounded-full bg-[#0B1A33]/95 border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,.35)] pl-5 pr-2 py-2' : 'py-6'}`}>
           <a href="#top" className="flex items-center gap-2" aria-label="Linea Aligners">
             <img src="/linea-logo.svg" alt="Linea" className={`brightness-0 invert transition-all duration-500 ${solid ? 'h-7' : 'h-9'}`} />
           </a>
@@ -255,19 +218,16 @@ const LabVideo: React.FC<{ className?: string; label?: string }> = ({ className,
 
 const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
-  const [straight, setStraight] = useState(false);
-  useEffect(() => { const i = setInterval(() => setStraight(v => !v), 2600); const s0 = setTimeout(() => setStraight(true), 1400); return () => { clearInterval(i); clearTimeout(s0); }; }, []);
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const fade = useTransform(scrollYProgress, [0, .6], [1, 0]);
   const yUp = useTransform(scrollYProgress, [0, 1], ['0%', '-20%']);
-  const OFF = [[-14, 10], [9, -8], [-6, 14], [12, -12], [-10, 8], [7, 12], [-12, -9], [10, 6]];
   return (
     <section id="top" ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#06101F] flex items-center">
       <motion.div initial={{ opacity: 0, clipPath: 'inset(12% 12% 12% 12% round 28px)' }} animate={{ opacity: 1, clipPath: 'inset(0% 0% 0% 0% round 28px)' }} transition={{ delay: .5, duration: 1.4, ease: EASE }}
         style={{ y: yUp }} className="hidden lg:block absolute right-[max(2rem,calc((100vw-80rem)/2+2rem))] top-[18vh] w-[30vw] max-w-[440px] aspect-square z-0">
         <LabVideo className="w-full h-full rounded-[28px]" label={lang === 'sq' ? 'Laboratori Linea në Pejë: planifikim, printim, polirim' : 'The Linea lab in Pejë: planning, printing, polishing'} />
-        <div className="absolute left-4 bottom-4 text-[11px] uppercase text-white/80 bg-black/40 backdrop-blur px-3 py-1.5 rounded-full" style={{ letterSpacing: '.18em' }}>{lang === 'sq' ? 'Laboratori ynë · Pejë' : 'Our lab · Pejë'}</div>
+        <div className="absolute left-4 bottom-4 text-[11px] uppercase text-white/80 bg-black/50 px-3 py-1.5 rounded-full" style={{ letterSpacing: '.18em' }}>{lang === 'sq' ? 'Laboratori ynë · Pejë' : 'Our lab · Pejë'}</div>
       </motion.div>
       <motion.div style={{ opacity: fade, y: yUp }} className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 pt-32 pb-14">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .1, duration: .8 }} className="text-[12px] font-semibold uppercase text-white/45 mb-8" style={{ letterSpacing: '.24em' }}>{t.eyebrow}</motion.div>
@@ -275,15 +235,6 @@ const Hero: React.FC<{ lang: Lang }> = ({ lang }) => {
           <span className="block overflow-hidden pb-[.06em]"><motion.span className="block" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .2 }}>{lang === 'sq' ? 'Drejtoji dhëmbët,' : 'Straighten your teeth,'}</motion.span></span>
           <span className="block overflow-hidden pb-[.08em]"><motion.span className="block italic font-serif-i text-[#87CEEB]" initial={{ y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: .35 }}>{lang === 'sq' ? 'pa u vërejt.' : 'unnoticed.'}</motion.span></span>
         </h1>
-        {/* aligning teeth */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .7, duration: 1, ease: EASE }} className="relative mt-12 flex items-end gap-[1.2vw] sm:gap-3 h-20 sm:h-24">
-          {OFF.map(([dy, r], i) => (
-            <motion.span key={i} animate={{ y: straight ? 0 : dy, rotate: straight ? 0 : r }} transition={{ type: 'spring', stiffness: 90, damping: 14, delay: i * .04 }}
-              className="block w-[7vw] max-w-[46px] h-14 sm:h-16 rounded-t-[14px] rounded-b-[22px] bg-gradient-to-b from-white to-[#C9DCFF]" />
-          ))}
-          <motion.span animate={{ opacity: straight ? 1 : 0, scaleX: straight ? 1 : .6 }} transition={{ duration: .6, ease: EASE }} className="absolute -left-2 bottom-[-10px] h-[3px] rounded-full bg-[#4169E1] origin-left" style={{ width: 'calc(8 * min(7vw,46px) + 7 * 12px + 16px)' }} />
-          <motion.span animate={{ opacity: straight ? 1 : 0 }} className="ml-4 sm:ml-6 self-center text-xs sm:text-sm text-white/50 whitespace-nowrap">{straight ? (lang === 'sq' ? 'Pas' : 'After') : ''}</motion.span>
-        </motion.div>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .9, duration: 1, ease: EASE }} className="lg:hidden mt-10 relative">
           <LabVideo className="w-full aspect-[16/10] rounded-[22px]" label={lang === 'sq' ? 'Laboratori Linea në Pejë' : 'The Linea lab in Pejë'} />
           <div className="absolute left-3 bottom-3 text-[10px] uppercase text-white/80 bg-black/40 px-3 py-1.5 rounded-full" style={{ letterSpacing: '.18em' }}>{lang === 'sq' ? 'Laboratori ynë · Pejë' : 'Our lab · Pejë'}</div>
@@ -323,32 +274,32 @@ const Marquee: React.FC<{ lang: Lang }> = ({ lang }) => {
 const Transformation: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   const ref = useRef<HTMLDivElement>(null);
+  const stepRef = useRef<HTMLSpanElement>(null), pctRef = useRef<HTMLSpanElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
-  const p = useSpring(useTransform(scrollYProgress, [0.05, 0.85], [0, 1], { clamp: true }), { stiffness: 80, damping: 22 });
-  const [step, setStep] = useState(1);
-  useEffect(() => p.on('change', v => setStep(Math.max(1, Math.round(v * 24)))), [p]);
-  const width = useTransform(p, v => `${v * 100}%`);
+  const p = useTransform(scrollYProgress, [0.05, 0.9], [0, 1], { clamp: true });
+  // write the counter straight to the DOM: no React re-render while scrolling
+  useEffect(() => p.on('change', v => { const st = Math.max(1, Math.round(v * 24)); if (stepRef.current) stepRef.current.textContent = String(st).padStart(2, '0'); if (pctRef.current) pctRef.current.textContent = Math.round(st / 24 * 100) + '%'; }), [p]);
+  const width = useTransform(p, v => `scaleX(${v})`);
+  const zoom = useTransform(p, [0, 1], [1.12, 1]);
+  const pan = useTransform(p, [0, 1], ['-3%', '3%']);
   return (
-    <section ref={ref} className="relative h-[260vh] bg-[#06101F]" aria-label={t.trTag}>
+    <section ref={ref} className="relative h-[200vh] bg-[#06101F]" aria-label={t.trTag}>
       <div className="sticky top-0 h-[100svh] flex items-center overflow-hidden">
         <div className="absolute inset-0 radial-glow" />
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 w-full grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 w-full grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           <div>
             <Tag>{t.trTag}</Tag>
             <h2 className="font-display text-5xl sm:text-7xl text-white leading-[.95] tracking-[-.03em] mt-6"><Words text={t.trTitle} /></h2>
             <Up delay={.2}><p className="text-white/65 text-lg mt-6 max-w-md">{t.trDesc}</p></Up>
             <div className="mt-10 max-w-md">
-              <div className="flex justify-between text-sm text-white/60 mb-3"><span>{t.step} <span className="text-white font-semibold tabular-nums">{String(step).padStart(2, '0')}</span> / 24</span><span className="tabular-nums">{Math.round(step / 24 * 100)}%</span></div>
-              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden"><motion.div style={{ width }} className="h-full bg-gradient-to-r from-[#4169E1] to-[#87CEEB] rounded-full" /></div>
+              <div className="flex justify-between text-sm text-white/60 mb-3"><span>{t.step} <span ref={stepRef} className="text-white font-semibold tabular-nums">01</span> / 24</span><span ref={pctRef} className="tabular-nums">4%</span></div>
+              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden"><motion.div style={{ transform: width }} className="h-full w-full origin-left bg-gradient-to-r from-[#4169E1] to-[#87CEEB] rounded-full" /></div>
             </div>
           </div>
-          <div className="relative">
-            <div className="absolute inset-10 bg-[#4169E1]/30 blur-[90px] rounded-full" />
-            <div className="relative rounded-[36px] border border-white/10 bg-gradient-to-b from-white/[.07] to-white/[.02] p-6 sm:p-10">
-              <Teeth p={p} className="w-full h-auto" />
-              <div className="mt-6 flex justify-between text-[11px] uppercase tracking-[.2em] text-white/40"><span>{lang === 'sq' ? 'Para' : 'Before'}</span><span>{lang === 'sq' ? 'Pas' : 'After'}</span></div>
-              <p className="mt-4 text-xs text-white/40">{lang === 'sq' ? 'Ilustrim. Plani yt i vërtetë 3D del pas skanimit.' : 'Illustration. Your real 3D plan comes after the scan.'}</p>
-            </div>
+          <div className="relative rounded-[28px] overflow-hidden border border-white/10 aspect-[4/3] bg-black">
+            <motion.img style={{ scale: zoom, x: pan }} src={IMG.slicing} alt={lang === 'sq' ? 'Plani 3D i trajtimit në kompjuter, laboratori Linea' : '3D treatment plan on screen, Linea lab'} loading="lazy" className="absolute inset-0 w-full h-full object-cover will-change-transform" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
+            <p className="absolute left-5 bottom-4 right-5 text-xs text-white/60">{lang === 'sq' ? 'Planifikimi 3D në laboratorin tonë. Plani yt i vërtetë del pas skanimit.' : '3D planning in our lab. Your own plan comes after the scan.'}</p>
           </div>
         </div>
       </div>
@@ -429,11 +380,10 @@ const Film: React.FC<{ lang: Lang; onPlay: () => void }> = ({ lang, onPlay }) =>
   const inView = useInView(ref, { margin: '200px' });
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const scale = useTransform(scrollYProgress, [0, .45], [.86, 1]);
-  const radius = useTransform(scrollYProgress, [0, .45], [64, 28]);
   useEffect(() => { const v = vref.current; if (!v) return; if (inView) v.play().catch(() => {}); else v.pause(); }, [inView]);
   return (
     <section ref={ref} className="bg-[#F4F6FA] pb-28 sm:pb-40 px-3 sm:px-6">
-      <motion.div style={{ scale, borderRadius: radius }} className="relative overflow-hidden mx-auto max-w-[1500px] aspect-[4/5] sm:aspect-[16/8] bg-[#06101F]">
+      <motion.div style={{ scale }} className="relative overflow-hidden rounded-[28px] mx-auto max-w-[1500px] aspect-[4/5] sm:aspect-[16/8] bg-[#06101F]">
         <img src={IMG.polish} alt={lang === 'sq' ? 'Polirimi i maskerinës me dorë në laboratorin Linea' : 'Hand-polishing an aligner in the Linea lab'} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         {inView && <video ref={vref} src={SCAN_VIDEO_URL} muted loop playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#06101F] via-[#06101F]/30 to-transparent" />
@@ -461,7 +411,7 @@ const Pricing: React.FC<{ lang: Lang }> = ({ lang }) => {
   const t = T[lang];
   return (
     <section id="cmimi" className="relative bg-[#06101F] text-white py-28 sm:py-40 overflow-hidden">
-      <div className="absolute -right-40 top-20 w-[600px] h-[600px] rounded-full bg-[#4169E1] blur-[180px] opacity-25 blob" />
+      <div className="absolute -right-40 top-20 w-[700px] h-[700px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(65,105,225,.25), transparent 70%)' }} />
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-14 items-center">
         <div>
           <Tag>{t.priceTag}</Tag>
@@ -469,7 +419,7 @@ const Pricing: React.FC<{ lang: Lang }> = ({ lang }) => {
           <Up delay={.2}><p className="text-white/65 text-lg mt-6 max-w-md">{t.priceDesc}</p></Up>
         </div>
         <Up>
-          <div className="rounded-[32px] border border-white/10 bg-white/[.04] backdrop-blur p-3">
+          <div className="rounded-[32px] border border-white/10 bg-white/[.04] p-3">
             <div className="rounded-[26px] bg-gradient-to-br from-[#4169E1] to-[#1D3F8F] p-8 mb-3 relative overflow-hidden">
               <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full border border-white/20" />
               <div className="absolute -right-2 -top-2 w-32 h-32 rounded-full border border-white/20" />
@@ -584,12 +534,11 @@ const Product: React.FC<{ lang: Lang }> = ({ lang }) => {
   const order = () => { const m = lang === 'sq' ? `Përshëndetje! Dua të porosis Linea Retainer Cleaner.\nSasia: ${qty} kuti\nTotali: €${(qty * 4.5).toFixed(2)}\nEmri:\nAdresa:` : `Hi! I'd like to order Linea Retainer Cleaner.\nQuantity: ${qty}\nTotal: €${(qty * 4.5).toFixed(2)}\nName:\nAddress:`; window.open('https://wa.me/38349772307?text=' + encodeURIComponent(m), '_blank', 'noopener'); };
   return (
     <section id="shop" ref={ref} className="relative overflow-hidden bg-gradient-to-b from-[#0E0A24] via-[#1A1145] to-[#0E0A24] text-white py-28 sm:py-40">
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-[#7C5CFF] blur-[200px] opacity-25" />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(45% 45% at 50% 50%, rgba(124,92,255,.22), transparent 75%)' }} />
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-16 items-center">
         <div className="relative h-[520px] sm:h-[580px]">
           <motion.div style={{ y: y1 }} className="absolute left-1/2 -translate-x-1/2 top-0 h-full aspect-[9/16] rounded-[36px] overflow-hidden border border-white/15 shadow-[0_60px_120px_rgba(0,0,0,.6)] bg-[#0E0A24]">
             <img src={IMG.box} alt="Linea Antibacterial Retainer Cleaner" className="absolute inset-0 w-full h-full object-cover" />
-            {vis && <video ref={vref} src={IMG.boxVideo} poster={IMG.box} muted loop playsInline autoPlay preload="auto" className="absolute inset-0 w-full h-full object-cover" />}
           </motion.div>
         </div>
         <div>
@@ -694,9 +643,6 @@ const CSS = `
 @keyframes shimmer{to{background-position:-250% 0}}
 .landing .grid-lines{background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%)}
 .landing .radial-glow{background:radial-gradient(ellipse 60% 50% at 70% 50%,rgba(65,105,225,.25),transparent 70%)}
-.landing .blob{animation:blob 18s ease-in-out infinite}
-.landing .blob2{animation:blob 22s ease-in-out infinite reverse}
-@keyframes blob{0%,100%{border-radius:50%;transform:translate(0,0) scale(1)}33%{border-radius:40% 60% 55% 45%;transform:translate(-6%,8%) scale(1.1)}66%{border-radius:60% 40% 45% 55%;transform:translate(5%,-4%) scale(.95)}}
 .landing .marquee{animation:marquee 30s linear infinite}
 @keyframes marquee{to{transform:translateX(-50%)}}
 html{scroll-behavior:smooth}
