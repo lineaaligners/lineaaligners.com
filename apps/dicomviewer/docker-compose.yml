@@ -1,0 +1,12 @@
+# Everything on the clinic PC. Bound to localhost only: patient data never leaves the machine.
+services:
+  medident:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - ./backend/data:/data      # studies, labels, SQLite
+      - ./backend/models:/models  # nnU-Net model folders
+    deploy:
+      resources:
+        reservations:
+          devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
