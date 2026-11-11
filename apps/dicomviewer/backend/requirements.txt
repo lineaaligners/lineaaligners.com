@@ -1,0 +1,12 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+SimpleITK>=2.3
+numpy>=1.26
+scipy>=1.11
+scikit-image>=0.22
+trimesh>=4.0
+fast-simplification>=0.1.7
+pydicom>=2.4
+pillow>=10
+onnxruntime>=1.17   # onnxruntime-gpu on the clinic PC to use the RTX 4060

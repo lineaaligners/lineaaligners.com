@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/dicomviewer",
+      "destination": "/dicomviewer/index.html"
+    },
+    {
+      "source": "/dicomviewer/",
+      "destination": "/dicomviewer/index.html"
+    },
+    {
       "source": "/regjistrimi",
       "destination": "/regjistrimi/index.html"
     },
