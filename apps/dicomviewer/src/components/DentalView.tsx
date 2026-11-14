@@ -63,13 +63,13 @@ export default function DentalView({ series }: { series: Series }) {
   };
 
   return (
-    <div className="absolute inset-0 grid grid-cols-[1fr_1fr_304px] grid-rows-[46fr_54fr] gap-0.5 bg-line">
-      <div data-capture className="relative col-span-2 row-span-2 grid grid-cols-2 grid-rows-[46fr_54fr] gap-0.5 bg-line">
+    <div className="absolute inset-0 grid grid-cols-[1fr_1fr_304px] grid-rows-[46fr_54fr] gap-1.5 p-1.5">
+      <div data-capture className="relative col-span-2 row-span-2 grid grid-cols-2 grid-rows-[46fr_54fr] gap-1.5 p-1.5">
         <div className="vp col-span-2"><canvas ref={pan} className="absolute inset-0 h-full w-full touch-none" /></div>
         <div className="vp"><canvas ref={ax} className="absolute inset-0 h-full w-full touch-none" /></div>
         <div className="vp"><canvas ref={xs} className="absolute inset-0 h-full w-full touch-none" /></div>
       </div>
-      <div className="row-span-2 flex flex-col gap-1.5 overflow-y-auto bg-panel p-3 text-[13px]">
+      <div className="row-span-2 flex flex-col gap-1.5 overflow-y-auto rounded-xl border border-line bg-panel p-3 text-[13px]">
         <H>{t('d_tools')}</H>
         <div className="flex flex-wrap gap-1">{(['nav', 'len', 'box', 'wl'] as DTool[]).map(k => <Btn key={k} on={d?.tool === k} onClick={() => { d!.tool = k; tick(); }}>{t('d_' + k)}</Btn>)}</div>
         <div className="flex flex-wrap gap-1">

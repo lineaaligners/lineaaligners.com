@@ -42,7 +42,7 @@ class Pane {
     ctx.setTransform(M); ctx.imageSmoothingEnabled = this.base * this.zoom * g.sx < 4; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(this.off, 0, 0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     const P = (x: number, y: number) => M.transformPoint(new DOMPoint(x, y));
-    ctx.font = `${12 * k}px ui-monospace, Menlo, monospace`; ctx.textBaseline = 'middle';
+    ctx.font = `${12 * k}px "JetBrains Mono Variable", ui-monospace, Menlo, monospace`; ctx.textBaseline = 'middle';
     this.host.overlay(this, ctx, P, k);
     for (const m of this.draft ? [...this.measures, this.draft] : this.measures) {
       if (m.key !== this.key) continue;

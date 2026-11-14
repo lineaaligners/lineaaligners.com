@@ -78,7 +78,7 @@ export default function XrayPanel({ series, host }: { series: Series; host: HTML
   const ROWS = [[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28], [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]];
 
   return (
-    <div id="xray-panel" className="flex w-[304px] shrink-0 flex-col gap-1.5 overflow-y-auto bg-panel p-3 text-[13px]">
+    <div id="xray-panel" className="flex w-[304px] shrink-0 flex-col gap-1.5 overflow-y-auto rounded-xl border border-line bg-panel p-3 text-[13px]">
       <h3 className="text-muted text-[11px] font-medium tracking-widest uppercase">{t('x_title')}</h3>
       {down && <p className="text-warn text-xs">{t('ai_down')}</p>}
       {engines && !engines.length && <p className="text-warn text-xs">{t('x_no_model')}</p>}
