@@ -1,3 +1,4 @@
+import { percentile } from '../lib/pano';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clip3d, cs, csTools, engine, R3D_PRESETS, WL_PRESETS, type ToolKey } from '../lib/cs';
@@ -41,6 +42,8 @@ export default function Toolbar({ onTags, onReport }: { onTags: () => void; onRe
     reset: () => { for (const v of engine().getViewports()) { v.resetCamera(); if (v.id !== 'v3d') (v as cs.StackViewport).resetProperties(); v.render(); } if (isVol) { applySlab('0', blend); setClip(FULL); clip3d(FULL); } setSharp(false); },
     invert: () => { for (const v of planar()) { v.setProperties({ invert: !v.getProperties()?.invert }); v.render(); } },
     rotate: () => { for (const v of planar()) { const r = (v.getViewPresentation() as { rotation?: number } | undefined)?.rotation || 0; v.setViewPresentation({ rotation: (r + 90) % 360 }); v.render(); } },
+    rotate180: () => { for (const v of planar()) { const r = (v.getViewPresentation() as { rotation?: number } | undefined)?.rotation || 0; v.setViewPresentation({ rotation: (r + 180) % 360 }); v.render(); } },
+    contrast: () => { for (const v of planar() as cs.StackViewport[]) { if (!v.getCurrentImageId) continue; const im = cs.cache.getImage(v.getCurrentImageId()!) as unknown as { getPixelData: () => ArrayLike<number>; slope?: number; intercept?: number } | undefined; if (!im) continue; const px = im.getPixelData(), m = im.slope || 1, b = im.intercept || 0, lo = percentile(px, 0.01) * m + b, hi = percentile(px, 0.995) * m + b; if (hi > lo) { v.setProperties({ voiRange: { lower: lo, upper: hi } }); v.render(); } } },
     flip: () => { for (const v of planar()) { v.setCamera({ flipHorizontal: !v.getCamera().flipHorizontal }); v.render(); } },
     sharpen: () => { const on = !sharp; setSharp(on); for (const v of planar() as cs.StackViewport[]) { v.setProperties({ sharpening: on ? 1 : 0 } as never); v.render(); } },
     clear: () => { csTools.annotation.state.removeAllAnnotations(); engine().render(); },
@@ -50,6 +53,10 @@ export default function Toolbar({ onTags, onReport }: { onTags: () => void; onRe
     try {
       if (kind === 'png' && root) { const c = await captureView(root); c.toBlob(b => b && download(b, `medident-${Date.now()}.png`), 'image/png'); }
       else if (kind === 'shot' && root) { const c = await captureView(root); addShot({ url: c.toDataURL('image/jpeg', 0.9), caption: active!.label }); say(t('shot_added', { n: shots.length + 1 })); }
+      else if (kind === 'print' && root) {
+        const c = await captureView(root); let box = document.getElementById('print-area'); if (!box) { box = document.createElement('div'); box.id = 'print-area'; document.body.appendChild(box); }
+        box.innerHTML = ''; const img = new Image(); img.src = c.toDataURL('image/png'); await img.decode(); box.appendChild(img); const cap = document.createElement('p'); cap.textContent = `${active!.label} · ${t('disclaimer')}`; box.appendChild(cap); window.print();
+      }
       else if (kind === 'report') onReport();
       else if (kind === 'anon' && active) {
         setBusy({ label: t('anon_busy'), pct: null });
@@ -74,7 +81,7 @@ export default function Toolbar({ onTags, onReport }: { onTags: () => void; onRe
             {isVol && Object.keys(WL_PRESETS).map(k => <option key={k} value={k}>{t('preset_' + k)}</option>)}
           </select>
           <B onClick={act.invert}>{t('invert')}</B>
-          {!isVol && <><B onClick={act.rotate}>{t('rotate')}</B><B onClick={act.flip}>{t('flip')}</B><B on={sharp} onClick={act.sharpen}>{t('sharpen')}</B>{compare && <B onClick={() => setCompare(null)}>{t('compare_off')}</B>}<B on={aiOpen} onClick={() => setAiOpen(!aiOpen)}>{t('ai_button')}</B></>}
+          {!isVol && <><B onClick={act.rotate}>{t('rotate')}</B><B onClick={act.rotate180}>{t('rotate180')}</B><B onClick={act.contrast}>{t('auto_contrast')}</B><B onClick={act.flip}>{t('flip')}</B><B on={sharp} onClick={act.sharpen}>{t('sharpen')}</B>{compare && <B onClick={() => setCompare(null)}>{t('compare_off')}</B>}<B on={aiOpen} onClick={() => setAiOpen(!aiOpen)}>{t('ai_button')}</B></>}
         </div>
         {isVol && (
           <div className="flex items-center gap-1 border-l border-line pl-3">
@@ -105,7 +112,7 @@ export default function Toolbar({ onTags, onReport }: { onTags: () => void; onRe
         <B onClick={onTags}>{t('tags')}</B>
         <select id="export" aria-label={t('export')} className="btn" disabled={off} value="" onChange={e => exportAs(e.target.value)}>
           <option value="" disabled>{t('export')}</option>
-          <option value="png">{t('ex_png')}</option><option value="shot">{t('ex_shot')}</option><option value="report">{t('ex_report')}</option><option value="anon">{t('ex_anon')}</option>
+          <option value="png">{t('ex_png')}</option><option value="shot">{t('ex_shot')}</option><option value="report">{t('ex_report')}</option><option value="print">{t('print')}</option><option value="anon">{t('ex_anon')}</option>
         </select>
       </div>
     </div>

@@ -43,6 +43,11 @@ const sq = {
   x_title: 'AI për radiografi 2D', x_no_model: 'Asnjë model 2D i instaluar. Vendose te backend/models/xray/ (shih MODELS.md).', x_view: 'Lloji i imazhit', x_pano: 'Panoramike (OPG)', x_intraoral: 'Intraorale (periapikale, bitewing)',
   x_run: 'Analizo', x_findings: 'Gjetje', x_unnumbered: 'dhëmbë pa numër', x_show_teeth: 'Shfaq dhëmbët', x_suggestions: 'Vetëm sugjerime. Secilën e vendos dentisti.', x_accept: 'Prano', x_reject: 'Refuzo', x_none: 'Asnjë gjetje.',
   x_report_hint: 'Gjetjet e pranuara ({{n}}) hyjnë në raport.', x_accepted: 'Gjetjet e pranuara',
+  x_min_conf: 'Siguria minimale', x_chart: 'Harta e dhëmbëve', x_all_teeth: 'Krejt dhëmbët', x_accept_all: 'Prano krejt', x_tooth_filter: 'Vetëm dhëmbi {{n}}',
+  rotate180: 'Rroto 180°', auto_contrast: 'Kontrast auto', print: 'Printo', r_kind: 'Lloji i raportit', r_clinical: 'Klinik (për dentistin)', r_patient: 'Për pacientin',
+  r_patient_intro: 'Çka kemi parë në radiografinë tuaj. Dentisti juaj ua shpjegon secilën pikë dhe hapat e ardhshëm.', r_patient_title: 'Shpjegim për pacientin', r_tooth: 'Dhëmbi {{n}}',
+  x_p_caries: 'Karies (prishje e dhëmbit). Zakonisht rregullohet me mbushje.', x_p_deep_caries: 'Karies i thellë, afër nervit. Mund të duhet mjekim i kanalit.', x_p_periapical_lesion: 'Infeksion te maja e rrënjës. Zakonisht kërkon mjekim të kanalit.',
+  x_p_bone_loss: 'Humbje e kockës rreth dhëmbit (sëmundje e mishrave). Kërkon pastrim dhe kontrolla.', x_p_restoration: 'Mbushje ekzistuese.', x_p_root_canal_filling: 'Dhëmb me kanal të mjekuar.', x_p_implant: 'Implant ekzistues.', x_p_crown: 'Kurorë ekzistuese.', x_p_impacted_tooth: 'Dhëmb i pa dalë plotësisht (i impaktuar).',
   x_k_caries: 'Karies', x_k_deep_caries: 'Karies i thellë', x_k_periapical_lesion: 'Lezion periapikal', x_k_bone_loss: 'Humbje kocke', x_k_restoration: 'Mbushje', x_k_root_canal_filling: 'Mbushje kanali', x_k_implant: 'Implant', x_k_crown: 'Kurorë', x_k_impacted_tooth: 'Dhëmb i impaktuar',
   ai_s_1: 'Maxilla', ai_s_2: 'Mandibula', ai_s_3: 'Kanali mandibular majtas', ai_s_4: 'Kanali mandibular djathtas', ai_s_5: 'Sinusi maksilar majtas', ai_s_6: 'Sinusi maksilar djathtas', ai_s_7: 'Kaviteti nazal', ai_s_8: 'Pulpa', ai_s_9: 'Dhëmbët e sipërm', ai_s_10: 'Dhëmbët e poshtëm',
 };
@@ -87,6 +92,11 @@ const en: typeof sq = {
   x_title: 'AI for 2D radiographs', x_no_model: 'No 2D model installed. Put one in backend/models/xray/ (see MODELS.md).', x_view: 'Image type', x_pano: 'Panoramic (OPG)', x_intraoral: 'Intraoral (periapical, bitewing)',
   x_run: 'Analyse', x_findings: 'Findings', x_unnumbered: 'teeth without numbers', x_show_teeth: 'Show teeth', x_suggestions: 'Suggestions only. The dentist decides on each one.', x_accept: 'Accept', x_reject: 'Reject', x_none: 'No findings.',
   x_report_hint: 'Accepted findings ({{n}}) go into the report.', x_accepted: 'Accepted findings',
+  x_min_conf: 'Minimum confidence', x_chart: 'Tooth chart', x_all_teeth: 'All teeth', x_accept_all: 'Accept all', x_tooth_filter: 'Tooth {{n}} only',
+  rotate180: 'Rotate 180°', auto_contrast: 'Auto contrast', print: 'Print', r_kind: 'Report type', r_clinical: 'Clinical (for the dentist)', r_patient: 'For the patient',
+  r_patient_intro: 'What we saw on your X-ray. Your dentist will explain each point and the next steps.', r_patient_title: 'Explanation for the patient', r_tooth: 'Tooth {{n}}',
+  x_p_caries: 'Tooth decay. Usually treated with a filling.', x_p_deep_caries: 'Deep decay close to the nerve. A root canal treatment may be needed.', x_p_periapical_lesion: 'Infection at the tip of the root. Usually needs root canal treatment.',
+  x_p_bone_loss: 'Bone loss around the tooth (gum disease). Needs cleaning and check-ups.', x_p_restoration: 'Existing filling.', x_p_root_canal_filling: 'Tooth with a root canal filling.', x_p_implant: 'Existing implant.', x_p_crown: 'Existing crown.', x_p_impacted_tooth: 'Tooth that has not fully erupted (impacted).',
   x_k_caries: 'Caries', x_k_deep_caries: 'Deep caries', x_k_periapical_lesion: 'Periapical lesion', x_k_bone_loss: 'Bone loss', x_k_restoration: 'Restoration', x_k_root_canal_filling: 'Root canal filling', x_k_implant: 'Implant', x_k_crown: 'Crown', x_k_impacted_tooth: 'Impacted tooth',
   ai_s_1: 'Maxilla', ai_s_2: 'Mandible', ai_s_3: 'Mandibular canal left', ai_s_4: 'Mandibular canal right', ai_s_5: 'Maxillary sinus left', ai_s_6: 'Maxillary sinus right', ai_s_7: 'Nasal cavity', ai_s_8: 'Pulp', ai_s_9: 'Upper teeth', ai_s_10: 'Lower teeth',
 };

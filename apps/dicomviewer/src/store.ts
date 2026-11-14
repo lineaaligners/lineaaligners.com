@@ -4,7 +4,7 @@ import type { ToolKey } from './lib/cs';
 
 export interface Shot { url: string; caption: string }
 interface State {
-  studies: Study[]; active: Series | null; tool: ToolKey; volMode: 'mpr' | 'dental'; compare: Series | null; shots: Shot[]; aiOpen: boolean; view3d: 'volume' | 'mesh'; accepted: { key: string; text: string }[];
+  studies: Study[]; active: Series | null; tool: ToolKey; volMode: 'mpr' | 'dental'; compare: Series | null; shots: Shot[]; aiOpen: boolean; view3d: 'volume' | 'mesh'; accepted: { key: string; text: string; kind?: string; fdi?: number | null }[];
   busy: { label: string; pct: number | null } | null; toast: { msg: string; bad?: boolean } | null;
   addStudies: (s: Study[]) => void; open: (s: Series) => void; setTool: (t: ToolKey) => void;
   setVolMode: (m: 'mpr' | 'dental') => void; setCompare: (s: Series | null) => void; addShot: (s: Shot) => void; removeShot: (i: number) => void;
