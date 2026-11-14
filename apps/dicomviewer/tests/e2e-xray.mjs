@@ -23,6 +23,13 @@ try {
   // the test image is a checkerboard of 40 px squares; the caries box (image x 300-340) must straddle the edge at x = 320
   const edge = await p.evaluate(() => { const r = document.querySelector('svg[data-xray] g[data-finding=caries] rect').getBoundingClientRect(), c = document.querySelector('.vp canvas'), cr = c.getBoundingClientRect(); const t = document.createElement('canvas'); t.width = cr.width; t.height = cr.height; const x = t.getContext('2d'); x.drawImage(c, 0, 0, cr.width, cr.height); const cx = r.left + r.width / 2 - cr.left, cy = r.top + r.height / 2 - cr.top, q = r.width / 4; return [x.getImageData(cx - q, cy, 1, 1).data[0], x.getImageData(cx + q, cy, 1, 1).data[0]]; });
   check('box placed on the right pixels', Math.abs(edge[0] - edge[1]) > 150, edge.join(' | '));
+  check('tooth chart marks detected teeth and findings', (await p.locator('#x-chart [data-state=present], #x-chart [data-state=finding]').count()) === 8 && (await p.locator('#x-chart [data-fdi="12"]').getAttribute('data-state')) === 'finding' && (await p.locator('#x-chart [data-fdi="38"]').getAttribute('data-state')) === 'absent');
+  await p.locator('#x-chart [data-fdi="12"]').click(); await p.waitForTimeout(200);
+  check('clicking a tooth filters the findings', (await p.locator('#x-findings li').count()) === 1, await p.locator('#x-findings li').count());
+  await p.locator('#x-chart [data-fdi="12"]').click();
+  await p.locator('#x-conf').fill('95'); await p.waitForTimeout(200);
+  check('confidence threshold hides weak findings', (await p.locator('#x-findings li').count()) === 0 && (await p.locator('svg[data-xray] g[data-finding]').count()) === 0);
+  await p.locator('#x-conf').fill('30'); await p.waitForTimeout(200);
   const items = p.locator('#x-findings li');
   check('findings list with tooth and confidence', /Karies · 12/.test(await items.nth(0).innerText()) && /81%/.test(await items.nth(0).innerText()), (await items.nth(0).innerText()).replace(/\n/g, ' '));
   await items.nth(0).getByRole('button', { name: 'Prano' }).click(); await items.nth(1).getByRole('button', { name: 'Refuzo' }).click(); await p.waitForTimeout(300);
@@ -32,10 +39,20 @@ try {
   await p.evaluate(() => { const vp = __cs.cs.getRenderingEngine('main').getViewport('stack'); vp.setZoom(2); vp.render(); }); await p.waitForTimeout(500);
   const after = await svg.locator('g[data-finding=caries] rect').boundingBox();
   check('boxes follow zoom', after.width > before.width * 1.3, `${before.width.toFixed(0)} -> ${after.width.toFixed(0)}`);
+  const vpe = e => p.evaluate(`(() => { const v = __cs.cs.getRenderingEngine('main').getViewport('stack'); return ${e}; })()`);
+  await vpe('(v.setProperties({ voiRange: { lower: 0, upper: 1 } }), v.render(), 0)'); await btn('Kontrast auto').click(); await p.waitForTimeout(300);
+  const voi = await vpe('v.getProperties().voiRange'); check('auto contrast sets a sensible window', voi.upper - voi.lower > 50, JSON.stringify(voi));
+  await btn('Rroto 180°').click(); await p.waitForTimeout(300); const rot = await vpe('v.getViewPresentation().rotation');
+  await btn('Rroto 180°').click(); await p.waitForTimeout(300);
+  check('rotate 180 and back', rot === 180 && (await vpe('v.getViewPresentation().rotation')) === 0, rot);
   await p.screenshot({ path: 'tests/shots/xray.png' });
   await p.selectOption('#export', 'report'); await p.waitForSelector('#r-findings');
   const lines = await p.locator('#r-findings li').allInnerTexts();
   check('only the accepted finding is in the report', lines.length === 1 && /Karies · dhëmbi 12 \(81%\) · OPG test/.test(lines[0]), lines.join(' | '));
+  await p.selectOption('#r-kind', 'patient'); await p.waitForTimeout(200);
+  const plainLines = await p.locator('#r-findings li').allInnerTexts();
+  check('patient report uses plain words, no percentages', plainLines.length === 1 && /^Dhëmbi 12: Karies \(prishje/.test(plainLines[0]) && !/%/.test(plainLines[0]), plainLines.join(' | '));
+  await p.selectOption('#r-kind', 'clinical');
   const [d] = await Promise.all([p.waitForEvent('download'), p.locator('#make-pdf').click()]);
   const pdf = fs.readFileSync(await d.path()).toString('latin1');
   check('PDF created with findings section', pdf.startsWith('%PDF-') && pdf.includes('Gjetjet e pranuara'));

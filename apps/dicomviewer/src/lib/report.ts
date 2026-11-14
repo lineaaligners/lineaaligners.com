@@ -3,7 +3,7 @@ import { jsPDF } from 'jspdf';
 
 export interface ReportInput {
   clinic: string; logo?: string; title: string; disclaimer: string;
-  patient: [string, string][]; notesLabel: string; notes: string; findingsLabel?: string; findings?: string[];
+  patient: [string, string][]; notesLabel: string; notes: string; findingsLabel?: string; findings?: string[]; intro?: string;
   shots: { url: string; caption: string; w: number; h: number }[];
 }
 export function buildReport(r: ReportInput): jsPDF {
@@ -17,6 +17,7 @@ export function buildReport(r: ReportInput): jsPDF {
   y += 22; doc.setDrawColor(200); doc.line(M, y, W - M, y); y += 7;
   doc.setFontSize(10);
   for (const [k, v] of r.patient) { if (!v) continue; doc.setTextColor(110); doc.text(k, M, y); doc.setTextColor(0); doc.text(v, M + 32, y); y += 5.5; }
+  if (r.intro) { y += 3; doc.setFontSize(10); for (const line of doc.splitTextToSize(r.intro, W - 2 * M) as string[]) { room(5); doc.text(line, M, y); y += 5; } }
   if (r.notes.trim()) {
     y += 3; doc.setFontSize(11); doc.text(r.notesLabel, M, y); y += 6; doc.setFontSize(10);
     for (const line of doc.splitTextToSize(r.notes, W - 2 * M) as string[]) { room(5); doc.text(line, M, y); y += 5; }
