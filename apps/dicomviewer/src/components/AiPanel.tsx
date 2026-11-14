@@ -80,7 +80,7 @@ export default function AiPanel({ series, meshHost }: { series: Series; meshHost
   const visible = labels.filter(l => !hidden.includes(l));
 
   return (
-    <div id="ai-panel" className="flex w-[304px] shrink-0 flex-col gap-1.5 overflow-y-auto bg-panel p-3 text-[13px]">
+    <div id="ai-panel" className="flex w-[304px] shrink-0 flex-col gap-1.5 overflow-y-auto rounded-xl border border-line bg-panel p-3 text-[13px]">
       <H>{t('ai_title')}</H>
       {down && <p className="text-warn text-xs">{t('ai_down')}</p>}
       {engines && <>

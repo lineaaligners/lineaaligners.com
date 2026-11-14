@@ -16,6 +16,8 @@
     "@cornerstonejs/core": "^5.17.0",
     "@cornerstonejs/dicom-image-loader": "^5.17.0",
     "@cornerstonejs/tools": "^5.17.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@types/three": "^0.187.0",
     "dicom-parser": "^1.8.21",
     "events": "^3.3.0",

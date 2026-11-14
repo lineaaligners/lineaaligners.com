@@ -87,8 +87,8 @@ export default function Viewer({ series }: { series: Series }) {
   if (dental) return <DentalView series={series} />;
   const el = (id: string) => <div className="el" ref={n => { refs.current[id] = n; }} onContextMenu={e => e.preventDefault()} />;
   if (!isVol) return (
-    <div className="absolute inset-0 flex gap-0.5 bg-line">
-      <div data-capture className={`relative grid min-w-0 flex-1 gap-0.5 bg-line ${compare ? 'grid-cols-2' : ''}`}>
+    <div className="absolute inset-0 flex gap-1.5 p-1.5">
+      <div data-capture className={`relative grid min-w-0 flex-1 gap-1.5 p-1.5 ${compare ? 'grid-cols-2' : ''}`}>
         <div className="vp" ref={setMeshHost}>{el('stack')}{compare && <div className="lbl text-accent">{series.label}</div>}</div>
         {compare && <div className="vp">{el('stack2')}<div className="lbl text-warn">{compare.label}</div></div>}
       </div>
@@ -101,8 +101,8 @@ export default function Viewer({ series }: { series: Series }) {
     </div>
   );
   return (
-    <div className="absolute inset-0 flex gap-0.5 bg-line">
-      <div data-capture className="relative grid min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-0.5 bg-line">
+    <div className="absolute inset-0 flex gap-1.5 p-1.5">
+      <div data-capture className="relative grid min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-1.5 p-1.5">
         {MPR.map(m => cell(m.id, t(m.key), m.color))}
         {cell('v3d', t('v3d'), '#c9a7ff')}
       </div>
