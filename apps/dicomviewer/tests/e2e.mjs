@@ -59,7 +59,7 @@ await p.setInputFiles('#pick-files', walk('testdata/jaw'));
 await p.waitForTimeout(1500); await p.getByText('Fantom nofulle').click();
 await p.waitForFunction(() => !document.querySelector('[role=status]'), null, { timeout: 90000 }); await p.waitForTimeout(3000);
 const before3d = await lit('.vp:nth-child(4)');
-await p.locator('summary').click(); await p.locator('#clip_x-1').fill('0.3'); await p.waitForTimeout(800);
+await p.locator('summary', { hasText: 'Prerja 3D' }).click(); await p.locator('#clip_x-1').fill('0.3'); await p.waitForTimeout(800);
 const after3d = await lit('.vp:nth-child(4)'); check('3D crop reduces rendering', after3d < before3d, `${before3d} -> ${after3d}`);
 await p.screenshot({ path: 'tests/shots/mpr-crop.png' });
 await btn('Dentare').click(); await p.waitForTimeout(2500);

@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import meshes, pipeline, xray
+from .library import Library
 from .engines import ENGINES
 
 DATA = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent.parent / "data"))
@@ -25,6 +26,9 @@ DATA.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="Medident AI")
 # The hosted viewer (a web page) may call this backend on the same PC; nothing else may.
 app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("ALLOWED_ORIGINS", "https://lineaaligners.com,https://www.lineaaligners.com,http://localhost:5173").split(","), allow_methods=["*"], allow_headers=["*"])
+LIB = Library(DATA, Path(os.environ["INBOX_DIR"]) if os.environ.get("INBOX_DIR") else None)
+if os.environ.get("WATCH_INBOX", "1") == "1":
+    LIB.watch()
 JOBS: dict[str, dict] = {}
 LOCK = threading.Lock()  # one segmentation at a time: a second one would not fit in 8 GB of GPU memory
 
@@ -143,6 +147,36 @@ def mesh(job_id: str, label: int, ext: str):
             raise HTTPException(404, "structure is empty")
         cache.write_bytes(meshes.glb(m) if ext == "glb" else meshes.stl(m))
     return Response(cache.read_bytes(), media_type="model/gltf-binary" if ext == "glb" else "model/stl")
+
+
+@app.get("/api/library/status")
+def library_status():
+    return LIB.status()
+
+
+@app.get("/api/library/patients")
+def library_patients(q: str = ""):
+    return {"patients": LIB.patients(q)}
+
+
+@app.get("/api/library/patients/{patient_id}/exams")
+def library_exams(patient_id: int):
+    return {"exams": LIB.exams(patient_id)}
+
+
+@app.get("/api/library/series/{series_id}/zip")
+def library_series(series_id: int):
+    data = LIB.series_zip(series_id)
+    if data is None:
+        raise HTTPException(404, "unknown series")
+    return Response(data, media_type="application/zip")
+
+
+@app.post("/api/library/series/{series_id}/assign")
+def library_assign(series_id: int, patient_id: int):
+    if not LIB.assign(series_id, patient_id):
+        raise HTTPException(404, "unknown patient")
+    return {"ok": True}
 
 
 @app.get("/api/xray/engines")
