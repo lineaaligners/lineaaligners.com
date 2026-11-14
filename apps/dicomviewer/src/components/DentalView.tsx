@@ -45,6 +45,7 @@ export default function DentalView({ series }: { series: Series }) {
       const c = ctl.current, tag = (e.target as HTMLElement).tagName;
       if (!c || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); c.move(e.key === 'ArrowRight' ? 1 : -1); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); c.setDepth(c.depth + (e.key === 'ArrowUp' ? 0.5 : -0.5)); }
       if (e.key === 'Escape' && c.drawing) { c.drawing = null; c.refresh(); }
     };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
@@ -87,6 +88,11 @@ export default function DentalView({ series }: { series: Series }) {
         <div className="flex flex-wrap gap-1"><Btn onClick={() => d!.setSplitHere()}>{t('d_split')}</Btn><Btn on={d?.flipped} onClick={() => d!.flipZ()}>{t('d_flip')}</Btn></div>
         <H>{t('d_pano')}</H>
         <Sel id="d-thick" label={t('d_thick')} value={d?.thick ?? 10} opts={[0, 5, 10, 15, 20, 30].map(n => [n, `${n} mm`])} onChange={v => d!.setThick(+v)} />
+        <label htmlFor="d-depth" className="flex items-center gap-2"><span className="text-muted">{t('d_depth')}</span>
+          <input id="d-depth" type="range" disabled={!d} min={-(d?.depthMax ?? 14)} max={d?.depthMax ?? 14} step={0.5} value={d?.depth ?? 0} onChange={e => d!.setDepth(+e.target.value)} className="min-w-0 flex-1 accent-[#c9a7ff]" />
+          <span className="w-14 text-right tabular-nums">{(d?.depth ?? 0).toFixed(1)} mm</span></label>
+        <div className="flex gap-1"><Btn onClick={() => d!.setDepth(d!.depth - 0.5)}>◀ {t('d_lingual')}</Btn><Btn onClick={() => d!.setDepth(0)}>0</Btn><Btn onClick={() => d!.setDepth(d!.depth + 0.5)}>{t('d_buccal')} ▶</Btn></div>
+        <p className="text-muted text-xs">{t('d_depth_hint')}</p>
         <Sel id="d-mode" label={t('slab')} value={d?.mode ?? 'avg'} opts={[['avg', t('avg')], ['mip', t('mip')]]} onChange={v => d!.setMode(v as 'avg' | 'mip')} />
         <H>{t('d_cross')}</H>
         <Sel id="d-step" label={t('d_step')} value={d?.step ?? 1} opts={[0.5, 1, 1.5, 2].map(n => [n, `${n} mm`])} onChange={v => d!.setStep(+v)} />

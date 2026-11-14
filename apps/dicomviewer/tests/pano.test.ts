@@ -26,6 +26,11 @@ describe('panoramic reconstruction', () => {
     for (let i = 1; i < curve.W; i += 17) expect(Math.hypot((curve.cx[i] - curve.cx[i - 1]) * 0.4, (curve.cy[i] - curve.cy[i - 1]) * 0.4)).toBeCloseTo(0.4, 1);
     expect(curve.hw).toBe(Math.round(15 / 0.4));
   });
+  it('moving the layer off the curve leaves the teeth behind', () => {
+    const on = reslicePano(vol, curve, 0, vol.nz - 1, 1, 'mip', 0), off = reslicePano(vol, curve, 0, vol.nz - 1, 1, 'mip', 12);
+    const bright = (d: Float32Array) => d.reduce((n, v) => n + (v > 1000 ? 1 : 0), 0);
+    expect(bright(on.data)).toBeGreaterThan(500); expect(bright(off.data)).toBeLessThan(bright(on.data) * 0.2);
+  });
   it('shows every tooth in the panoramic and the gap between the jaws', () => {
     const p = reslicePano(vol, curve, 0, vol.nz - 1, 4, 'mip');
     expect(p.w).toBe(curve.W); expect(p.h).toBe(60);

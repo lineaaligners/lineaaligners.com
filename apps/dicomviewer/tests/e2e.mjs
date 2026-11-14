@@ -66,6 +66,17 @@ await btn('Dentare').click(); await p.waitForTimeout(2500);
 const ctl = () => p.evaluate(() => { const c = [...document.querySelectorAll('[data-capture] canvas')]; return c.map(x => x.width > 10); });
 check('dental panes drawn', (await lit('.vp:nth-child(1)')) > 0.05 && (await lit('.vp:nth-child(2)')) > 0.05 && (await lit('.vp:nth-child(3)')) > 0.05, (await ctl()).join());
 await p.screenshot({ path: 'tests/shots/dental-both.png' });
+{ // walking through the panoramic: wheel moves the layer in and out
+  const box = await p.locator('.vp:nth-child(1) canvas').boundingBox(), sum = () => p.evaluate(() => { const c = document.querySelector('.vp:nth-child(1) canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let t = 0; for (let i = 0; i < d.length; i += 97) t += d[i]; return t; });
+  const s0 = await sum(); await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 8; i++) await p.mouse.wheel(0, -100); await p.waitForTimeout(400);
+  const dep = await p.locator('#d-depth').inputValue(), s1 = await sum();
+  check('wheel over panoramic moves the layer (depth)', dep === '4' && s1 !== s0, `depth ${dep}`);
+  await p.keyboard.press('ArrowDown'); await p.waitForTimeout(200);
+  check('arrow keys move the layer', (await p.locator('#d-depth').inputValue()) === '3.5');
+  await p.getByRole('button', { name: '0', exact: true }).click(); await p.waitForTimeout(300);
+  check('depth back to 0 restores the panoramic', (await sum()) === s0);
+}
 await btn('Maxilla').click(); await p.waitForTimeout(500);
 await btn('Kocka G × L').click(); await drag('.vp:nth-child(3)', 0.42, 0.3, 0.58, 0.7);
 await btn('Navigo').click(); await btn('16').click(); const pr = await p.locator('.vp:nth-child(1)').boundingBox(); await p.mouse.click(pr.x + pr.width * 0.3, pr.y + pr.height * 0.5); await p.waitForTimeout(400);

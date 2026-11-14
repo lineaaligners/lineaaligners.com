@@ -67,7 +67,7 @@ class Pane {
     cv.addEventListener('contextmenu', e => e.preventDefault());
     cv.addEventListener('wheel', e => {
       if (!this.img) return; e.preventDefault();
-      if (!e.ctrlKey && !e.metaKey) { host.wheel(this, e.deltaY > 0 ? -1 : 1); return; }
+      if (!e.ctrlKey && !e.metaKey) { host.wheel(this, e.deltaY > 0 ? -1 : 1, e.shiftKey); return; }
       const r = cv.getBoundingClientRect(), k = dpr(), px = (e.clientX - r.left) * k - cv.width / 2, py = (e.clientY - r.top) * k - cv.height / 2;
       const z = Math.max(0.3, Math.min(40, this.zoom * Math.exp(-e.deltaY * 0.004))), q = z / this.zoom;
       this.panX = px - q * (px - this.panX); this.panY = py - q * (py - this.panY); this.zoom = z; this.draw();
@@ -105,7 +105,7 @@ class Pane {
 
 export class Dental {
   tool: DTool = 'nav'; win: { c: number; w: number }; auto: { c: number; w: number }; range: number; invert = false;
-  z: number; jaw: Jaw = 'both'; split: number; thick = 10; mode: 'avg' | 'mip' = 'avg'; step = 1; xsThick = 1;
+  z: number; jaw: Jaw = 'both'; split: number; thick = 10; depth = 0; mode: 'avg' | 'mip' = 'avg'; step = 1; xsThick = 1;
   pts: Record<'both' | 'lo' | 'hi', Pt[]>; curve!: Curve; s = -1; ver = 0;
   teeth: Record<number, { mm: number; z: number }> = {}; placing: number | null = null; numbering: 'fdi' | 'uni' = 'fdi';
   drawing: Pt[] | null = null; labels = { value: 'vlera', width: 'G', height: 'L', axial: 'Aksial', pano: 'Panoramik', cross: 'Prerja', lingual: 'L', buccal: 'B' };
@@ -133,11 +133,11 @@ export class Dental {
     const [z0, z1] = this.zRange(), P = this.panes;
     if (this.dirtyCurve) {
       this.curve = buildCurve(this.vol, this.pts[this.key()]); this.s = this.s < 0 ? this.curve.W >> 1 : Math.min(this.curve.W - 1, this.s);
-      this.ver++; this.dirtyCurve = false; this.dirtyPano = true; P.pan.measures = []; P.xs.measures = [];
+      this.ver++; this.depth = Math.max(-this.depthMax, Math.min(this.depthMax, this.depth)); this.dirtyCurve = false; this.dirtyPano = true; P.pan.measures = []; P.xs.measures = [];
     }
-    if (this.dirtyPano) { this.pano = reslicePano(this.vol, this.curve, z0, z1, this.thick, this.mode); this.dirtyPano = false; }
+    if (this.dirtyPano) { this.pano = reslicePano(this.vol, this.curve, z0, z1, this.thick, this.mode, this.depth); this.dirtyPano = false; }
     P.ax.img = axialSlice(this.vol, this.z); P.ax.key = `z${this.z}`; P.ax.title = `${this.labels.axial} ${this.z + 1}/${this.vol.nz}`;
-    P.pan.img = this.pano; P.pan.key = `v${this.ver}`; P.pan.title = this.labels.pano;
+    P.pan.img = this.pano; P.pan.key = `v${this.ver}`; P.pan.title = this.depth ? `${this.labels.pano} · ${this.depth > 0 ? this.labels.buccal : this.labels.lingual} ${Math.abs(this.depth).toFixed(1)} mm` : this.labels.pano;
     P.xs.img = resliceCross(this.vol, this.curve, this.s, z0, z1, this.xsThick); P.xs.key = `v${this.ver}s${this.s}`; P.xs.title = `${this.labels.cross} ${this.posMm.toFixed(1)} / ${this.lengthMm.toFixed(0)} mm`;
     this.redraw(); this.onChange();
   }
@@ -148,6 +148,9 @@ export class Dental {
   // ---- settings ----
   setJaw(j: Jaw) { this.jaw = j; if (j !== 'both') { const [z0, z1] = this.zRange(); this.z = Math.round(z0 + (z1 - z0) * (this.key() === 'hi' ? 0.3 : 0.7)); } this.touchCurve(); }
   setSplitHere() { this.split = Math.max(1, Math.min(this.vol.nz - 2, this.z)); this.touchCurve(); }
+  /** walk through the jaw: move the panoramic layer towards the cheek (+) or the tongue (-) */
+  get depthMax() { return Math.floor(this.curve.hw * this.curve.st) - 1; }
+  setDepth(mm: number) { const m = this.depthMax, v = Math.max(-m, Math.min(m, Math.round(mm * 2) / 2)); if (v === this.depth) return; this.depth = v; this.touchPano(); }
   setThick(mm: number) { this.thick = mm; this.touchPano(); }
   setMode(m: 'avg' | 'mip') { this.mode = m; this.touchPano(); }
   setStep(mm: number) { this.step = mm; this.onChange(); }
@@ -192,7 +195,7 @@ export class Dental {
     this.refresh();
   }
   release() { this.dragPt = -1; }
-  wheel(p: Pane, d: number) { if (p.kind === 'ax') { this.z = Math.max(0, Math.min(this.vol.nz - 1, this.z + d)); this.refresh(); } else this.move(d); }
+  wheel(p: Pane, d: number, along = false) { if (p.kind === 'pan' && !along) { this.setDepth(this.depth + d * 0.5); return; } if (p.kind === 'ax') { this.z = Math.max(0, Math.min(this.vol.nz - 1, this.z + d)); this.refresh(); } else this.move(d); }
 
   overlay(p: Pane, ctx: CanvasRenderingContext2D, P: (x: number, y: number) => DOMPoint, k: number) {
     const c = this.curve, g = p.img!, [z0, z1] = this.zRange();
@@ -204,6 +207,7 @@ export class Dental {
       ctx.globalAlpha = 0.9; ctx.strokeStyle = COL.pan; ctx.lineWidth = 1.5 * k; ctx.beginPath();
       for (let i = 0; i < c.W; i++) { const q = P(c.cx[i], c.cy[i]); if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
       ctx.stroke(); const s = this.s; line(c.cx[s] - c.nxv[s] * c.hw, c.cy[s] - c.nyv[s] * c.hw, c.cx[s] + c.nxv[s] * c.hw, c.cy[s] + c.nyv[s] * c.hw, COL.xs, 2); ctx.globalAlpha = 1;
+      if (this.depth) { const o = this.depth / c.st; ctx.strokeStyle = COL.pan; ctx.lineWidth = k; ctx.setLineDash([5 * k, 4 * k]); ctx.beginPath(); for (let i = 0; i < c.W; i++) { const q = P(c.cx[i] + c.nxv[i] * o, c.cy[i] + c.nyv[i] * o); if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); } ctx.stroke(); ctx.setLineDash([]); }
       for (const q of this.pts[this.key()]) dot(q.x, q.y, COL.pan);
     } else if (p.kind === 'pan') {
       zLine(); ctx.globalAlpha = 0.8; line(this.s + 0.5, 0, this.s + 0.5, g.h, COL.xs); ctx.globalAlpha = 1;
@@ -213,7 +217,7 @@ export class Dental {
         ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(q.x - tw / 2 - 4 * k, q.y - 9 * k, tw + 8 * k, 18 * k); ctx.fillStyle = COL.tooth; ctx.fillText(label, q.x - tw / 2, q.y);
       }
     } else {
-      zLine(); ctx.globalAlpha = 0.35; line(c.hw + 0.5, 0, c.hw + 0.5, g.h, COL.pan); ctx.globalAlpha = 1;
+      zLine(); const o = c.hw + this.depth / c.st + 0.5; ctx.globalAlpha = this.depth ? 0.7 : 0.35; line(o, 0, o, g.h, COL.pan); ctx.globalAlpha = 1;
       ctx.fillStyle = '#e8edf0'; ctx.fillText(this.labels.lingual, 10 * k, 36 * k); ctx.fillText(this.labels.buccal, p.canvas.width - 20 * k, 36 * k);
     }
   }
