@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StudyList from './components/StudyList';
+import Library from './components/Library';
+import { loadBindings, saveBindings, type Bindings } from './lib/cs';
 import Toolbar from './components/Toolbar';
 import TagBrowser from './components/TagBrowser';
 import ReportDialog from './components/ReportDialog';
@@ -11,7 +13,8 @@ import { useStore } from './store';
 export default function App() {
   const { t, i18n } = useTranslation();
   const { active, busy, toast } = useStore();
-  const [drag, setDrag] = useState(false); const [tags, setTags] = useState(false); const [report, setReport] = useState(false);
+  const [drag, setDrag] = useState(false); const [tags, setTags] = useState(false); const [report, setReport] = useState(false); const [bind, setBind] = useState<Bindings>(loadBindings);
+  const setButton = (k: keyof Bindings, v: string) => { const next = { ...bind, [k]: v } as Bindings; setBind(next); saveBindings(next); };
   const files = useRef<HTMLInputElement>(null), folder = useRef<HTMLInputElement>(null);
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => { const list = [...(e.target.files || [])].map(f => ({ name: f.webkitRelativePath || f.name, blob: f })); e.target.value = ''; if (list.length) ingest(list); };
   const setLang = (lng: string) => { i18n.changeLanguage(lng); document.documentElement.lang = lng; try { localStorage.setItem('lang', lng); } catch { /* ignore */ } };
@@ -30,9 +33,20 @@ export default function App() {
           <input ref={folder} id="pick-folder" type="file" multiple hidden onChange={pick} {...({ webkitdirectory: '' } as object)} />
         </div>
         <Toolbar onTags={() => setTags(true)} onReport={() => setReport(true)} />
-        <select id="lang" aria-label="Language" className="btn ml-auto" value={i18n.language} onChange={e => setLang(e.target.value)}><option value="sq">Shqip</option><option value="en">English</option></select>
+        <details className="relative ml-auto">
+          <summary className="btn list-none">{t('set_title')}</summary>
+          <div className="border-line absolute top-full right-0 z-30 mt-1 flex w-72 flex-col gap-2 rounded-md border bg-panel p-3 text-[13px]">
+            {(['secondary', 'auxiliary'] as const).map(k => (
+              <label key={k} htmlFor={`bind-${k}`} className="flex items-center justify-between gap-2"><span className="text-muted">{t('set_' + k)}</span>
+                <select id={`bind-${k}`} className="btn" value={bind[k]} onChange={e => setButton(k, e.target.value)}>{(['wl', 'zoom', 'pan'] as const).map(v => <option key={v} value={v}>{t('tool_' + v)}</option>)}</select></label>
+            ))}
+            <p className="text-muted text-xs">{t('set_fixed')}</p>
+          </div>
+        </details>
+        <select id="lang" aria-label="Language" className="btn" value={i18n.language} onChange={e => setLang(e.target.value)}><option value="sq">Shqip</option><option value="en">English</option></select>
       </header>
       <aside className="border-line flex min-h-0 flex-col gap-3 overflow-y-auto border-r bg-panel p-3">
+        <Library />
         <h2 className="text-muted text-[11px] font-medium tracking-widest uppercase">{t('studies')}</h2>
         <StudyList />
         {busy && <div role="status" className="text-muted text-xs">{busy.label}<div className="bg-line mt-1 h-1 overflow-hidden rounded"><div className="h-full bg-accent" style={{ width: `${(busy.pct ?? 0.15) * 100}%` }} /></div></div>}

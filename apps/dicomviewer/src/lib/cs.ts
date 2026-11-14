@@ -16,13 +16,44 @@ export const TOOL_NAME: Record<ToolKey, string> = {
   angle: T.AngleTool.toolName, probe: T.ProbeTool.toolName, note: T.ArrowAnnotateTool.toolName, cross: T.CrosshairsTool.toolName,
   brush: 'Brush', eraser: 'Eraser', grow: '', canal: '', // grow and canal are handled by the AI panel's own click handler
 };
-const { MouseBindings } = T.Enums;
-// Pan and zoom stay reachable on the middle and right button whatever the active tool is.
-const FIXED: Record<string, number> = { [T.PanTool.toolName]: MouseBindings.Auxiliary, [T.ZoomTool.toolName]: MouseBindings.Secondary };
+const { MouseBindings, KeyboardBindings } = T.Enums;
+// Which tool sits on the right and the middle mouse button whatever the active tool is. The user can change both;
+// the defaults follow what dental imaging programs do: right-drag changes contrast, wheel scrolls, Ctrl + wheel zooms.
+export interface Bindings { secondary: 'wl' | 'zoom' | 'pan'; auxiliary: 'wl' | 'zoom' | 'pan' }
+const DEFAULT_BINDINGS: Bindings = { secondary: 'wl', auxiliary: 'pan' };
+export function loadBindings(): Bindings { try { return { ...DEFAULT_BINDINGS, ...JSON.parse(localStorage.getItem('bindings') || '{}') }; } catch { return DEFAULT_BINDINGS; } }
+const TOOL_OF = { wl: T.WindowLevelTool.toolName, zoom: T.ZoomTool.toolName, pan: T.PanTool.toolName };
+let FIXED: Record<string, number> = {};
+function fixedFrom(b: Bindings) { const f: Record<string, number> = {}; f[TOOL_OF[b.secondary]] = MouseBindings.Secondary; if (b.auxiliary !== b.secondary) f[TOOL_OF[b.auxiliary]] = MouseBindings.Auxiliary; return f; }
+const CTRL_WHEEL = { mouseButton: MouseBindings.Wheel, modifierKey: KeyboardBindings.Ctrl };
+function bindingsFor(name: string, primary: boolean) {
+  const b: { mouseButton: number; modifierKey?: number }[] = [];
+  if (primary) b.push({ mouseButton: MouseBindings.Primary });
+  if (name in FIXED) b.push({ mouseButton: FIXED[name] });
+  if (name === T.ZoomTool.toolName) b.push(CTRL_WHEEL);
+  return b;
+}
+// Cornerstone merges new bindings into the old ones, so clear them before activating.
+function activate(g: NonNullable<ReturnType<typeof T.ToolGroupManager.getToolGroup>>, name: string, b: unknown[]) {
+  const o = (g as unknown as { toolOptions: Record<string, { bindings: unknown[] }> }).toolOptions[name];
+  if (o) o.bindings = [];
+  if (b.length) g.setToolActive(name, { bindings: b as never }); else g.setToolPassive(name);
+}
+function applyFixed() {
+  for (const id of [TG.stack, TG.mpr]) {
+    const g = T.ToolGroupManager.getToolGroup(id); if (!g) continue;
+    for (const name of Object.values(TOOL_OF)) {
+      const primary = current != null && TOOL_NAME[current] === name, b = bindingsFor(name, primary);
+      activate(g, name, b);
+    }
+  }
+}
+export function saveBindings(b: Bindings) { try { localStorage.setItem('bindings', JSON.stringify(b)); } catch { /* storage unavailable */ } FIXED = fixedFrom(b); if (ready) ready.then(applyFixed); }
 
 // Plane geometry for volumes whose files carry no per-slice position (some multi-frame exports).
 const synthPlane = new Map<string, Record<string, unknown>>();
 
+let current: ToolKey | null = null;
 let ready: Promise<void> | null = null;
 export function initCs(): Promise<void> {
   ready ??= (async () => {
@@ -39,13 +70,13 @@ export function initCs(): Promise<void> {
       }
       g.addTool(T.StackScrollTool.toolName);
       g.setToolActive(T.StackScrollTool.toolName, { bindings: [{ mouseButton: MouseBindings.Wheel }] });
-      for (const [name, btn] of Object.entries(FIXED)) g.setToolActive(name, { bindings: [{ mouseButton: btn }] });
     }
     const g3 = T.ToolGroupManager.createToolGroup(TG.v3d)!;
     for (const tool of [T.TrackballRotateTool, T.ZoomTool, T.PanTool]) g3.addTool(tool.toolName);
     g3.setToolActive(T.TrackballRotateTool.toolName, { bindings: [{ mouseButton: MouseBindings.Primary }] });
     g3.setToolActive(T.ZoomTool.toolName, { bindings: [{ mouseButton: MouseBindings.Secondary }] });
     g3.setToolActive(T.PanTool.toolName, { bindings: [{ mouseButton: MouseBindings.Auxiliary }] });
+    FIXED = fixedFrom(loadBindings()); applyFixed();
     cs.metaData.addProvider((type: string, imageId: string) => (type === 'imagePlaneModule' ? synthPlane.get(imageId) : undefined), 20000);
     new cs.RenderingEngine(ENGINE);
   })();
@@ -53,20 +84,17 @@ export function initCs(): Promise<void> {
 }
 export const engine = () => cs.getRenderingEngine(ENGINE)!;
 
-let current: ToolKey | null = null;
 export function setPrimaryTool(key: ToolKey) {
   for (const id of [TG.stack, TG.mpr]) {
     const g = T.ToolGroupManager.getToolGroup(id);
     if (!g) continue;
     if (current && TOOL_NAME[current] && g.hasTool(TOOL_NAME[current])) {
-      const prev = TOOL_NAME[current];
-      if (prev in FIXED) g.setToolActive(prev, { bindings: [{ mouseButton: FIXED[prev] }] }); else g.setToolPassive(prev);
+      const prev = TOOL_NAME[current], b = bindingsFor(prev, false);
+      activate(g, prev, b);
     }
     if (key === 'grow' || key === 'canal') continue; // no Cornerstone tool on the left button while picking points
     const name = g.hasTool(TOOL_NAME[key]) ? TOOL_NAME[key] : TOOL_NAME.wl;
-    const bindings = [{ mouseButton: MouseBindings.Primary }];
-    if (name in FIXED) bindings.push({ mouseButton: FIXED[name] });
-    g.setToolActive(name, { bindings });
+    activate(g, name, bindingsFor(name, true));
   }
   current = key;
 }

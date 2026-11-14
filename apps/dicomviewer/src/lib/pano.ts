@@ -12,29 +12,49 @@ export function percentile(data: ArrayLike<number>, p: number): number {
   const b = a.subarray(0, j).sort(); return b[Math.min(j - 1, (j * p) | 0)];
 }
 
-/** Fits a parabola through the dense (tooth) voxels of a z-range and returns 7 control points along it. */
+/** Arch curve through the dense (tooth) voxels of a z-range, as control points from the patient's right to left.
+ *
+ * Seen from a point at the back of the arch, the teeth are sorted by angle and the middle of the tooth row is
+ * taken every few degrees. Unlike a parabola this follows a deep U-shaped arch along the molars, and it also works
+ * when a small field of view shows only part of the arch.
+ */
 export function fitArch(vol: Vol, zlo: number, zhi: number, thr: number): Pt[] {
   const { nx, ny, data } = vol, nxy = nx * ny, zs = Math.max(1, ((zhi - zlo) / 40) | 0);
   const mask = new Uint8Array(nxy);
-  for (let k = zlo; k <= zhi; k += zs) for (let y = 0; y < ny; y += 2) for (let x = 0; x < nx; x += 2) if (data[k * nxy + y * nx + x] >= thr) mask[y * nx + x] = 1;
-  const X: number[] = [], Y: number[] = []; let sum = 0;
-  for (let y = 0; y < ny; y += 2) for (let x = 0; x < nx; x += 2) if (mask[y * nx + x]) { X.push(x); Y.push(y); sum += x; }
+  for (let k = zlo; k <= zhi; k += zs) for (let y = 0; y < ny; y += 2) for (let x = 0; x < nx; x += 2) if (data[k * nxy + y * nx + x] >= thr) mask[y * nx + x]++;
+  // a tooth is dense over many slices; a thin bright streak (metal artefact, noise) is not
+  const need = Math.max(1, Math.round(((zhi - zlo) / zs + 1) * 0.12));
+  const X: number[] = [], Y: number[] = [];
+  for (let y = 0; y < ny; y += 2) for (let x = 0; x < nx; x += 2) if (mask[y * nx + x] >= need) { X.push(x); Y.push(y); }
   const n = X.length;
   const fallback = () => Array.from({ length: 7 }, (_, i) => { const t = -1 + i / 3; return { x: nx / 2 + t * nx * 0.28, y: ny * 0.25 + ny * 0.45 * t * t }; });
   if (n < 50) return fallback();
-  const xm = sum / n; let S1 = 0, S2 = 0, S3 = 0, S4 = 0, T0 = 0, T1 = 0, T2 = 0;
-  for (let i = 0; i < n; i++) { const u = X[i] - xm, u2 = u * u, y = Y[i]; S1 += u; S2 += u2; S3 += u2 * u; S4 += u2 * u2; T0 += y; T1 += u * y; T2 += u2 * y; }
-  const det = (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
-  const D = det(S4, S3, S2, S3, S2, S1, S2, S1, n);
-  const a = det(T2, S3, S2, T1, S2, S1, T0, S1, n) / D, b = det(S4, T2, S2, S3, T1, S1, S2, T0, n) / D, c = det(S4, S3, T2, S3, S2, T1, S2, S1, T0) / D;
-  const xs = X.slice().sort((p, q) => p - q), xlo = xs[(n * 0.02) | 0], xhi = xs[(n * 0.98) | 0];
-  if (!(a > 0) || xhi - xlo < nx * 0.15) return fallback();
-  return Array.from({ length: 7 }, (_, i) => { const x = xlo + (i * (xhi - xlo)) / 6, u = x - xm; return { x: x + 0.5, y: Math.max(1, Math.min(ny - 2, a * u * u + b * u + c)) + 0.5 }; });
+  const q = (a: number[], p: number) => a.slice().sort((u, v) => u - v)[Math.min(a.length - 1, (a.length * p) | 0)];
+  const cx = (q(X, 0.03) + q(X, 0.97)) / 2, cy = q(Y, 0.97), sx = vol.dx, sy = vol.dy;
+  const BIN = 7.5, NB = Math.round(180 / BIN), bins: number[][] = Array.from({ length: NB }, () => []);
+  for (let i = 0; i < n; i++) {
+    const dxm = (X[i] - cx) * sx, dym = (cy - Y[i]) * sy; if (dym < 0) continue;
+    const th = (Math.atan2(dym, dxm) * 180) / Math.PI; bins[Math.min(NB - 1, (th / BIN) | 0)].push(Math.hypot(dxm, dym));
+  }
+  const most = Math.max(...bins.map(b => b.length));
+  let pts: { th: number; r: number }[] = [];
+  bins.forEach((b, i) => { if (b.length >= Math.max(4, most * 0.08)) pts.push({ th: (i + 0.5) * BIN, r: q(b, 0.5) }); });
+  if (pts.length < 4) return fallback();
+  pts = pts.map((p, i) => ({ th: p.th, r: (pts[Math.max(0, i - 1)].r + p.r * 2 + pts[Math.min(pts.length - 1, i + 1)].r) / 4 }));
+  const want = Math.min(11, pts.length), out: Pt[] = [];
+  for (let i = 0; i < want; i++) {
+    const p = pts[Math.round((i * (pts.length - 1)) / (want - 1))], a = (p.th * Math.PI) / 180;
+    out.push({ x: Math.max(1, Math.min(nx - 2, cx + (p.r * Math.cos(a)) / sx)) + 0.5, y: Math.max(1, Math.min(ny - 2, cy - (p.r * Math.sin(a)) / sy)) + 0.5 });
+  }
+  return out[0].x > out[out.length - 1].x ? out.reverse() : out;
 }
 
 /** Finds the tooth-bearing z-range and the slice between the jaws (middle of that range). */
 export function findJaws(vol: Vol): { thr: number; zA: number; zB: number; split: number } {
-  const { nx, ny, nz, data } = vol, nxy = nx * ny, thr = percentile(data, 0.993);
+  const { nx, ny, nz, data } = vol, nxy = nx * ny, floor = percentile(data, 0.02) + 300;
+  const step = Math.max(1, (data.length / 400000) | 0) | 1, tissue: number[] = [];
+  for (let i = 0; i < data.length; i += step) if (data[i] > floor) tissue.push(data[i]);
+  const thr = tissue.length > 500 ? percentile(tissue, 0.965) : percentile(data, 0.993);
   const cnt = new Uint32Array(nz); let mx = 0;
   for (let k = 0; k < nz; k++) { let c = 0; const o = k * nxy; for (let y = 0; y < ny; y += 2) for (let x = 0; x < nx; x += 2) if (data[o + y * nx + x] >= thr) c++; cnt[k] = c; if (c > mx) mx = c; }
   let zA = 0, zB = nz - 1;
