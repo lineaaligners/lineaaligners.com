@@ -100,11 +100,12 @@ function column(vol: Vol, x: number, y: number, z0: number, z1: number, acc: Flo
   return true;
 }
 
-export function reslicePano(vol: Vol, c: Curve, z0: number, z1: number, thickMm: number, mode: 'avg' | 'mip'): Slice {
-  const H = z1 - z0 + 1, W = c.W, T = Math.round(thickMm / 2 / c.st), out = new Float32Array(W * H), acc = new Float32Array(H), max = mode === 'mip';
+/** `offMm` moves the layer off the curve: positive towards the cheek (buccal), negative towards the tongue. */
+export function reslicePano(vol: Vol, c: Curve, z0: number, z1: number, thickMm: number, mode: 'avg' | 'mip', offMm = 0): Slice {
+  const H = z1 - z0 + 1, W = c.W, T = Math.round(thickMm / 2 / c.st), O = Math.round(offMm / c.st), out = new Float32Array(W * H), acc = new Float32Array(H), max = mode === 'mip';
   for (let i = 0; i < W; i++) {
     acc.fill(max ? -Infinity : 0); let n = 0;
-    for (let t = -T; t <= T; t++) if (column(vol, c.cx[i] - 0.5 + c.nxv[i] * t, c.cy[i] - 0.5 + c.nyv[i] * t, z0, z1, acc, max)) n++;
+    for (let t = O - T; t <= O + T; t++) if (column(vol, c.cx[i] - 0.5 + c.nxv[i] * t, c.cy[i] - 0.5 + c.nyv[i] * t, z0, z1, acc, max)) n++;
     for (let r = 0; r < H; r++) out[r * W + i] = n ? (max ? acc[r] : acc[r] / n) : vol.air;
   }
   return { data: out, w: W, h: H, sx: c.st, sy: vol.dz };
