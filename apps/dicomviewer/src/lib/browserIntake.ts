@@ -56,7 +56,10 @@ export async function ingest(input: SourceFile[]) {
     if (!instances.length) { say(t('none_found'), true); return; }
     const studies = groupInstances(instances);
     addStudies(studies);
-    if (!active) open(studies[0].series.find(s => s.kind === 'volume') || studies[0].series[0]);
+    // separate scans of one patient (e.g. upper and lower jaw) open joined as one
+    const fresh = new Set(studies.flatMap(st => st.series.map(x => x.id))), joined = useStore.getState().studies.flatMap(st => st.series).find(x => x.parts?.some(p => fresh.has(p.id)));
+    if (joined) { open(joined); say(t('merged_note', { n: joined.parts!.length })); }
+    else if (!active) open(studies[0].series.find(s => s.kind === 'volume') || studies[0].series[0]);
     if (bad) say(t('skipped', { n: bad }));
   } catch (e) { say(String((e as Error).message || e), true); } finally { setBusy(null); }
 }
