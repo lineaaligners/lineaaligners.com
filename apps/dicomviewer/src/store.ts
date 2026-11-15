@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { Series, Study } from './lib/intake';
+import { withMerged, type Series, type Study } from './lib/intake';
+import i18n from './i18n';
 import type { ToolKey } from './lib/cs';
 
 export interface Shot { url: string; caption: string }
@@ -24,7 +25,7 @@ export const useStore = create<State>((set, get) => ({
       const have = studies.find(s => s.uid === st.uid);
       if (have) have.series.push(...st.series.filter(n => !have.series.some(o => o.id === n.id))); else studies.push(st);
     }
-    set({ studies });
+    set({ studies: withMerged(studies, i18n.t('merged')) });
   },
   open: (s) => set({ active: s, compare: null, view3d: 'volume', tool: s.kind === 'volume' ? 'cross' : 'wl' }),
   setTool: (tool) => set({ tool }),

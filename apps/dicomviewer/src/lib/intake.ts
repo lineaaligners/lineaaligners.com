@@ -12,7 +12,8 @@ export interface Instance {
   ipp?: number[]; iop?: number[]; spacing?: number[]; thickness?: number; hasFrameGroups: boolean;
 }
 export type SeriesKind = 'volume' | 'stack';
-export interface Series { id: string; kind: SeriesKind; instances: Instance[]; label: string; modality: string; count: number; rows: number; cols: number }
+/** `parts`: a series made by joining several scans of the same patient (e.g. upper and lower jaw exported separately). */
+export interface Series { id: string; kind: SeriesKind; instances: Instance[]; label: string; modality: string; count: number; rows: number; cols: number; parts?: Series[] }
 export interface Study { uid: string; patient: string; patientId: string; date: string; desc: string; series: Series[] }
 export interface IntakeResult { studies: Study[]; skipped: number }
 
@@ -90,4 +91,40 @@ export async function readDicomFiles(files: SourceFile[], onProgress?: (done: nu
     if (++done % 16 === 0) onProgress?.(done, todo.length);
   }
   return { instances, skipped };
+}
+
+/** Slab of space a positioned series covers, as [min, max] along its own row, column and slice directions (mm). */
+function extent(s: Series): { o: number[]; lo: number[]; hi: number[] } | null {
+  const a = s.instances[0], z = s.instances[s.instances.length - 1];
+  if (s.instances.length < 2 || !a.ipp || !z.ipp || a.iop?.length !== 6) return null;
+  const r = a.iop.slice(0, 3), c = a.iop.slice(3), n = normal(a.iop), sp = a.spacing || [1, 1];
+  const p = [dot(a.ipp, r), dot(a.ipp, c), dot(a.ipp, n)], q = dot(z.ipp, n);
+  return { o: a.iop, lo: [p[0], p[1], Math.min(p[2], q)], hi: [p[0] + a.cols * sp[1], p[1] + a.rows * sp[0], Math.max(p[2], q)] };
+}
+/** True when two scans mostly cover the same space: then they are two versions of one scan, not two halves. */
+function sameRegion(a: Series, b: Series): boolean {
+  const x = extent(a), y = extent(b);
+  if (!x || !y || x.o.some((v, i) => Math.abs(v - y.o[i]) > 0.02)) return false;
+  let shared = 1, small = Infinity, va = 1, vb = 1;
+  for (let i = 0; i < 3; i++) { shared *= Math.max(0, Math.min(x.hi[i], y.hi[i]) - Math.max(x.lo[i], y.lo[i])); va *= x.hi[i] - x.lo[i]; vb *= y.hi[i] - y.lo[i]; }
+  small = Math.min(va, vb);
+  return small > 0 && shared / small > 0.5;
+}
+export const MERGED = 'merged|';
+/** Adds one joined series per patient and day when several separate 3D scans were opened (never for scans of the same region). */
+export function withMerged(studies: Study[], label: string): Study[] {
+  for (const st of studies) st.series = st.series.filter(s => !s.parts);
+  const groups = new Map<string, { study: Study; vols: Series[] }>();
+  for (const st of studies) {
+    const key = (st.patientId || st.patient) ? `${st.patientId}|${st.patient}|${st.date}` : st.uid;
+    if (!groups.has(key)) groups.set(key, { study: st, vols: [] });
+    groups.get(key)!.vols.push(...st.series.filter(s => s.kind === 'volume'));
+  }
+  for (const { study, vols } of groups.values()) {
+    if (vols.length < 2 || vols.length > 6) continue;
+    if (vols.some((a, i) => vols.some((b, j) => j > i && sameRegion(a, b)))) continue;
+    const a = vols[0];
+    study.series.unshift({ id: MERGED + vols.map(v => v.id).join('+'), kind: 'volume', parts: vols, instances: vols.flatMap(v => v.instances), label, modality: a.modality, count: vols.reduce((n, v) => n + v.count, 0), rows: a.rows, cols: a.cols });
+  }
+  return studies;
 }

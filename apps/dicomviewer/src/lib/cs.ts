@@ -120,6 +120,7 @@ export function loadVolume(series: Series, onProgress: (done: number, total: num
 export function releaseVolumes() { volumes.clear(); cs.cache.purgeCache(); }
 
 async function buildVolume(series: Series, onProgress: (done: number, total: number) => void): Promise<string> {
+  if (series.parts) return buildMerged(series, onProgress);
   const ids = imageIdsFor(series), a = series.instances[0];
   const multi = series.instances.length === 1 && a.frames > 1;
   const positioned = multi ? a.hasFrameGroups : series.instances.every(i => i.ipp?.length === 3) && a.iop?.length === 6;
@@ -140,6 +141,70 @@ async function buildVolume(series: Series, onProgress: (done: number, total: num
   const volume = await cs.volumeLoader.createAndCacheVolume(volumeId, { imageIds: ids }) as unknown as { load: () => void; loadStatus?: { loaded?: boolean } };
   volume.load();
   for (let i = 0; i < 1200 && !volume.loadStatus?.loaded; i++) await new Promise(r => setTimeout(r, 100));
+  return volumeId;
+}
+
+interface Grid { dimensions: number[]; spacing: number[]; origin: number[]; direction: number[]; metadata: Record<string, unknown>; voxelManager: { getCompleteScalarDataArray: () => Voxels } }
+const isPositioned = (s: Series) => { const a = s.instances[0]; return s.instances.length === 1 ? a.hasFrameGroups : s.instances.every(i => i.ipp?.length === 3) && a.iop?.length === 6; };
+/**
+ * Joins separately exported scans (e.g. upper and lower jaw) into one volume on a common grid, each part at its true
+ * position, so the panoramic, MPR and 3D see both. Gaps between the parts are filled with air.
+ */
+async function buildMerged(series: Series, onProgress: (done: number, total: number) => void): Promise<string> {
+  const parts = series.parts!, total = series.count, grids: Grid[] = []; let before = 0;
+  for (const p of parts) { const id = await loadVolume(p, d => onProgress(before + d, total)); before += p.count; grids.push(cs.cache.getVolume(id) as unknown as Grid); }
+  const g0 = grids[0], D = g0.direction, O = g0.origin;
+  // coordinates in the frame of the first part: mm along its row, column and slice directions
+  const toRef = (w: number[]) => [0, 1, 2].map(a => (w[0] - O[0]) * D[a * 3] + (w[1] - O[1]) * D[a * 3 + 1] + (w[2] - O[2]) * D[a * 3 + 2]);
+  const origins = grids.map(g => [...g.origin]);
+  const box = (g: Grid, o: number[]) => {
+    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let c = 0; c < 8; c++) {
+      const ijk = [c & 1 ? g.dimensions[0] - 1 : 0, c & 2 ? g.dimensions[1] - 1 : 0, c & 4 ? g.dimensions[2] - 1 : 0];
+      const r = toRef([0, 1, 2].map(k => o[k] + ijk[0] * g.spacing[0] * g.direction[k] + ijk[1] * g.spacing[1] * g.direction[3 + k] + ijk[2] * g.spacing[2] * g.direction[6 + k]));
+      for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], r[a]); hi[a] = Math.max(hi[a], r[a]); }
+    }
+    return { lo, hi };
+  };
+  // scans without position information are stacked one after the other
+  if (parts.some(p => !isPositioned(p))) {
+    let top = box(g0, origins[0]).hi[2];
+    for (let n = 1; n < grids.length; n++) { const b = box(grids[n], origins[n]), shift = top + grids[n].spacing[2] - b.lo[2]; for (let k = 0; k < 3; k++) origins[n][k] += shift * D[6 + k]; top = b.hi[2] + shift; }
+  }
+  const boxes = grids.map((g, n) => box(g, origins[n])), lo = [0, 1, 2].map(a => Math.min(...boxes.map(b => b.lo[a]))), hi = [0, 1, 2].map(a => Math.max(...boxes.map(b => b.hi[a])));
+  const sp = [0, 1, 2].map(a => Math.min(...grids.map(g => g.spacing[a])));
+  let dims = [0, 1, 2].map(a => Math.round((hi[a] - lo[a]) / sp[a]) + 1);
+  const voxels = dims[0] * dims[1] * dims[2], LIMIT = 220e6;
+  if (voxels > LIMIT) { const f = Math.cbrt(voxels / LIMIT); for (let a = 0; a < 3; a++) sp[a] *= f; dims = [0, 1, 2].map(a => Math.round((hi[a] - lo[a]) / sp[a]) + 1); }
+  const src0 = g0.voxelManager.getCompleteScalarDataArray(), air = percentile(src0, 0.001);
+  const out = new (src0.constructor as new (n: number) => Voxels)(dims[0] * dims[1] * dims[2]); out.fill(air);
+  const origin = [0, 1, 2].map(k => O[k] + lo[0] * D[k] + lo[1] * D[3 + k] + lo[2] * D[6 + k]);
+  for (let n = 0; n < grids.length; n++) {
+    const g = grids[n], src = g.voxelManager.getCompleteScalarDataArray(), [nx, ny, nz] = g.dimensions, d = g.direction, o = origins[n], b = boxes[n];
+    // part index = M * output index + t
+    const M: number[] = [], t: number[] = [];
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) M.push(sp[c] * (D[c * 3] * d[r * 3] + D[c * 3 + 1] * d[r * 3 + 1] + D[c * 3 + 2] * d[r * 3 + 2]) / g.spacing[r]);
+      t.push(((origin[0] - o[0]) * d[r * 3] + (origin[1] - o[1]) * d[r * 3 + 1] + (origin[2] - o[2]) * d[r * 3 + 2]) / g.spacing[r]);
+    }
+    const from = [0, 1, 2].map(a => Math.max(0, Math.floor((b.lo[a] - lo[a]) / sp[a]))), to = [0, 1, 2].map(a => Math.min(dims[a] - 1, Math.ceil((b.hi[a] - lo[a]) / sp[a])));
+    for (let z = from[2]; z <= to[2]; z++) {
+      for (let y = from[1]; y <= to[1]; y++) {
+        let pi = M[0] * from[0] + M[1] * y + M[2] * z + t[0] + 0.5, pj = M[3] * from[0] + M[4] * y + M[5] * z + t[1] + 0.5, pk = M[6] * from[0] + M[7] * y + M[8] * z + t[2] + 0.5;
+        let at = (z * dims[1] + y) * dims[0] + from[0];
+        for (let x = from[0]; x <= to[0]; x++, at++, pi += M[0], pj += M[3], pk += M[6]) {
+          const i = Math.floor(pi), j = Math.floor(pj), k = Math.floor(pk);
+          if (i < 0 || j < 0 || k < 0 || i >= nx || j >= ny || k >= nz) continue;
+          const v = src[(k * ny + j) * nx + i]; if (v > out[at]) out[at] = v;
+        }
+      }
+      if (z % 16 === 0) await new Promise(r => setTimeout(r, 0)); // keep the page responsive
+    }
+  }
+  const volumeId = `merged:${series.id}`;
+  // the slices live in the cache already; viewports ask for them through an image loader
+  cs.imageLoader.registerImageLoader('merged', (id: string) => ({ promise: Promise.resolve(cs.cache.getImage(id)) }) as never);
+  cs.volumeLoader.createLocalVolume(volumeId, { scalarData: out as never, metadata: { ...g0.metadata } as never, dimensions: dims as never, spacing: sp as never, origin: origin as never, direction: [...D] as never });
   return volumeId;
 }
 
